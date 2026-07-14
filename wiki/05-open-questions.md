@@ -2,8 +2,12 @@
 
 ## Decisions made
 
-- **Design committed:** Design 1 ("The Transducer"), with crowding as a gated
-  add-on. See [04-design.md](04-design.md).
+- **Design REOPENED** (was Design 1 + add-on). Second literature pass found a
+  second strong neighbor to the transducer (Cacioli 2026, arXiv:2603.20642 —
+  causal Weber's-law method in transformers). Transducer now has two neighbors;
+  crowding has none. Leaning toward Design 3 (two-battery) or Design 2-forward.
+  **Ron to decide** — see [04-design.md](04-design.md). This is now open
+  question #0 (below).
 - **Illusion direction killed** (saturated literature).
 - **2017 code:** Ron will supply it; priority is the **log-response / contrast**
   material.
@@ -17,6 +21,11 @@
 ## Open questions (need Ron's facts before step 3 is precise)
 
 Numbered for easy reply.
+
+0. **Which design?** (Reopened — see above.) Design 3 (two-battery: transducer +
+   crowding), Design 2-forward (crowding headline, transducer as 2017-lineage
+   second battery), or hold to transducer-led despite the two neighbors? This
+   gates everything in step 3.
 
 1. **The log-response measurement — behavior vs. representation as the headline.**
    The 2017 result is representational (encoder embeddings). Behaviorally, a
