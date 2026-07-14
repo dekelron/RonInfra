@@ -43,32 +43,38 @@ whichever deficit is largest.
 - Strongest artifact; measures a *space*, not a point.
 - Risk: heaviest for a 4–6 week evenings/weekends budget.
 
-## ⚠️ Decision reopened (2026-07-14, after second literature pass)
+## Committed decision (2026-07-14, confirmed after second literature pass)
 
-A hard second search found **arXiv:2603.20642** (Cacioli, Mar 2026): RSA +
-behaviour + causal intervention for Weber's law in 7–9B transformers — nearly
-the transducer battery's method template, but in symbolic magnitude, not vision.
-Combined with the detection-CSF neighbor (2508.10367), the **transducer spine
-now has two strong neighbors**, while **crowding/uncrowding has none**.
+**Design 1 — transducer-led.** The choice was reopened when the second search
+found a second strong neighbor (**arXiv:2603.20642**, Cacioli Mar 2026: RSA +
+behaviour + causal Weber's law in 7–9B transformers, symbolic magnitude) on top
+of the detection-CSF neighbor (2508.10367). Ron's call: **hold transducer-led**
+— the visual-contrast domain + the Dekel-2017 lineage are the genuine edge, and
+crowding is both further from that core and heavier on stimulus engineering.
 
-This reopens the design choice. Leading options:
-- **Elevate to Design 3 (two-battery suite)** — transducer + crowding as
-  co-equal, so the artifact never rests on the contested ground alone.
-- **Or Design 2 (crowding-forward)** — lead with the clearly-open battery, keep
-  the transducer as the 2017-lineage supporting result.
+This is defensible **only if the design is built to beat the two neighbors.**
+The following are **requirements, not options:**
 
-Recommendation now: **Design 3 if the 4–6 week budget can absorb it; otherwise
-Design 2-forward** (crowding as headline, transducer as the second battery and
-the 2017 tie-in). **Ron to decide.** The prior "Design 1 + add-on" framing below
-is retained for context but is no longer the default.
+1. **Lead with the 2017 lineage, not the method.** The framing is *behavioural +
+   causal closure of a 2017 representational result*. Neither neighbor has a
+   prior result to close; Ron does. This is the core differentiator.
+2. **Sensory transducer via the vision encoder**, explicitly distinguished from
+   Cacioli's symbolic/token magnitude. Cite him first, distinguish in one line.
+3. **Causal LoRA must land a pre-registered effect** — separates from the
+   descriptive CSF paper and puts causal intervention in the *sensory* domain,
+   where it has not been done.
+4. **Dual surface in the same open models** (behaviour ↔ encoder-RDM), tying
+   directly back to the 2017 measurement. Cacioli does this for magnitude; nobody
+   for contrast.
+5. **Not a single point.** Measure the transducer **across spatial frequency**
+   (the 2017 contrast-constancy / "deblurring" result) and/or across model scale
+   — a *space* within the contrast domain, so the artifact is a suite, not one
+   slope. This is how depth is kept without defecting to crowding.
 
-## (Superseded) Committed decision (2026-07-14)
+Crowding/uncrowding is **demoted to an optional week-3-gated add-on** (its lack
+of a close neighbor is noted, but it is no longer the recommended lead).
 
-~~Design 1 as the committed core, built so crowding (Design 2) drops in as an
-add-on if the week-3 go/no-go is green.~~ Superseded by the reopened decision
-above.
-
-Rationale (still valid for why the transducer is *a* battery, not *the* battery):
+Rationale (why the transducer works as the spine when built to the above):
 - The **log-response transducer** is the result Ron can defend three levels
   deep — it is the defensible spine.
 - **Crowding** is what makes the suite *role-relevant* — held as an add-on, not

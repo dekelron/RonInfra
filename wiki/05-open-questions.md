@@ -2,12 +2,14 @@
 
 ## Decisions made
 
-- **Design REOPENED** (was Design 1 + add-on). Second literature pass found a
-  second strong neighbor to the transducer (Cacioli 2026, arXiv:2603.20642 —
-  causal Weber's-law method in transformers). Transducer now has two neighbors;
-  crowding has none. Leaning toward Design 3 (two-battery) or Design 2-forward.
-  **Ron to decide** — see [04-design.md](04-design.md). This is now open
-  question #0 (below).
+- **Design CONFIRMED: Design 1, transducer-led** (2026-07-14). Reopened after
+  the Cacioli 2026 neighbor was found; Ron's call is to hold transducer-led on
+  the strength of the visual-contrast domain + the Dekel-2017 lineage. Survival
+  depends on five **mandatory** defense conditions (2017-lineage lead; sensory-
+  encoder framing vs. symbolic magnitude; pre-registered causal LoRA effect;
+  dual behaviour+RDM surface; transducer measured across spatial frequency /
+  scale so it is a space, not a point). See [04-design.md](04-design.md).
+  Crowding demoted to optional week-3-gated add-on.
 - **Illusion direction killed** (saturated literature).
 - **2017 code:** Ron will supply it; priority is the **log-response / contrast**
   material.
@@ -22,10 +24,7 @@
 
 Numbered for easy reply.
 
-0. **Which design?** (Reopened — see above.) Design 3 (two-battery: transducer +
-   crowding), Design 2-forward (crowding headline, transducer as 2017-lineage
-   second battery), or hold to transducer-led despite the two neighbors? This
-   gates everything in step 3.
+0. **Which design?** RESOLVED — Design 1, transducer-led (see Decisions above).
 
 1. **The log-response measurement — behavior vs. representation as the headline.**
    The 2017 result is representational (encoder embeddings). Behaviorally, a
