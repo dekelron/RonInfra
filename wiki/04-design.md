@@ -21,12 +21,17 @@ open VLM targeting the transducer, then re-measure slope / threshold.
 ## Design 2 — "Crowding under Computer-Use" (role-first)
 
 Behavioral crowding psychophysics — target recognition vs. flanker
-spacing / clutter, psychometric threshold for critical spacing — on synthetic
-stimuli *and* real UI screenshots; across API + open; LoRA to move critical
-spacing.
+spacing / clutter, psychometric threshold for critical spacing, plus the
+**uncrowding** signature — on synthetic stimuli *and* real UI screenshots;
+across API + open; LoRA to move critical spacing.
 
-- Novelty 5/5 · Defensibility 4/5 · Effort 4/5 · Role-relevance 5/5
-- Most defensibly novel (unoccupied) and bullseye for the target role.
+- Novelty 4.5/5 · Defensibility 4/5 · Effort 4/5 · Role-relevance 5/5
+- Bullseye for the target role. Novelty is real but **must be scoped**:
+  crowding in CNNs is already studied representationally (Doerig et al. 2020,
+  arXiv:2004.12676; Volokitin et al. 2017). The open slice is **behavioral**
+  crowding + **uncrowding** in **chat VLMs** — cite the CNN-crowding cluster and
+  claim only that slice. Uncrowding is the strongest differentiator (feedforward
+  nets fail it).
 - Risk: further from the 2017 anchor; more stimulus engineering.
 
 ## Design 3 — "Two-Battery Suite" (transducer + crowding)
@@ -60,7 +65,10 @@ Rationale:
   VLMs (behavioral **+** vision-encoder representational surface).
 - **Batteries are plug-ins** to the core (transducer first; crowding second).
 - **Causal module:** LoRA fine-tune on a ~7B open VLM → re-run the same
-  psychometric measurement → compare pre/post threshold & slope.
+  psychometric measurement → compare pre/post threshold & slope. Position
+  against arXiv:2502.15678 (fine-tuning helps high-level visual cognition but is
+  brittle): our claim is sharper — moving a **low-level parametric threshold**,
+  with a pre-registered effect-size bar.
 
 ## Still to produce (session-plan step 3)
 

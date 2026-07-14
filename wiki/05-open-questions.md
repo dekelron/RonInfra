@@ -7,7 +7,12 @@
 - **Illusion direction killed** (saturated literature).
 - **2017 code:** Ron will supply it; priority is the **log-response / contrast**
   material.
-- **Sweep depth:** focused (done).
+- **Sweep depth:** focused (done); broadened pass added crowding prior art,
+  the causal-fine-tuning neighbor, and the related-work backbone —
+  see [06-related-work.md](06-related-work.md).
+- **Crowding novelty rescoped:** representational crowding-in-CNNs is prior art
+  (Doerig 2020, Volokitin 2017); the open slice is behavioral crowding +
+  uncrowding in VLMs.
 
 ## Open questions (need Ron's facts before step 3 is precise)
 
@@ -38,9 +43,13 @@ Numbered for easy reply.
    hygiene, and it's an interview-defense point).
 
 6. **Scaling answer.** Interview Q2 is "how does it scale beyond lab-N to
-   millions of samples?" Rough intended answer: automated stimulus generation +
-   staircase = unlimited trials, bounded only by API cost; representational
-   surface is fully offline/batchable. Want this baked into the design now?
+   millions of samples?" Draft answer now recorded in
+   [06-related-work.md](06-related-work.md). Confirm it matches how you'd say it.
+
+7. **Crowding add-on — include the uncrowding test?** Prior CNN work (Doerig
+   2020) shows feedforward nets fail *uncrowding*; testing it in VLMs is the
+   strongest crowding differentiator but adds stimulus-design effort. In scope
+   for the gated add-on, or drop to keep the timeline?
 
 ## Immediate next step
 

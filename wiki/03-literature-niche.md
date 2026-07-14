@@ -52,10 +52,16 @@ required).
   failures; pitch a **transducer + causal manipulation**.
 - **Weber's law** appears only for **length** judgment (MindSet toolbox), not
   contrast discrimination. Weber-of-contrast-discrimination is **open**.
-- **(b) Crowding in VLMs → OPEN.** No behavioral crowding psychophysics for
-  VLMs found (COREVQA, 2507.13405, is crowd-*scene* QA — unrelated). This is the
-  most role-relevant battery: crowding is the limit on reading dense
-  dashboards / screenshots, i.e. agentic computer-use.
+- **(b) Crowding in VLMs → PARTIALLY open (scope carefully).** Crowding in
+  neural nets is **already studied representationally**: Doerig et al. 2020
+  (arXiv:2004.12676) and Volokitin et al. 2017 showed feedforward CNNs reproduce
+  crowding but not **uncrowding**. What remains **open** is *behavioral* crowding
+  psychophysics — critical-spacing thresholds and the **uncrowding** signature —
+  in **chat VLMs**, on synthetic + real-UI stimuli. That slice is unclaimed and
+  is the most role-relevant battery (crowding is the limit on reading dense
+  dashboards / screenshots, i.e. agentic computer-use). Cite the CNN-crowding
+  cluster; scope the claim to behavior + VLMs + uncrowding. (COREVQA, 2507.13405,
+  is crowd-*scene* QA — unrelated.)
 
 ## The unoccupied niche (one sentence)
 
@@ -64,17 +70,20 @@ required).
 > **behaviorally and in the vision encoder**, with a **causal LoRA** that moves
 > a measured threshold.
 
-It separates from three neighbors at once:
+It separates from four neighbors at once:
 - **BLINK / CV-Bench / VSR / Winoground:** accuracy-on-categories, no thresholds
   or transducer.
 - **Illusion benchmarks:** categorical and descriptive.
-- **2508.10367:** detection-only, behavior-only, descriptive-only.
+- **2508.10367 (VLM-CSF):** detection-only, behavior-only, descriptive-only.
+- **2502.15678 (fine-tuning visual cognition):** high-level cognition tasks,
+  found brittle — vs. our low-level parametric threshold moved causally.
 
-## Citation seeds (verify PDFs before use)
+See [06-related-work.md](06-related-work.md) for the full citation map,
+red-team critiques + rebuttals, and draft interview answers.
 
-- arXiv:2508.10367 — VLM contrast sensitivity (the direct competitor).
-- arXiv:2502.16435 — human cognitive benchmarks / visual gaps in MLLMs.
-- arXiv:2504.10786 — VLM visual deficits on neuropsychological tests.
-- Illusion cluster: 2501.00848, 2602.01816, 2412.08169, 2311.00047, 2508.12422.
-- Foundational credit (from positioning rules): Geirhos et al.; Zhang et al.
-  2018 (LPIPS); Kubilius & Schrimpf (Brain-Score); PsyPhy.
+## Citation seeds
+
+Full, clustered citation map now lives in
+[06-related-work.md](06-related-work.md) (competitor, crowding prior art, causal
+fine-tuning, foundational/framing, transducer theory, illusion cluster,
+adjacent). Verify all PDFs before use.
