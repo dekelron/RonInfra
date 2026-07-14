@@ -27,6 +27,30 @@ the two required interview questions. All arXiv/PDF numbers are snippet-sourced
   **uncrowding** signature) in **chat VLMs**, on synthetic + real-UI stimuli.
   Cite this cluster; scope the novelty claim to behavior + VLMs + uncrowding.
 
+### B2. Weber/log transducers in transformers — THE method neighbor (critical)
+- **arXiv:2603.20642** — "Weber's Law in Transformer Magnitude Representations"
+  (Cacioli, **March 2026**). Four converging paradigms — **RSA, behavioural
+  discrimination, precision gradients, causal intervention** — across three
+  magnitude domains (**numerical, temporal, spatial**) in three 7–9B
+  instruction-tuned open models (Llama/Mistral/Qwen). Log-compressive geometry
+  (RSA vs. Weber DM .68–.96); behaviour/geometry and layer-wise causal
+  dissociations. **This is nearly the exact multi-surface + causal template
+  proposed for our transducer battery — but in symbolic/token magnitude, NOT
+  vision/contrast.** Our differentiation is now narrow and must be explicit:
+  *sensory visual transducer (contrast/luminance through a vision encoder) vs.
+  numeric magnitude in the token stream; and the Dekel-2017 lineage.*
+- **arXiv:2604.04469** — "Same Geometry, Opposite Noise: Transformer Magnitude
+  Representations Lack Scalar Variability" (follow-up; scalar-variability angle).
+- LLM number-sense cluster: 2502.16147 (Number Representations in LLMs),
+  2502.01540 (What is a Number…), 2402.03328 (Generative AI lacks visual number
+  sense).
+- **Human/ML grounding (log contrast is textbook, not a discovery):**
+  Naka-Rushton contrast-response function; "near-miss to Weber" for
+  suprathreshold contrast discrimination; divisive normalization. Kausik
+  "Psychophysical Machine Learning" (2208.11236) / "Accelerating ML via
+  Weber-Fechner" (2204.11834) impose Weber-Fechner in training (not measure
+  emergence).
+
 ### C. Causal fine-tuning of visual behavior (neighbor to the LoRA component)
 - **arXiv:2502.15678** — "Testing the Limits of Fine-Tuning for Improving Visual
   Cognition in VLMs" (2025). Fine-tuning improves alignment on
@@ -86,6 +110,18 @@ the two required interview questions. All arXiv/PDF numbers are snippet-sourced
    psychophysical threshold** is a sharper claim; brittleness at the cognition
    level is precisely why a low-level, controlled measure is informative. Pre-
    register the effect-size bar (see [05-open-questions.md](05-open-questions.md)).
+
+3b. **"Cacioli (2603.20642) already measured Weber's law in transformers with
+    RSA + behavior + causal intervention."**
+   → In **symbolic magnitude** (number/time/space) through the **token stream**.
+   Ours is a **sensory visual transducer** — contrast/luminance through the
+   **vision encoder** — the behavioural + causal extension of Dekel-2017's CNN
+   contrast log-law to frontier VLMs. Different modality, different pathway,
+   different lineage. **Honest caveat:** the *method template* is no longer
+   novel; the novelty is the **visual-contrast domain** + the **2017 lineage**,
+   and (more cleanly) the **crowding/uncrowding** battery, which Cacioli does not
+   touch at all. This is why the design leans toward including crowding rather
+   than resting on the transducer alone.
 
 4. **"Prompt-sensitivity makes VLM psychophysics unreliable."**
    → Acknowledged (2508.10367 shows it). Mitigate with prompt-robustness

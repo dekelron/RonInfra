@@ -4,7 +4,17 @@ Focused sweep of 2024–2026 VLM-psychophysics / VLM-perception work, run to fin
 what is already taken. (Snippet-level; PDFs blocked by network policy — verify
 before citing in the preprint.)
 
-## The one dangerous collision
+## Two dangerous collisions (not one)
+
+A hard second-pass search on "log / Weber-Fechner transducer" (not just
+"VLM psychophysics") surfaced a second, closer neighbor. **The log response is
+also not itself novel** — it is textbook human vision (near-miss to Weber,
+Naka-Rushton, divisive normalization) and Dekel-2017 already showed it in CNN
+*representations*. So the novelty was never the phenomenon; it is the
+*behavioural + causal instantiation in the visual/contrast domain in frontier
+VLMs*. Read both collisions below before treating the transducer as a safe spine.
+
+## Collision 1
 
 **arXiv:2508.10367 — "Contrast Sensitivity in Multimodal Large Language Models:
 A Psychophysics-Inspired Evaluation"** (Hernández-Cámara, Gomez-Villa,
@@ -39,6 +49,29 @@ psychophysics**. They took the threshold; the 2017 result is the transducer
 direct methodological warning for our behavioral protocol (robustness controls
 required).
 
+## Collision 2 — the method neighbor (found on the second pass)
+
+**arXiv:2603.20642 — "Weber's Law in Transformer Magnitude Representations"**
+(Cacioli, **March 2026**). Four converging paradigms — **RSA + behavioural
+discrimination + precision gradients + causal intervention** — in three 7–9B
+open models. This is nearly the exact multi-surface + causal template proposed
+for the transducer battery.
+
+- **Why it does not fully close our niche:** its domains are **numerical,
+  temporal, spatial** magnitude in the **token stream** — *not* a sensory visual
+  transducer. A second search for suprathreshold contrast transducers,
+  behavioural, in VLMs returned **nothing** — that cell is empty.
+- **Why it still hurts:** the *method template* (measure Weber's law 4 ways incl.
+  causal) is now published and 4 weeks old. The transducer battery is defensible
+  only on **domain** (visual/contrast via the vision encoder) + the **Dekel-2017
+  lineage** — an interviewer who knows Cacioli will say "you changed the stimulus
+  to gratings." Survivable, but it is a real punch.
+- **Design consequence:** the transducer spine now has **two** strong neighbors
+  (Collision 1 = detection-CSF; Collision 2 = causal-Weber method). **Crowding /
+  uncrowding has none.** This argues for the two-battery suite or a
+  crowding-forward design rather than resting on the transducer alone. See
+  [04-design.md](04-design.md) (recommendation reopened).
+
 ## What the sweep settled about the seed directions
 
 - **(c) Illusion susceptibility → KILL.** Saturated. IllusionBench+
@@ -70,13 +103,20 @@ required).
 > **behaviorally and in the vision encoder**, with a **causal LoRA** that moves
 > a measured threshold.
 
-It separates from four neighbors at once:
+It separates from five neighbors at once:
 - **BLINK / CV-Bench / VSR / Winoground:** accuracy-on-categories, no thresholds
   or transducer.
 - **Illusion benchmarks:** categorical and descriptive.
 - **2508.10367 (VLM-CSF):** detection-only, behavior-only, descriptive-only.
+- **2603.20642 (transformer Weber's law):** symbolic magnitude in the token
+  stream, not a sensory visual transducer.
 - **2502.15678 (fine-tuning visual cognition):** high-level cognition tasks,
   found brittle — vs. our low-level parametric threshold moved causally.
+
+**Caveat, stated plainly:** for the *transducer* battery the separation from
+2508.10367 + 2603.20642 is narrow (domain + lineage). For the *crowding/
+uncrowding* battery there is no comparably close neighbor — which is why the
+committed design is being reconsidered in favor of including crowding.
 
 See [06-related-work.md](06-related-work.md) for the full citation map,
 red-team critiques + rebuttals, and draft interview answers.
