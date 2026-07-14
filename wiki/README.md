@@ -17,6 +17,7 @@ Status as of 2026-07-14: **planning / no code yet.** Design committed
 | [03-literature-niche.md](03-literature-niche.md) | 2024–2026 sweep, the collisions, the unoccupied niche, citations |
 | [04-design.md](04-design.md) | Three candidate designs, scoring, the committed design |
 | [05-open-questions.md](05-open-questions.md) | Decisions made, open decisions, immediate next steps |
+| [06-related-work.md](06-related-work.md) | Clustered citations, red-team critiques + rebuttals, draft interview answers |
 
 ## One-line summary of the artifact
 
