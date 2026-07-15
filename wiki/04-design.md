@@ -56,12 +56,18 @@ This is defensible **only if the design is built to beat the two neighbors.**
 The following are **requirements, not options** (ordered by what actually carries
 the novelty):
 
-1. **Primary novelty = mechanism disambiguation.** No neighbor resolves whether a
-   log/Weber signature reflects genuine **log-encoding + constant noise** or
-   **linear-encoding + scalar noise** (2604.04469 shows geometry and noise
-   dissociate). The dual behaviour+RDM surface + causal LoRA can *decide* it in
-   the **sensory/contrast** domain. **Headline this** — it is the one claim no
-   neighbor makes. See [papers/theory-efficient-coding-log.md](papers/theory-efficient-coding-log.md).
+1. **Primary novelty = mechanism disambiguation (now concrete).** No neighbor
+   resolves whether a log/Weber signature reflects genuine **log-encoding +
+   constant noise** or **linear-encoding + scalar noise** — geometry and noise
+   dissociate. Cacioli's follow-up (2604.04469) answered the **noise-signature**
+   question for *numeric* magnitude: transformers show log geometry but
+   **non-biological** noise (CV *decreases* with magnitude, α≈−0.19; biology has
+   constant-CV scalar variability). **Nobody has asked it for a *sensory*
+   (contrast) transducer in a VLM.** So our headline, falsifiable question:
+   *does the VLM contrast transducer carry biological constant-CV noise or the
+   transformer-like decreasing-CV signature — and does a causal LoRA move it?*
+   This is the one claim no neighbor makes. See
+   [papers/theory-efficient-coding-log.md](papers/theory-efficient-coding-log.md).
 2. **Sensory transducer via the vision encoder**, explicitly distinguished from
    Cacioli's symbolic/token magnitude (different modality *and* pathway). Cite
    him first, distinguish in one line.

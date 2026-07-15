@@ -68,12 +68,15 @@ plan is agreed.**
 
 ## Housekeeping / risks to keep visible
 
-- **HIGHEST-PRIORITY VERIFICATION:** the entire two-collision framing pivots on
-  **arXiv:2603.20642 (Cacioli)** and **2604.04469**, both **snippet-sourced
-  only**. Confirm their real method / scope / author / IDs against the PDFs
-  before treating the positioning as settled — if either differs materially,
-  [03-literature-niche.md](03-literature-niche.md) and
-  [04-design.md](04-design.md) change.
+- **Two-collision framing VERIFIED via search (2026-07-15).** Both pivot papers
+  are confirmed: **2603.20642** and **2604.04469** are by **Jon-Paul Cacioli**
+  (independent researcher, Melbourne); methods, models (7–9B Llama/Mistral/Qwen),
+  and key numbers (RSA .68–.96; noise α≈−0.19, 0/16 layers) match. Both are
+  **numeric/token magnitude, no visual stimulus** — our sensory-domain
+  differentiation holds. Residual risk: full-text PDFs remain unread (network
+  policy), so subtle method nuances still want a read before the preprint.
+  Verified this pass: Dekel-2017 R²≈98% + grating/L1 stimulus; Volokitin
+  crowding = arXiv:1706.08616.
 - Network policy blocks arxiv / Semantic Scholar / PDF fetch — verify all cited
   numbers against real PDFs before the preprint.
 - 2019 paper is (apparently) JOV-published — keep the "peer-review" framing
