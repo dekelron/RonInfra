@@ -19,6 +19,7 @@ Status as of 2026-07-14: **planning / no code yet.** Design committed
 | [05-open-questions.md](05-open-questions.md) | Decisions made, open decisions, immediate next steps |
 | [06-related-work.md](06-related-work.md) | Clustered citations, red-team critiques + rebuttals, draft interview answers |
 | [07-log-response-as-instrument.md](07-log-response-as-instrument.md) | The log response as a **readout instrument** — what to vary, what to show, what it is (and isn't) a proxy for |
+| [08-adaptation-and-learning.md](08-adaptation-and-learning.md) | **Adaptation vs. learning** as two routes to the transducer — red-teams the memo ideas; promotes the cheap **in-context adaptation** experiment, parks the rest with prior art |
 | [papers/](papers/README.md) | **One `.md` per paper** — exhaustive per-work summaries + differentiation, grouped A–I |
 
 ## One-line summary of the artifact

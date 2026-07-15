@@ -135,3 +135,6 @@ this page just names *why* those five requirements are the right ones.
   purest test of the efficient-coding prediction.
 - The "conflicting second purpose" (log vs veridical magnitude) is logged as a
   candidate extension, gated like crowding — not on the critical path.
+- The **adaptation-vs-learning** reading of this same "input-statistics" axis, and
+  a cheap **in-context adaptation** experiment that extends it to frontier APIs,
+  are worked out in [08-adaptation-and-learning.md](08-adaptation-and-learning.md).
