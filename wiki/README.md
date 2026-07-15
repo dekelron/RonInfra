@@ -18,6 +18,7 @@ Status as of 2026-07-14: **planning / no code yet.** Design committed
 | [04-design.md](04-design.md) | Three candidate designs, scoring, the committed design |
 | [05-open-questions.md](05-open-questions.md) | Decisions made, open decisions, immediate next steps |
 | [06-related-work.md](06-related-work.md) | Clustered citations, red-team critiques + rebuttals, draft interview answers |
+| [papers/](papers/README.md) | **One `.md` per paper** — exhaustive per-work summaries + differentiation, grouped A–I |
 
 ## One-line summary of the artifact
 
