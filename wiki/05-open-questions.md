@@ -68,6 +68,12 @@ plan is agreed.**
 
 ## Housekeeping / risks to keep visible
 
+- **HIGHEST-PRIORITY VERIFICATION:** the entire two-collision framing pivots on
+  **arXiv:2603.20642 (Cacioli)** and **2604.04469**, both **snippet-sourced
+  only**. Confirm their real method / scope / author / IDs against the PDFs
+  before treating the positioning as settled — if either differs materially,
+  [03-literature-niche.md](03-literature-niche.md) and
+  [04-design.md](04-design.md) change.
 - Network policy blocks arxiv / Semantic Scholar / PDF fetch — verify all cited
   numbers against real PDFs before the preprint.
 - 2019 paper is (apparently) JOV-published — keep the "peer-review" framing

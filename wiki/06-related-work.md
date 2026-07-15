@@ -152,9 +152,14 @@ its just-noticeable difference,"* not *"what fraction did it get right."* Plus a
 **causal** result: a targeted LoRA moves the measured threshold.
 
 **Q2 — "How does it scale beyond psychophysics-lab N to millions of samples?"**
-Stimuli are **procedurally generated** and staircases are **automated**, so
-trial count is bounded only by API cost, not human subject-hours; the
-**representational** surface (open encoders) is fully **offline and batchable**
-to arbitrary N. Psychophysics constrains *design* (parametric axes, adaptive
-sampling), not *volume* — the method is a stimulus generator, and sample size
-is a compute dial.
+Own both halves; don't imply seamless scale. (a) **Generation scales trivially:**
+stimuli are procedural and staircases automated, so the suite can emit millions
+of labelled, parametrically-controlled trials — a data engine for training/eval —
+and the representational surface is fully offline/batchable to arbitrary N (cf.
+PsyPhy's millions of procedurally rendered scenes). (b) **But the scientific unit
+is a threshold, not a sample:** thresholds need many trials *per condition*, not
+many conditions, so "millions of samples" is the wrong axis for the *measurement*
+and the right axis for the *stimulus/data-generation* use. The method is a
+controlled-stimulus generator whose value is **precision** (thresholds, slopes,
+CIs); volume is a separate compute dial. Say which you mean — conflating them is
+the trap in this question.
