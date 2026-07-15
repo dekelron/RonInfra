@@ -122,10 +122,11 @@ the two required interview questions. All arXiv/PDF numbers are snippet-sourced
    **vision encoder** — the behavioural + causal extension of Dekel-2017's CNN
    contrast log-law to frontier VLMs. Different modality, different pathway,
    different lineage. **Honest caveat:** the *method template* is no longer
-   novel; the novelty is the **visual-contrast domain** + the **2017 lineage**,
-   and (more cleanly) the **crowding/uncrowding** battery, which Cacioli does not
-   touch at all. This is why the design leans toward including crowding rather
-   than resting on the transducer alone.
+   novel; the novelty is the **visual-contrast domain** + the **2017 lineage** +
+   the **mechanism-disambiguation** (noise-signature) test no neighbor runs.
+   Crowding/uncrowding — which Cacioli does not touch — stays available as an
+   optional add-on, but the design is committed **transducer-led**, not
+   crowding-forward.
 
 4. **"Prompt-sensitivity makes VLM psychophysics unreliable."**
    → Acknowledged (2508.10367 shows it). Mitigate with prompt-robustness

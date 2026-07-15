@@ -5,7 +5,7 @@ psychophysics to current frontier vision-language models (VLMs), released as
 **code (GitHub) + arXiv preprint**, with a small **LoRA fine-tune of an open
 VLM** so the work is causal, not only descriptive.
 
-Status as of 2026-07-14: **planning / no code yet.** Design committed
+Status as of 2026-07-15: **planning / no code yet.** Design committed
 (see below). Literature niche identified.
 
 ## Contents

@@ -52,7 +52,7 @@ The under-determination has a **measurable** discriminator: the **noise-vs-
 magnitude law**. Constant-CV noise — representational noise that grows
 proportionally with magnitude → **constant coefficient of variation (CV)** — is
 what turns a log transducer into Weber behaviour. Cacioli 2604.04469 measured
-this for *numeric* magnitude in 7–8B transformers and found the **opposite**: CV
+this for *numeric* magnitude in 7–9B transformers and found the **opposite**: CV
 *decreases* with magnitude (α ≈ −0.19; 0/16 layers positive) — log geometry,
 **decreasing-CV noise**.
 

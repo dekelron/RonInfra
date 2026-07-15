@@ -68,9 +68,10 @@ for the transducer battery.
   to gratings." Survivable, but it is a real punch.
 - **Design consequence:** the transducer spine now has **two** strong neighbors
   (Collision 1 = detection-CSF; Collision 2 = causal-Weber method). **Crowding /
-  uncrowding has none.** This argues for the two-battery suite or a
-  crowding-forward design rather than resting on the transducer alone. See
-  [04-design.md](04-design.md) (recommendation reopened).
+  uncrowding has none.** This reopened the design question — but it was resolved
+  **transducer-led** on the strength of the visual-contrast domain + the
+  Dekel-2017 lineage + the mechanism-disambiguation test no neighbor runs, with
+  crowding demoted to an optional add-on. See [04-design.md](04-design.md).
 
 ## What the sweep settled about the seed directions
 

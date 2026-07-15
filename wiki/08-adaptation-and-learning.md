@@ -184,7 +184,7 @@ things survive, and they are the same lever seen twice:
    re-centering.
    - **Why it's worth it:** it costs only API calls (fits the budget), runs on the
      **frontier API models** where the dual-surface/LoRA legs *cannot* reach (see
-     [04-design.md](04-design.md) req. 4), it is **novel** (nobody has run
+     [04-design.md](04-design.md) req. 4), it is **novel** (no prior work found on
      in-context contrast adaptation in a VLM), and it is a **direct instantiation
      of the adaptation idea** — the one thread that lands inside the committed
      design instead of outside it.
