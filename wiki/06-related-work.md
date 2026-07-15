@@ -4,6 +4,10 @@ Organized citation map + anticipated critiques with rebuttals + draft answers to
 the two required interview questions. All arXiv/PDF numbers are snippet-sourced
 (network policy blocks PDF fetch) — **verify before the preprint.**
 
+> **Per-paper detail lives in [papers/](papers/README.md)** — one `.md` per work
+> with exhaustive summary + differentiation, grouped A–I. This file is the
+> high-level map; go to `papers/` for any single work.
+
 ## Related work, by cluster
 
 ### A. The direct competitor (behavioral VLM psychophysics)
