@@ -114,9 +114,16 @@ It separates from five neighbors at once:
   found brittle — vs. our low-level parametric threshold moved causally.
 
 **Caveat, stated plainly:** for the *transducer* battery the separation from
-2508.10367 + 2603.20642 is narrow (domain + lineage). For the *crowding/
-uncrowding* battery there is no comparably close neighbor — which is why the
-committed design is being reconsidered in favor of including crowding.
+2508.10367 + 2603.20642 is narrow. It rests on exactly two things: (1) **domain**
+— a *sensory* contrast/luminance transducer through the vision encoder, not
+symbolic token magnitude; and (2) **mechanism disambiguation** — resolving
+log-encoding vs. scalar-noise (2604.04469) via a dual behaviour+RDM surface plus
+a causal LoRA, which no neighbor does. **The 2017 lineage is framing, not
+novelty.** A further sharpening the design must own: the dual-surface + causal
+work only runs on **open-weights** models (API models give behaviour only), i.e.
+on 7–9B models — **Cacioli's exact regime** — so the differentiation *there* is
+modality/pathway + mechanism, not experimental setup. Design is confirmed
+transducer-led; see [04-design.md](04-design.md).
 
 See [06-related-work.md](06-related-work.md) for the full citation map,
 red-team critiques + rebuttals, and draft interview answers.

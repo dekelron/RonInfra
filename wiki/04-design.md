@@ -53,23 +53,35 @@ of the detection-CSF neighbor (2508.10367). Ron's call: **hold transducer-led**
 crowding is both further from that core and heavier on stimulus engineering.
 
 This is defensible **only if the design is built to beat the two neighbors.**
-The following are **requirements, not options:**
+The following are **requirements, not options** (ordered by what actually carries
+the novelty):
 
-1. **Lead with the 2017 lineage, not the method.** The framing is *behavioural +
-   causal closure of a 2017 representational result*. Neither neighbor has a
-   prior result to close; Ron does. This is the core differentiator.
+1. **Primary novelty = mechanism disambiguation.** No neighbor resolves whether a
+   log/Weber signature reflects genuine **log-encoding + constant noise** or
+   **linear-encoding + scalar noise** (2604.04469 shows geometry and noise
+   dissociate). The dual behaviour+RDM surface + causal LoRA can *decide* it in
+   the **sensory/contrast** domain. **Headline this** — it is the one claim no
+   neighbor makes. See [papers/theory-efficient-coding-log.md](papers/theory-efficient-coding-log.md).
 2. **Sensory transducer via the vision encoder**, explicitly distinguished from
-   Cacioli's symbolic/token magnitude. Cite him first, distinguish in one line.
+   Cacioli's symbolic/token magnitude (different modality *and* pathway). Cite
+   him first, distinguish in one line.
 3. **Causal LoRA must land a pre-registered effect** — separates from the
-   descriptive CSF paper and puts causal intervention in the *sensory* domain,
-   where it has not been done.
-4. **Dual surface in the same open models** (behaviour ↔ encoder-RDM), tying
-   directly back to the 2017 measurement. Cacioli does this for magnitude; nobody
-   for contrast.
+   descriptive CSF paper and puts causal intervention in the *sensory* domain
+   where it has not been done. Fix the effect-size bar before running.
+4. **Dual surface — but know where it applies.** Behaviour ↔ encoder-RDM only
+   works on **open-weights** models; API models (Claude/GPT/Gemini) give
+   behaviour ONLY. So the frontier-model story is behaviour-only (same surface as
+   2508.10367), and the novel dual-surface + causal work lives on **7–9B open
+   models — exactly Cacioli's regime.** State this openly; the differentiation
+   there is modality/pathway + mechanism, not experimental setup.
 5. **Not a single point.** Measure the transducer **across spatial frequency**
    (the 2017 contrast-constancy / "deblurring" result) and/or across model scale
    — a *space* within the contrast domain, so the artifact is a suite, not one
-   slope. This is how depth is kept without defecting to crowding.
+   slope.
+6. **Lineage is framing, not novelty.** The Dekel-2017 tie-in is a credibility /
+   narrative asset (independent early work) — **not** a scientific-novelty claim.
+   Novelty must stand on 1–3 alone; do not let the argument become circular
+   ("it's novel because I did the earlier version").
 
 Crowding/uncrowding is **demoted to an optional week-3-gated add-on** (its lack
 of a close neighbor is noted, but it is no longer the recommended lead).
