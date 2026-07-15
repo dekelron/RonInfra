@@ -33,8 +33,8 @@ contrast across the full range), i.e. contrast-constancy / Weber-law-of-
 discrimination territory. It is **not** a detection threshold.
 
 **Honesty note (do not overclaim the phenomenon):** the log contrast response
-is *established human vision* — near-miss to Weber, Naka-Rushton contrast-
-response, divisive normalization — and it has been shown in transformer
+is *established human vision* — near-miss to Weber, divisive normalization — and
+it has been shown in transformer
 *representations* for symbolic magnitude (Cacioli 2026, arXiv:2603.20642). The
 novel contribution is **not** "networks show a log response." It is the
 **behavioural + causal instantiation in the visual/contrast domain in frontier

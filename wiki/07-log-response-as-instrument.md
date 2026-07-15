@@ -65,10 +65,10 @@ as evidence:
 6. **Dual surface: behavior slope vs encoder-RDM slope, same model** — do the two
    instruments agree? This is the core differentiator (nobody runs it for
    contrast) and the only way to attack the identifiability problem.
-7. **Noise / variability, not just mean shape** — scalar variability vs constant
+7. **Noise / variability, not just mean shape** — magnitude-dependent vs constant
    noise (Cacioli follow-up 2604.04469,
    [papers/2604.04469-same-geometry-opposite-noise.md](papers/2604.04469-same-geometry-opposite-noise.md)).
-   The geometry can look human while the noise does not. Reading *only* the mean
+   The geometry can match while the noise does not. Reading *only* the mean
    transducer is exactly the trap that paper exposes.
 
 ## Q3 — Is it a proxy for…? (answering the real question)

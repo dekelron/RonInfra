@@ -9,7 +9,7 @@ before citing in the preprint.)
 A hard second-pass search on "log / Weber-Fechner transducer" (not just
 "VLM psychophysics") surfaced a second, closer neighbor. **The log response is
 also not itself novel** — it is textbook human vision (near-miss to Weber,
-Naka-Rushton, divisive normalization) and Dekel-2017 already showed it in CNN
+divisive normalization) and Dekel-2017 already showed it in CNN
 *representations*. So the novelty was never the phenomenon; it is the
 *behavioural + causal instantiation in the visual/contrast domain in frontier
 VLMs*. Read both collisions below before treating the transducer as a safe spine.

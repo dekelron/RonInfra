@@ -49,8 +49,8 @@ the two required interview questions. All arXiv/PDF numbers are snippet-sourced
   2502.01540 (What is a Number…), 2402.03328 (Generative AI lacks visual number
   sense).
 - **Human/ML grounding (log contrast is textbook, not a discovery):**
-  Naka-Rushton contrast-response function; "near-miss to Weber" for
-  suprathreshold contrast discrimination; divisive normalization. Kausik
+  "near-miss to Weber" for suprathreshold contrast discrimination; divisive
+  normalization. Kausik
   "Psychophysical Machine Learning" (2208.11236) / "Accelerating ML via
   Weber-Fechner" (2204.11834) impose Weber-Fechner in training (not measure
   emergence).

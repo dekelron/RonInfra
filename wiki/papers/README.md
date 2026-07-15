@@ -58,6 +58,6 @@ Do not cite any `snippet` figure in the paper without opening the source.
 - [LLM number-sense — grouped (2502.16147, 2502.01540, 2402.03328)](llm-number-sense-grouped.md)
 
 ### I. Theory of log / Weber responses (the "why")
-- [Efficient coding & the log transducer (Laughlin 1981; Fechner; divisive normalization)](theory-efficient-coding-log.md)
+- [Efficient coding & the log transducer (Fechner; divisive normalization)](theory-efficient-coding-log.md)
 - [2312293121 — Unified framework for magnitude & discriminability (PNAS 2024)](pnas-2024-unified-magnitude.md)
 - [Kausik — Weber-Fechner in ML (2204.11834, 2208.11236)](kausik-weber-fechner-ml.md)

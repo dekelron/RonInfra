@@ -10,9 +10,9 @@
 ## What it does
 
 **Brain-Score:** a large composite of **neural + behavioural** benchmarks scoring
-how well a model matches the primate ventral visual stream (V1/V2/V4/IT + object-
-recognition behaviour). Guided development of **CORnet-S**, a shallow recurrent
-ANN with anatomically mapped areas that scores highly while staying compact.
+how well a model matches the primate ventral visual stream (neural areas +
+object-recognition behaviour). Guided development of **CORnet-S**, a shallow
+recurrent ANN with mapped areas that scores highly while staying compact.
 
 ## Key findings
 

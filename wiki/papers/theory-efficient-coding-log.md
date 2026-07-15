@@ -11,9 +11,9 @@ network have a log contrast response at all?"
 - A channel with **bounded output range** encoding a stimulus drawn from prior
   `p(x)` maximizes transmitted information when its transfer function is the
   **CDF of `p(x)`** (histogram equalization).
-- **Laughlin 1981** (*Z. Naturforsch.*) showed the fly LMC contrast-response
-  curve **is** the CDF of natural-scene contrast — the empirical proof of
-  concept.
+- Empirically, a measured contrast-response curve equals the CDF of
+  natural-scene contrast — the efficient-coding prediction confirmed in a real
+  channel (proof of concept).
 - When `p(x)` is approximately **scale-invariant / power-law (~1/x)** — true of
   natural luminance, contrast, and symbolic magnitudes — the optimal transfer
   function is **logarithmic**. This is Fechner's intuition made rigorous.
@@ -29,9 +29,8 @@ network have a log contrast response at all?"
 
 ## Mechanistic enablers in networks
 
-- **Divisive normalization** (Heeger 1992) — the standard model of the
-  **Naka-Rushton** contrast-response curve; compresses dynamic range ≈ log.
-  LayerNorm / normalization layers play an analogous role in transformers.
+- **Divisive normalization** compresses dynamic range ≈ log; LayerNorm /
+  normalization layers play an analogous role in transformers.
 - **Heavy-tailed training statistics** + a **contrast-invariance** objective push
   a recognition network toward a compressive transducer.
 - Cacioli 2603.20642 checks the **power-law precondition** (integer frequencies)
@@ -40,41 +39,40 @@ network have a log contrast response at all?"
 ## The critical caveat (our leverage)
 
 - **Under-determination:** a constant Weber fraction is consistent with (i) **log
-  encoding + constant noise** OR (ii) **linear encoding + scalar (Poisson-like)
-  noise**. Behaviour alone cannot decide; geometry alone cannot decide the noise
+  encoding + constant noise** OR (ii) **linear encoding + scalar noise**.
+  Behaviour alone cannot decide; geometry alone cannot decide the noise
   (see 2604.04469). "Log-linear response" is often asserted beyond what one
   surface licenses.
 - Real contrast discrimination is a **near-miss to Weber** (dipper function), not
   a clean log line — method and range effects contaminate Stevens/Fechner fits.
 
-## The noise axis (scalar variability) — the concrete test
+## The noise axis (magnitude-dependent noise) — the concrete test
 
-The under-determination has a **measurable** discriminator: **scalar
-variability**. Biological magnitude systems have representational noise that grows
-with magnitude → **constant coefficient of variation (CV)**; that is what turns a
-log transducer into Weber behaviour. Cacioli 2604.04469 measured this for
-*numeric* magnitude in 7–8B transformers and found the **opposite**: CV
+The under-determination has a **measurable** discriminator: the **noise-vs-
+magnitude law**. Constant-CV noise — representational noise that grows
+proportionally with magnitude → **constant coefficient of variation (CV)** — is
+what turns a log transducer into Weber behaviour. Cacioli 2604.04469 measured
+this for *numeric* magnitude in 7–8B transformers and found the **opposite**: CV
 *decreases* with magnitude (α ≈ −0.19; 0/16 layers positive) — log geometry,
-**non-biological noise**.
+**decreasing-CV noise**.
 
 **No one has measured the noise signature of a *sensory* (contrast) transducer in
 a VLM.** So our sharpest, falsifiable question is:
 
-> Does the VLM contrast transducer carry biological **constant-CV** noise
-> (scalar variability) or the transformer-like **decreasing-CV** signature — and
-> does a **causal LoRA** move it?
+> Does the VLM contrast transducer carry **constant-CV** noise or the
+> transformer-like **decreasing-CV** signature — and does a **causal LoRA**
+> move it?
 
 ## Why this hands us the contribution
 
 Neighbors measure **one surface**. Our **dual behaviour+RDM surface in the same
 model** + **causal LoRA** can test whether the log response is genuine
 log-encoding or Weber-mimicking noise — mechanism disambiguation in the **sensory**
-domain that no one has run. The scalar-variability test above makes it concrete
+domain that no one has run. The noise-law test above makes it concrete
 and pre-registrable. This is the strongest defense of Design 1.
 
 ## Key refs
 
-Laughlin 1981; Fechner (1860); Heeger 1992 (divisive normalization); Wilson 1980
-("A transducer function for threshold and suprathreshold human vision",
-Biol. Cybern.); PNAS 2024 unified framework (see own file); Royal Society 2023
-(Weber as least-error). Verify exact citations before the preprint.
+Fechner (1860, Weber–Fechner); Wilson 1980 (transducer function for threshold
+and suprathreshold vision); PNAS 2024 unified framework (see own file); Royal
+Society 2023 (Weber as least-error). Verify exact citations before the preprint.
