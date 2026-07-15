@@ -1,10 +1,10 @@
 # Do Deep Neural Networks Suffer from Crowding?
 
 - **Authors:** Anna Volokitin, Gemma Roig, Tomaso Poggio
-- **Venue / Year:** NeurIPS 2017
-- **ID:** arXiv `(verify id)` — NeurIPS 2017 proceedings
+- **Venue / Year:** NeurIPS 2017 (poster)
+- **ID:** arXiv:1706.08616 ✓ verified
 - **Cluster:** E — crowding (prior art)
-- **Sourcing:** `snippet`
+- **Sourcing:** `snippet` (id/venue verified; method detail still snippet-grade)
 
 ## What it does
 
@@ -25,5 +25,4 @@ add-on must be scoped to **behavioural VLMs + uncrowding + UI stimuli**, not
 
 ## How we cite / differentiate
 
-Cite alongside Doerig 2020 to scope novelty. **Verify the exact arXiv id /
-NeurIPS reference before use.**
+Cite alongside Doerig 2020 to scope novelty (arXiv:1706.08616, NeurIPS 2017).
