@@ -1,19 +1,32 @@
 """Reverse-engineered log-contrast-response experiment from Dekel (2017).
 
-See README.md in this directory for the derivation and the mapping to the
-paper's reported numbers.
+See METHOD.md for the exact procedure (Section 5 / Equation 4) and README.md for
+the implementation and how to run it.
 """
 
-from .gratings import GratingConfig, build_grid, make_grating, make_reference
+from .gratings import (
+    GratingConfig,
+    PAPER_CONTRASTS,
+    PAPER_FREQUENCIES_CPI,
+    make_grating,
+    make_reference,
+    sample_gratings,
+    reference_rgb,
+    to_rgb,
+)
 from .features import FeatureModel, TorchvisionModel, SyntheticFrontEnd, l1_distance
 from .fit import fit_log_linear, summarise_layer, LayerLogResult
 from .experiment import run_experiment, save_figures, ExperimentResult
 
 __all__ = [
     "GratingConfig",
-    "build_grid",
+    "PAPER_CONTRASTS",
+    "PAPER_FREQUENCIES_CPI",
     "make_grating",
     "make_reference",
+    "sample_gratings",
+    "reference_rgb",
+    "to_rgb",
     "FeatureModel",
     "TorchvisionModel",
     "SyntheticFrontEnd",

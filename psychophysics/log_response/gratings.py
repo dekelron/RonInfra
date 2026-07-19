@@ -1,30 +1,32 @@
 """Sinusoidal grating stimuli for the log-contrast-response experiment.
 
-Reverse-engineered from Dekel (2017), "Human perception in computer vision"
-(arXiv:1701.04674). The relevant measurement uses sinusoidal gratings at all
-combinations of spatial frequency and contrast, compared against a uniform gray
-reference image, and reads out the change in a DNN's internal representation.
+Faithful to Dekel (2017), Section 5 / Equation 4 (see METHOD.md). Grating:
 
-Conventions used here (documented so they can be defended in an interview):
+    I(c,f,theta,phi; x,y) = mu * [1 + c * sin(2*pi*f*(x*cos t + y*sin t)/W + phi)]
 
-* Luminance is represented in [0, 1] pixel space with a mid-gray background of
-  0.5. This makes the mean luminance of every grating exactly 0.5, so the only
-  thing that changes with contrast/frequency is the modulation -- the reference
-  gray and every grating share the same mean.
-* Contrast is Michelson contrast, ``c = (Lmax - Lmin) / (Lmax + Lmin)``. With a
-  mean of 0.5 and amplitude ``a`` the luminance is ``0.5 + a * sin(...)`` and
-  ``c = a / 0.5 = 2a``; i.e. amplitude ``a = c / 2``. A contrast of 1.0 spans
-  the full [0, 1] range; higher contrasts are clipped and therefore avoided.
-* Spatial frequency is specified in cycles-per-image so it is resolution
-  independent for a fixed model input size.
-* Gratings are grayscale (identical R, G, B) so the manipulation is purely
-  achromatic contrast, matching the psychophysics.
+with mu the mean gray level, f in cycles-per-image, W the image width, and c the
+Michelson contrast about mu. Every stimulus and the gray reference share the same
+mean luminance mu, so only the modulation changes with contrast/frequency.
+
+The paper draws 250 stimuli per (contrast, frequency) with **random orientation**
+and **random phase**; these are generated on the fly (materialising the full
+14x8x250 grid would be tens of GB), so this module exposes single-grating and
+sampler helpers rather than a pre-built array.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np
+
+# Paper's 14 contrasts: integer amplitudes /128, ~half-octave apart above the
+# low end -- the near-geometric spacing is what makes log(c) nearly even.
+PAPER_CONTRASTS: tuple[float, ...] = tuple(
+    a / 128.0 for a in (1, 2, 3, 4, 6, 8, 11, 16, 23, 33, 46, 64, 92, 128)
+)
+
+# Paper's 8 spatial frequencies in cycles/image (read off Figure 3).
+PAPER_FREQUENCIES_CPI: tuple[float, ...] = (1.0, 1.75, 3.5, 7.0, 14.0, 28.0, 56.0, 75.0)
 
 
 @dataclass(frozen=True)
@@ -32,47 +34,42 @@ class GratingConfig:
     """Parameters of the grating stimulus grid."""
 
     size: int = 224  # square image side, in pixels (model input size)
-    # Log-spaced Michelson contrasts. The log spacing is the whole point: the
-    # 2017 result is that these log-spaced inputs become *linearly* spaced in
-    # the end-layer representation.
-    contrasts: tuple[float, ...] = tuple(
-        np.round(np.logspace(np.log10(0.01), np.log10(1.0), 12), 6)
-    )
-    # Spatial frequencies in cycles per image.
-    frequencies_cpi: tuple[float, ...] = (2, 4, 8, 16, 32, 64)
-    # Phases (radians) to average over, to remove phase-specific sampling
-    # artifacts. Averaging over 4 quadrature phases is a standard trick.
-    phases: tuple[float, ...] = (0.0, np.pi / 2, np.pi, 3 * np.pi / 2)
-    orientation_deg: float = 90.0  # 90 = vertical bars (grating varies in x)
+    contrasts: tuple[float, ...] = PAPER_CONTRASTS
+    frequencies_cpi: tuple[float, ...] = PAPER_FREQUENCIES_CPI
+    repetitions: int = 250  # random (orientation, phase) draws per (c, f)
     mean: float = 0.5
+
+    @property
+    def contrast_array(self) -> np.ndarray:
+        return np.asarray(self.contrasts, dtype=np.float64)
+
+    @property
+    def frequency_array(self) -> np.ndarray:
+        return np.asarray(self.frequencies_cpi, dtype=np.float64)
 
 
 def _coordinate_grid(size: int) -> tuple[np.ndarray, np.ndarray]:
-    """Return x, y in cycles-normalised units on [0, 1)."""
+    """x, y in normalised [0, 1) units (cycles measured per image)."""
     axis = np.arange(size, dtype=np.float64) / size
-    x, y = np.meshgrid(axis, axis)
-    return x, y
+    return np.meshgrid(axis, axis)
 
 
 def make_grating(
-    frequency_cpi: float,
     contrast: float,
+    frequency_cpi: float,
+    orientation_rad: float = 0.0,
     phase: float = 0.0,
-    orientation_deg: float = 90.0,
     size: int = 224,
     mean: float = 0.5,
 ) -> np.ndarray:
-    """Create one grayscale sinusoidal grating as a float array in [0, 1].
+    """One grayscale sinusoidal grating as a float array in [0, 1], shape (H, W).
 
-    Returns an ``(size, size)`` array (single channel).
+    Orientation is in radians; ``frequency_cpi`` is cycles per image. Values are
+    clipped to [0, 1] (a Michelson contrast of 1.0 exactly spans the range).
     """
     x, y = _coordinate_grid(size)
-    theta = np.deg2rad(orientation_deg)
-    # Project coordinates onto the orientation direction; frequency is in
-    # cycles per image, so multiply the [0,1) coordinate by 2*pi*freq.
-    proj = x * np.cos(theta) + y * np.sin(theta)
-    amplitude = contrast * mean  # Michelson contrast about `mean`
-    img = mean + amplitude * np.sin(2.0 * np.pi * frequency_cpi * proj + phase)
+    proj = x * np.cos(orientation_rad) + y * np.sin(orientation_rad)
+    img = mean * (1.0 + contrast * np.sin(2.0 * np.pi * frequency_cpi * proj + phase))
     return np.clip(img, 0.0, 1.0)
 
 
@@ -86,46 +83,26 @@ def to_rgb(gray: np.ndarray) -> np.ndarray:
     return np.repeat(gray[:, :, None], 3, axis=2)
 
 
-@dataclass
-class StimulusGrid:
-    """Materialised grid of stimuli for a configuration.
+def sample_gratings(
+    contrast: float,
+    frequency_cpi: float,
+    repetitions: int,
+    rng: np.random.Generator,
+    size: int = 224,
+    mean: float = 0.5,
+):
+    """Yield ``repetitions`` RGB gratings with random orientation and phase.
 
-    ``images`` is indexed ``[freq_idx, contrast_idx, phase_idx]`` and each entry
-    is an ``(H, W, 3)`` float image in [0, 1]. ``reference`` is the single gray
-    image every grating is compared against.
+    Replication assumption (the manuscript does not state the distributions):
+    orientation ~ U[0, pi), phase ~ U[0, 2*pi).
     """
-
-    config: GratingConfig
-    reference: np.ndarray
-    images: np.ndarray = field(repr=False)
-
-    @property
-    def contrasts(self) -> np.ndarray:
-        return np.asarray(self.config.contrasts, dtype=np.float64)
-
-    @property
-    def frequencies(self) -> np.ndarray:
-        return np.asarray(self.config.frequencies_cpi, dtype=np.float64)
+    for _ in range(repetitions):
+        theta = rng.uniform(0.0, np.pi)
+        phi = rng.uniform(0.0, 2.0 * np.pi)
+        gray = make_grating(contrast, frequency_cpi, theta, phi, size=size, mean=mean)
+        yield to_rgb(gray)
 
 
-def build_grid(config: GratingConfig | None = None) -> StimulusGrid:
-    """Build the full frequency x contrast x phase stimulus grid."""
-    cfg = config or GratingConfig()
-    freqs = cfg.frequencies_cpi
-    contrasts = cfg.contrasts
-    phases = cfg.phases
-    imgs = np.empty((len(freqs), len(contrasts), len(phases), cfg.size, cfg.size, 3))
-    for fi, f in enumerate(freqs):
-        for ci, c in enumerate(contrasts):
-            for pi, p in enumerate(phases):
-                g = make_grating(
-                    frequency_cpi=f,
-                    contrast=c,
-                    phase=p,
-                    orientation_deg=cfg.orientation_deg,
-                    size=cfg.size,
-                    mean=cfg.mean,
-                )
-                imgs[fi, ci, pi] = to_rgb(g)
-    ref = to_rgb(make_reference(cfg.size, cfg.mean))
-    return StimulusGrid(config=cfg, reference=ref, images=imgs)
+def reference_rgb(config: GratingConfig) -> np.ndarray:
+    """RGB uniform-gray reference for a configuration."""
+    return to_rgb(make_reference(config.size, config.mean))

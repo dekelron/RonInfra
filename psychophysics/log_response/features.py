@@ -61,6 +61,8 @@ class TorchvisionModel(FeatureModel):
         weights_path: str | None = None,
         pretrained: bool = True,
         device: str = "cpu",
+        scramble: bool = False,
+        scramble_seed: int = 0,
     ):
         import torch
         import torchvision
@@ -91,18 +93,34 @@ class TorchvisionModel(FeatureModel):
                     state = state["state_dict"]
                 self.net.load_state_dict(state)
 
+        # Paper control: scramble learned weights *within each layer* (permute
+        # each weight tensor's own elements). Reported to drop prob R^2 0.98->0.60.
+        if scramble:
+            self._scramble_within_layers(scramble_seed)
+
         self.net.eval().to(self.device)
 
         self.layers = layers or self._default_layers(arch)
         self._acts: dict[str, np.ndarray] = {}
         self._register(self.layers)
 
+    def _scramble_within_layers(self, seed: int) -> None:
+        torch = self.torch
+        gen = torch.Generator().manual_seed(seed)
+        with torch.no_grad():
+            for name, p in self.net.named_parameters():
+                if "weight" in name and p.numel() > 1:
+                    flat = p.reshape(-1)
+                    perm = torch.randperm(flat.numel(), generator=gen)
+                    p.copy_(flat[perm].reshape(p.shape))
+
     def _default_layers(self, arch: str) -> list[str]:
-        # A spread from early to end computation, ending at the classifier.
+        # A spread from early to end computation. 'logits'/'prob' are appended in
+        # represent(); for VGG-19 these tap conv1_1 (pre-ReLU), a mid conv, fc7.
         if arch.startswith("vgg"):
-            return ["features.4", "features.18", "features.35", "classifier.6"]
+            return ["features.0", "features.19", "classifier.3"]
         if arch.startswith("resnet"):
-            return ["layer1", "layer2", "layer3", "layer4", "fc"]
+            return ["layer1", "layer2", "layer3", "layer4"]
         # Generic: just tap the final module.
         return [list(dict(self.net.named_modules()).keys())[-1]]
 
@@ -129,9 +147,12 @@ class TorchvisionModel(FeatureModel):
     def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
         self._acts = {}
         with self.torch.no_grad():
-            # softmax output is the final "prob"-style readout for the classifier
             logits = self.net(self._preprocess(image))
         acts = {k: v.copy() for k, v in self._acts.items()}
+        # Expose both the pre-softmax logits (fc8) and the softmax probabilities.
+        # The paper's headline R^2=0.98 is at 'prob'; comparing logits vs prob
+        # isolates how much of the compression is the softmax (see METHOD.md).
+        acts["logits"] = logits.cpu().numpy()
         acts["prob"] = self.torch.softmax(logits, dim=1).cpu().numpy()
         return acts
 

@@ -24,7 +24,16 @@ The single result the artifact is built around:
 - The average change in DNN representation scales with the **log** of the
   input-change magnitude.
 - Output L1 distance vs. **log-contrast** fit at **R² ≈ 98%** (averaged across
-  spatial frequencies).
+  spatial frequencies), at the VGG-19 softmax `prob` layer; scrambling learned
+  weights within each layer drops it to **≈ 60%**.
+
+**Method now confirmed against the paper (§5 / Eq. 4).** The metric is a
+*distance of means*: for each unit, average activation over 250 random-orient/
+random-phase gratings, subtract the gray activation, take `|·|`, average over
+units — `D = mean_i |mean_r a_i(x_r) − a_i(gray)|`, **not** mean per-stimulus
+distance. Grid: 14 contrasts `{1,2,3,4,6,8,11,16,23,33,46,64,92,128}/128` × 8
+frequencies `{1,1.75,3.5,7,14,28,56,75}` cyc/image. A runnable reverse-engineered
+implementation lives at `psychophysics/log_response/` (see its `METHOD.md`).
 
 In psychophysics terms: a **Weber–Fechner logarithmic transducer emerges** in a
 network trained only for object recognition — never trained to produce it. This
@@ -102,7 +111,12 @@ constraint that the 2017 code ships only as a living part of this repo.
 
 ## Sourcing note
 
-The session's network policy **blocks arxiv.org, Semantic Scholar, and direct
-PDF fetch** (403 at the proxy). All paper details above are reconstructed from
-web-search snippets — reliable for orientation, but exact figures/numbers should
-be verified against the PDFs once Ron supplies them.
+The session's network policy **blocks arxiv.org, OpenReview, Semantic Scholar,
+ResearchGate and direct PDF fetch** (403 at the proxy egress; only GitHub hosts
+tunnel through). The log-response / contrast details above are no longer from
+search snippets: they come from a **detailed reconstruction of §5 / Eq. 4 /
+Figs 3,10,11** supplied into the session (captured in
+`psychophysics/log_response/METHOD.md`). That source is itself a reconstruction
+(the paper released no analysis code), so undocumented stimulus specifics remain
+replication assumptions, and the R² numbers should still be confirmed against the
+manuscript figures when arxiv is reachable.
