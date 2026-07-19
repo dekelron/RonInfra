@@ -48,10 +48,11 @@ class ExperimentResult:
         header = f"{'layer':<14}{'mean R^2':>10}{'pooled R^2':>12}{'spacing CV':>12}"
         lines.append(header)
         lines.append("-" * len(header))
+        log_c = np.log10(contrasts)
         for layer in self.layers:
             res = self.results[layer]
             cvs = [
-                linear_spacing_uniformity(res.response[fi])
+                linear_spacing_uniformity(res.response[fi], log_c)
                 for fi in range(res.response.shape[0])
             ]
             cv = float(np.nanmean(cvs))

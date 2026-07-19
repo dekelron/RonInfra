@@ -71,9 +71,14 @@ def test_linear_in_contrast_is_not_log_linear():
 
 
 def test_log_spaced_becomes_evenly_spaced():
-    contrasts = np.logspace(-2, 0, 14)
-    y = 3.0 * np.log10(contrasts) + 7.0
-    assert linear_spacing_uniformity(y) < 1e-6
+    # A perfect log law has constant local log-slope even on a non-uniform
+    # contrast grid, once gaps are normalised by the log-contrast spacing.
+    contrasts = np.asarray(PAPER_CONTRASTS)
+    logc = np.log10(contrasts)
+    y = 3.0 * logc + 7.0
+    assert linear_spacing_uniformity(y, logc) < 1e-9
+    # Without normalisation, the paper's non-uniform grid looks uneven.
+    assert linear_spacing_uniformity(y) > 0.1
 
 
 def test_synthetic_frontend_shows_log_response():

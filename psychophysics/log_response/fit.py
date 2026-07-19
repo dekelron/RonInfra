@@ -99,15 +99,23 @@ def summarise_layer(
     )
 
 
-def linear_spacing_uniformity(response_row: np.ndarray) -> float:
-    """How uniform are the gaps between consecutive (log-contrast-ordered) points?
+def linear_spacing_uniformity(
+    response_row: np.ndarray, log_contrast: np.ndarray | None = None
+) -> float:
+    """How constant is the local log-contrast slope of the response?
 
-    Given a monotonic response to log-spaced contrasts, perfectly linear log
-    behaviour makes the consecutive differences equal. Returns the coefficient
-    of variation of the consecutive differences (0 = perfectly even spacing).
-    Lower is more "linearly spaced".
+    Under a perfect log law ``D = a + b*log c`` the per-interval slope
+    ``ΔD / Δlog c`` is constant, so its coefficient of variation is 0 (lower is
+    more "log-linear"). Pass ``log_contrast`` so the D-gaps are normalised by the
+    actual log-contrast spacing -- important because the paper's 14 contrasts are
+    only *approximately* even in log, so raw D-gaps would look uneven even for a
+    perfect log law. If ``log_contrast`` is omitted, even spacing is assumed.
     """
-    diffs = np.diff(np.asarray(response_row, dtype=np.float64))
+    response_row = np.asarray(response_row, dtype=np.float64)
+    diffs = np.diff(response_row)
+    if log_contrast is not None:
+        dlog = np.diff(np.asarray(log_contrast, dtype=np.float64))
+        diffs = diffs / dlog  # per-unit-log-contrast slope
     m = np.mean(diffs)
     if m == 0:
         return float("nan")
