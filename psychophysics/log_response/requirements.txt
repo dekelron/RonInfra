@@ -1,0 +1,11 @@
+# Core analysis pipeline (offline synthetic verification + fitting + figures)
+numpy
+scipy
+matplotlib
+pillow
+
+# Real ImageNet-CNN back-end (TorchvisionModel). Pretrained weights are fetched
+# by torchvision from download.pytorch.org, or pass a local state_dict via
+# --weights if that host is unreachable.
+torch
+torchvision
