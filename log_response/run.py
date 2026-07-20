@@ -22,6 +22,15 @@ set -- see CLIPModel)::
     python -m log_response.run --model clip:ViT-B-32 --figures out_clip/
     python -m log_response.run --model clip:ViT-B-32 --scramble --figures out_clip_scr/
     python -m log_response.run --model clip:ViT-B-32:laion2b_s34b_b79k --figures out_laion/
+
+Generative VLM (needs transformers + pillow; 'prob' is the next-token
+distribution given a fixed instruction -- see HFVLMModel). The grid is heavy
+for a 7B model, so use a GPU and shrink reps/frequencies::
+
+    python -m log_response.run --model hf:llava-hf/llava-1.5-7b-hf \
+        --device cuda --dtype float16 --reps 50 --figures out_llava/
+    python -m log_response.run --model hf:Qwen/Qwen2-VL-2B-Instruct \
+        --device cuda --dtype bfloat16 --frequencies 3.5,7,14,28 --reps 25
 """
 
 from __future__ import annotations
@@ -31,11 +40,14 @@ import argparse
 from .gratings import GratingConfig
 from .features import (
     CLIPModel,
+    DEFAULT_INSTRUCTION,
     DEFAULT_PROMPTS,
+    HFVLMModel,
     SyntheticFrontEnd,
     TorchvisionModel,
     load_prompts,
     parse_clip_spec,
+    parse_hf_spec,
 )
 from .experiment import run_experiment, save_figures
 
@@ -48,11 +60,19 @@ def build_model(args):
             (layers, "--layers"),
             (args.prompts, "--prompts"),
             (args.weights, "--weights"),
+            (args.instruction, "--instruction"),
+            (args.dtype, "--dtype"),
         ):
             if value:
                 raise SystemExit(f"{flag} does not apply to the synthetic back-end")
         return SyntheticFrontEnd()
-    if args.model == "clip" or args.model.startswith("clip:"):
+    is_clip = args.model == "clip" or args.model.startswith("clip:")
+    is_hf = args.model.startswith("hf:")
+    if args.prompts and not is_clip:
+        raise SystemExit("--prompts only applies to the CLIP back-end")
+    if (args.instruction or args.dtype) and not is_hf:
+        raise SystemExit("--instruction and --dtype only apply to the hf: VLM back-end")
+    if is_clip:
         arch, tag = parse_clip_spec(args.model)
         return CLIPModel(
             arch=arch,
@@ -63,8 +83,16 @@ def build_model(args):
             scramble=args.scramble,
             scramble_seed=args.seed,
         )
-    if args.prompts:
-        raise SystemExit("--prompts only applies to the CLIP back-end")
+    if is_hf:
+        return HFVLMModel(
+            model_id=args.weights or parse_hf_spec(args.model),
+            layers=layers,
+            instruction=args.instruction,
+            device=args.device,
+            dtype=args.dtype,
+            scramble=args.scramble,
+            scramble_seed=args.seed,
+        )
     return TorchvisionModel(
         arch=args.model,
         layers=layers,
@@ -82,14 +110,15 @@ def main(argv=None):
         "--model",
         default="synthetic",
         help="'synthetic' (offline), a torchvision arch name (vgg19, resnet152, "
-        "...), or 'clip[:ARCH[:PRETRAINED]]' (e.g. clip:ViT-B-32, "
-        "clip:ViT-B-32:laion2b_s34b_b79k)",
+        "...), 'clip[:ARCH[:PRETRAINED]]' (e.g. clip:ViT-B-32, "
+        "clip:ViT-B-32:laion2b_s34b_b79k), or 'hf:MODEL_ID' for a generative "
+        "VLM (e.g. hf:llava-hf/llava-1.5-7b-hf)",
     )
     p.add_argument(
         "--weights",
         default=None,
-        help="local weights: a torchvision state_dict path, or (with clip:) an "
-        "open_clip checkpoint path overriding the pretrained tag",
+        help="local weights: a torchvision state_dict path, an open_clip "
+        "checkpoint (clip:), or a local model directory (hf:)",
     )
     p.add_argument(
         "--layers",
@@ -103,6 +132,24 @@ def main(argv=None):
         default=None,
         help="clip only: text file with one zero-shot prompt per line "
         f"(default: built-in {len(DEFAULT_PROMPTS)}-prompt set)",
+    )
+    p.add_argument(
+        "--instruction",
+        default=None,
+        help="hf only: the fixed conditioning prompt "
+        f"(default: {DEFAULT_INSTRUCTION!r})",
+    )
+    p.add_argument(
+        "--dtype",
+        default=None,
+        choices=["auto", "float32", "float16", "bfloat16"],
+        help="hf only: model dtype (use float16/bfloat16 on GPU for 7B models)",
+    )
+    p.add_argument(
+        "--frequencies",
+        default=None,
+        help="comma-separated spatial frequencies in cycles/image "
+        "(default: the full 8-frequency grid; shrink for expensive models)",
     )
     p.add_argument("--device", default="cpu")
     p.add_argument(
@@ -129,12 +176,23 @@ def main(argv=None):
 
     model = build_model(args)
     size = args.size or getattr(model, "input_size", None) or 224
-    cfg = GratingConfig(size=size)
+    cfg_kwargs = {"size": size}
+    if args.frequencies:
+        freqs = tuple(float(s) for s in args.frequencies.split(",") if s.strip())
+        if not freqs or any(f <= 0 for f in freqs):
+            raise SystemExit("--frequencies needs positive cycles/image values")
+        cfg_kwargs["frequencies_cpi"] = freqs
+    cfg = GratingConfig(**cfg_kwargs)
     print(f"model: {args.model}" + (" (weights scrambled)" if args.scramble else ""))
     if isinstance(model, CLIPModel):
         print(
             f"zero-shot prompt set: {len(model.prompts)} prompts "
             "('prob' = softmax over prompt similarities)"
+        )
+    if isinstance(model, HFVLMModel):
+        print(
+            f"instruction: {model.instruction!r} "
+            "('prob' = next-token distribution at the final position)"
         )
     result = run_experiment(
         model, cfg, repetitions=args.reps, seed=args.seed, verbose=not args.quiet

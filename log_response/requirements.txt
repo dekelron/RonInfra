@@ -11,3 +11,8 @@ torchvision
 # CLIP back-end (CLIPModel). Weights are fetched by open_clip from the HF hub /
 # OpenAI mirrors; pass --weights with a local open_clip checkpoint if blocked.
 open_clip_torch
+
+# Generative-VLM back-end (HFVLMModel). Models are fetched by transformers from
+# huggingface.co; pass --model hf:/local/dir with a downloaded copy if blocked.
+transformers
+pillow

@@ -40,11 +40,11 @@ driver cancels a phase-varying signed unit rather than accumulating its energy.
 |------|------|
 | `METHOD.md`     | The exact procedure: inputs, metric, fit, grids, expected numbers. |
 | `gratings.py`   | Sinusoidal gratings; Michelson contrast about mid-gray; the 14-contrast / 8-frequency grids; random orient/phase sampling (on the fly). |
-| `features.py`   | `TorchvisionModel` (real CNN; hook-tapped layers; `logits`+`prob`; within-layer weight **scrambling** control), `CLIPModel` (open_clip image tower; zero-shot-prompt `prob` layer), and `SyntheticFrontEnd` (offline, weight-free pipeline verifier). |
+| `features.py`   | `TorchvisionModel` (real CNN; hook-tapped layers; `logits`+`prob`; within-layer weight **scrambling** control), `CLIPModel` (open_clip image tower; zero-shot-prompt `prob` layer), `HFVLMModel` (generative VLM; next-token `prob` layer), and `SyntheticFrontEnd` (offline, weight-free pipeline verifier). |
 | `fit.py`        | `D = a·log10(c) + b` least-squares fit, R² per-frequency and pooled; log-spacing uniformity (CV of consecutive gaps). |
 | `experiment.py` | End-to-end driver → `D(freq, contrast)` surface per layer, fits, figures. |
 | `run.py`        | CLI. |
-| `test_pipeline.py` | Offline self-tests (11, no downloaded weights). |
+| `test_pipeline.py` | Offline self-tests (13, no downloaded weights; the VLM test builds a tiny random-config LLaVA in memory and skips when transformers is absent). |
 
 ## Running it
 
@@ -103,6 +103,40 @@ zero-shot classifier). Two caveats:
 Default intermediate taps are the first/middle/last visual transformer block
 (or `visual.layer1..4` for ResNet towers); `--scramble` permutes weights in
 both towers, with text features recomputed from the scrambled text encoder.
+
+## Generative VLMs (LLaVA, Qwen-VL, ...)
+
+The same measurement runs through a Hugging Face image-text-to-text model
+(`pip install transformers pillow`):
+
+```bash
+python -m log_response.run --model hf:llava-hf/llava-1.5-7b-hf \
+    --device cuda --dtype float16 --reps 50 --figures out_llava/
+python -m log_response.run --model hf:Qwen/Qwen2-VL-2B-Instruct \
+    --device cuda --dtype bfloat16 --frequencies 3.5,7,14,28 --reps 25
+```
+
+A generative VLM's forward pass needs text, so the measurement is
+**conditional on a fixed instruction** (default `"Describe this image."`;
+override with `--instruction`), rendered through the model's chat template.
+The terminal layers are `logits` and `prob` — the **next-token distribution at
+the final position**, i.e. the model's distribution over the first response
+token given grating + instruction. Default intermediate taps: last
+vision-tower block, the multimodal projector, and a middle + the last LLM
+decoder layer (introspected; override with `--layers`). Caveats:
+
+- **`prob` is instruction- and template-conditional** — report both with any
+  numbers. The TV bound becomes `0 ≤ D_prob ≤ 2/V` for vocab size V.
+- **Decoder taps mix image- and text-token positions**; the text is fixed, so
+  shapes are stable and the distance-of-means metric applies unchanged, but a
+  per-position analysis is future work.
+- **Cost**: the full grid is ~28k forward passes. For a 7B model use a GPU
+  with `--dtype float16`/`bfloat16` and shrink `--reps` / `--frequencies`
+  (the driver is batch-1). If the HF hub is unreachable, point `--model
+  hf:/path/to/local/dir` (or `--weights`) at a downloaded copy.
+- As with CLIP: whether generative VLM training preserves the log-contrast
+  response through the LLM is the open question this measures, not something
+  the VGG numbers imply.
 
 ## Offline verification vs. the real phenomenon
 

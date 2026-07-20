@@ -45,7 +45,8 @@ class ExperimentResult:
         )
         lines.append(f"repetitions per cell (random orient/phase): {self.repetitions}")
         lines.append("")
-        header = f"{'layer':<14}{'mean R^2':>10}{'pooled R^2':>12}{'spacing CV':>12}"
+        name_w = max(14, max(len(layer) for layer in self.layers) + 2)
+        header = f"{'layer':<{name_w}}{'mean R^2':>10}{'pooled R^2':>12}{'spacing CV':>12}"
         lines.append(header)
         lines.append("-" * len(header))
         log_c = np.log10(contrasts)
@@ -57,7 +58,7 @@ class ExperimentResult:
             ]
             cv = float(np.nanmean(cvs))
             lines.append(
-                f"{layer:<14}{res.mean_r2:>10.3f}{res.pooled.r2:>12.3f}{cv:>12.3f}"
+                f"{layer:<{name_w}}{res.mean_r2:>10.3f}{res.pooled.r2:>12.3f}{cv:>12.3f}"
             )
         return "\n".join(lines)
 

@@ -116,6 +116,18 @@ DEFAULT_PROMPTS: tuple[str, ...] = (
 )
 
 
+# The fixed conditioning prompt for HFVLMModel: a generative VLM's forward pass
+# needs text, so the measurement is conditional on this instruction.
+DEFAULT_INSTRUCTION = "Describe this image."
+
+
+def parse_hf_spec(spec: str) -> str:
+    """Parse an ``hf:MODEL_ID`` spec (HF hub id or local path) into the id."""
+    if not spec.startswith("hf:") or len(spec) <= 3:
+        raise ValueError(f"not an hf VLM model spec: {spec!r} (expected hf:MODEL_ID)")
+    return spec[3:]
+
+
 def parse_clip_spec(spec: str) -> tuple[str, str]:
     """Parse a ``clip[:ARCH[:PRETRAINED]]`` model spec into (arch, tag).
 
@@ -177,7 +189,8 @@ class _TorchBackend(FeatureModel):
             def hook(_m, _in, out, key=name):
                 if isinstance(out, (tuple, list)):  # e.g. blocks returning extras
                     out = out[0]
-                self._acts[key] = out.detach().cpu().numpy()
+                # .float() so half/bfloat16 nets (numpy has no bfloat16) work.
+                self._acts[key] = out.detach().float().cpu().numpy()
 
             self._hooks.append(modules[name].register_forward_hook(hook))
 
@@ -416,6 +429,215 @@ class CLIPModel(_TorchBackend):
         acts["embed"] = embed.cpu().numpy()
         acts["zs_logits"] = zs.cpu().numpy()
         acts["prob"] = prob.cpu().numpy()
+        return acts
+
+
+# --------------------------------------------------------------------------- #
+# Generative-VLM back-end (HF transformers)
+# --------------------------------------------------------------------------- #
+class HFVLMModel(_TorchBackend):
+    """Generative VLM (LLaVA, Qwen-VL, ...) via a HF image-text-to-text model.
+
+    A generative VLM's forward pass needs a text prompt, so the measurement is
+    **conditional on a fixed instruction** (default ``DEFAULT_INSTRUCTION``),
+    rendered through the model's chat template when it has one (image first,
+    then the instruction, with the generation prompt appended). Terminal
+    layers:
+
+    * ``logits`` -- next-token logits at the final sequence position, i.e. the
+      distribution over the *first response token* given grating + instruction;
+    * ``prob``   -- their softmax over the LLM vocabulary: the representation
+      of "what the model would say next".
+
+    Intermediate taps default to: the last vision-tower block, the multimodal
+    projector, and a middle + the last LLM decoder layer (introspected from
+    module names; pass ``layers`` explicitly when the guess is wrong). Decoder
+    activations cover the whole sequence -- image-token and text-token
+    positions together; the text is fixed, so shapes are constant and the
+    distance-of-means metric applies unchanged.
+
+    Caveats vs the CNN measurement: 'prob' depends on the instruction and chat
+    template (report both alongside any numbers), and the METHOD.md TV bound
+    becomes ``0 <= D_prob <= 2/V`` for vocab size V. Cost: the full grid is
+    ~28k forward passes -- for a 7B model use a GPU (``device='cuda'``,
+    ``dtype='float16'``/``'bfloat16'``) and reduce repetitions/frequencies.
+
+    Images are handed to the model's own ``AutoProcessor`` as float arrays in
+    [0, 255], so its resize/normalise pipeline runs exactly as in deployment
+    but without an 8-bit quantisation step (important at the lowest contrasts).
+
+    ``model_id`` is a HF hub id or a local directory (pass a local path when
+    the hub is unreachable). ``model``/``processor`` can be injected directly,
+    which is how the offline tiny-model test exercises this class.
+    """
+
+    def __init__(
+        self,
+        model_id: str | None = None,
+        layers: list[str] | None = None,
+        instruction: str | None = None,
+        device: str = "cpu",
+        dtype: str | None = None,
+        scramble: bool = False,
+        scramble_seed: int = 0,
+        trust_remote_code: bool = False,
+        model=None,
+        processor=None,
+    ):
+        import torch
+
+        try:
+            import transformers
+        except ImportError as exc:
+            raise ImportError(
+                "HFVLMModel requires the transformers package "
+                "(pip install transformers pillow)"
+            ) from exc
+
+        self.torch = torch
+        self.device = torch.device(device)
+
+        if model is None or processor is None:
+            if not model_id:
+                raise ValueError(
+                    "model_id is required unless model and processor are injected"
+                )
+            if processor is None:
+                processor = transformers.AutoProcessor.from_pretrained(
+                    model_id, trust_remote_code=trust_remote_code
+                )
+            if model is None:
+                torch_dtype = {
+                    None: None,
+                    "auto": "auto",
+                    "float32": torch.float32,
+                    "float16": torch.float16,
+                    "bfloat16": torch.bfloat16,
+                }[dtype]
+                kwargs: dict = {"trust_remote_code": trust_remote_code}
+                if torch_dtype is not None:
+                    kwargs["dtype"] = torch_dtype
+                model = transformers.AutoModelForImageTextToText.from_pretrained(
+                    model_id, **kwargs
+                )
+        self.net = model
+        self.processor = processor
+        self.arch = model_id or getattr(self.net.config, "model_type", "vlm")
+
+        if scramble:
+            self._scramble_within_layers(scramble_seed)
+        self.net.eval().to(self.device)
+
+        self.instruction = instruction if instruction is not None else DEFAULT_INSTRUCTION
+        self._text = self._build_text()
+        self.input_size = self._infer_input_size()
+
+        self.layers = layers or self._default_layers()
+        self._init_hooks()
+        self._register(self.layers)
+
+    def _build_text(self) -> str:
+        """The full conditioning text: chat template if available, else raw."""
+        proc = self.processor
+        tok = getattr(proc, "tokenizer", None)
+        if getattr(proc, "chat_template", None) or getattr(tok, "chat_template", None):
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image"},
+                        {"type": "text", "text": self.instruction},
+                    ],
+                }
+            ]
+            return proc.apply_chat_template(
+                messages, add_generation_prompt=True, tokenize=False
+            )
+        image_token = str(getattr(proc, "image_token", None) or "<image>")
+        return f"{image_token}\n{self.instruction}"
+
+    def _infer_input_size(self) -> int:
+        ip = getattr(self.processor, "image_processor", None)
+        for attr in ("crop_size", "size"):
+            d = getattr(ip, attr, None)
+            if d is None:
+                continue
+            if isinstance(d, int):
+                return d
+            # plain dict (transformers 4) or SizeDict (transformers 5)
+            for key in ("height", "shortest_edge", "width"):
+                v = d.get(key) if isinstance(d, dict) else getattr(d, key, None)
+                if isinstance(v, int):
+                    return v
+        return 336
+
+    def _default_layers(self) -> list[str]:
+        import re
+
+        names = list(dict(self.net.named_modules()))
+        # Group repeated blocks: module names ending in '.<index>'.
+        groups: dict[str, list[int]] = {}
+        for n in names:
+            m = re.fullmatch(r"(.+)\.(\d+)", n)
+            if m:
+                groups.setdefault(m.group(1), []).append(int(m.group(2)))
+
+        picks: list[str] = []
+        vision = {p: idx for p, idx in groups.items() if re.search(r"vis", p)}
+        if vision:
+            prefix, idx = max(vision.items(), key=lambda kv: len(kv[1]))
+            picks.append(f"{prefix}.{max(idx)}")  # last vision block
+
+        projectors = [
+            n for n in names
+            if "projector" in n.rsplit(".", 1)[-1] or n.rsplit(".", 1)[-1] == "merger"
+        ]
+        if projectors:
+            picks.append(min(projectors, key=len))
+
+        llm = {
+            p: idx for p, idx in groups.items()
+            if p not in vision and (p.endswith("layers") or p.endswith(".h"))
+        }
+        if not llm:
+            llm = {p: idx for p, idx in groups.items() if p not in vision}
+        if llm:
+            prefix, idx = max(llm.items(), key=lambda kv: len(kv[1]))
+            hi = max(idx)
+            picks.extend([f"{prefix}.{hi // 2}", f"{prefix}.{hi}"])
+
+        deduped = [p for i, p in enumerate(picks) if p not in picks[:i]]
+        return deduped or [names[-1]]
+
+    def _inputs(self, image: np.ndarray) -> dict:
+        # Float values in [0, 255]: the processor's usual 1/255 rescale restores
+        # the exact [0,1] grating, so no 8-bit quantisation is introduced.
+        arr = np.ascontiguousarray(image * 255.0, dtype=np.float32)
+        batch = self.processor(text=self._text, images=arr, return_tensors="pt")
+        dtype = next(self.net.parameters()).dtype
+        out = {}
+        for key, value in batch.items():
+            if hasattr(value, "to"):
+                if value.is_floating_point():
+                    value = value.to(self.device, dtype=dtype)
+                else:
+                    value = value.to(self.device)
+            out[key] = value
+        return out
+
+    def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
+        torch = self.torch
+        self._acts = {}
+        inputs = self._inputs(image)
+        with torch.no_grad():
+            try:
+                out = self.net(**inputs, use_cache=False)
+            except TypeError:  # model without a use_cache kwarg
+                out = self.net(**inputs)
+        acts = {k: v.copy() for k, v in self._acts.items()}
+        logits = out.logits[:, -1, :].detach().float().cpu()
+        acts["logits"] = logits.numpy()
+        acts["prob"] = torch.softmax(logits, dim=-1).numpy()
         return acts
 
 

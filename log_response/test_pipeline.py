@@ -12,6 +12,10 @@ Verifies:
 4. CLIP helpers: the ``clip:ARCH[:PRETRAINED]`` model-spec parser, the built-in
    zero-shot prompt set, and the prompt-file loader (the CLIPModel itself needs
    torch + open_clip and is exercised by the real runs, not here).
+5. VLM back-end: the ``hf:MODEL_ID`` spec parser, and -- when torch +
+   transformers are installed (SKIPPED otherwise, still no downloads) -- the
+   full HFVLMModel plumbing against a tiny random-config LLaVA built in
+   memory: default layer taps, terminal logits/prob, shape stability.
 
 Run:  python -m pytest log_response/test_pipeline.py -q
   or: python log_response/test_pipeline.py
@@ -35,6 +39,7 @@ from .gratings import (
     make_grating,
     make_reference,
     sample_gratings,
+    to_rgb,
     CONTRASTS,
 )
 from .fit import fit_log_linear, linear_spacing_uniformity
@@ -45,6 +50,7 @@ from .features import (
     l1_distance,
     load_prompts,
     parse_clip_spec,
+    parse_hf_spec,
 )
 from .experiment import run_experiment
 
@@ -189,12 +195,120 @@ def test_load_prompts():
             raise AssertionError("expected ValueError for a one-prompt file")
 
 
+def test_parse_hf_spec():
+    assert parse_hf_spec("hf:llava-hf/llava-1.5-7b-hf") == "llava-hf/llava-1.5-7b-hf"
+    assert parse_hf_spec("hf:/local/model/dir") == "/local/model/dir"
+    for bad in ("hf:", "hf", "clip:ViT-B-32"):
+        try:
+            parse_hf_spec(bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"expected ValueError for {bad!r}")
+
+
+def _tiny_llava():
+    """A tiny random-config LLaVA + processor, built in memory (no downloads)."""
+    import torch
+    from tokenizers import Tokenizer, models as tok_models, pre_tokenizers
+    from transformers import (
+        CLIPImageProcessor,
+        CLIPVisionConfig,
+        LlamaConfig,
+        LlavaConfig,
+        LlavaForConditionalGeneration,
+        LlavaProcessor,
+        PreTrainedTokenizerFast,
+    )
+
+    vocab = {"<unk>": 0, "<pad>": 1, "<image>": 2, "<s>": 3}
+    for word in ("describe", "this", "image", "a", "photo", "the", "."):
+        vocab[word] = len(vocab)
+    tok = Tokenizer(tok_models.WordLevel(vocab, unk_token="<unk>"))
+    tok.pre_tokenizer = pre_tokenizers.Whitespace()
+    fast = PreTrainedTokenizerFast(
+        tokenizer_object=tok,
+        unk_token="<unk>",
+        pad_token="<pad>",
+        bos_token="<s>",
+        additional_special_tokens=["<image>"],
+    )
+
+    size, patch = 32, 8
+    vision_cfg = CLIPVisionConfig(
+        hidden_size=32, intermediate_size=64, num_hidden_layers=2,
+        num_attention_heads=2, image_size=size, patch_size=patch,
+    )
+    text_cfg = LlamaConfig(
+        hidden_size=32, intermediate_size=64, num_hidden_layers=2,
+        num_attention_heads=2, num_key_value_heads=2, vocab_size=len(vocab),
+        max_position_embeddings=128, pad_token_id=1,
+    )
+    cfg = LlavaConfig(
+        vision_config=vision_cfg, text_config=text_cfg, image_token_index=2,
+        vision_feature_select_strategy="default", vision_feature_layer=-1,
+    )
+    torch.manual_seed(0)
+    model = LlavaForConditionalGeneration(cfg)
+    image_processor = CLIPImageProcessor(
+        do_resize=True, size={"shortest_edge": size},
+        do_center_crop=True, crop_size={"height": size, "width": size},
+    )
+    processor = LlavaProcessor(
+        image_processor=image_processor, tokenizer=fast, patch_size=patch,
+        vision_feature_select_strategy="default", num_additional_image_tokens=1,
+    )
+    return model, processor
+
+
+def test_vlm_backend_tiny_offline():
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import transformers  # noqa: F401
+    except ImportError:
+        raise unittest.SkipTest("torch/transformers not installed")
+
+    from .features import HFVLMModel
+
+    model, processor = _tiny_llava()
+    m = HFVLMModel(model=model, processor=processor)
+    assert m.input_size == 32
+    # Default taps: last vision block, projector, mid + last LLM layer.
+    assert any("vision" in layer for layer in m.layers)
+    assert any("projector" in layer for layer in m.layers)
+
+    img = to_rgb(make_grating(0.5, 7, size=m.input_size))
+    acts = m.represent(img)
+    assert "logits" in acts and "prob" in acts
+    assert abs(float(acts["prob"].sum()) - 1.0) < 1e-5
+    # Shapes must be stable across images for the distance-of-means metric.
+    acts2 = m.represent(to_rgb(make_grating(1.0, 14, 1.0, 2.0, size=m.input_size)))
+    assert all(acts2[k].shape == acts[k].shape for k in acts)
+
+    # The driver runs end to end on the tiny model.
+    cfg = GratingConfig(size=m.input_size, contrasts=(0.05, 0.2, 1.0), frequencies_cpi=(7.0,))
+    result = run_experiment(m, cfg, repetitions=2, verbose=False)
+    assert set(result.layers) == set(m.layers) | {"logits", "prob"}
+    m.close()
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
+    import unittest
+
+    passed = skipped = 0
     for fn in fns:
-        fn()
-        print(f"PASS {fn.__name__}")
-    print(f"\n{len(fns)} tests passed")
+        try:
+            fn()
+        except unittest.SkipTest as skip:
+            skipped += 1
+            print(f"SKIP {fn.__name__} ({skip})")
+        else:
+            passed += 1
+            print(f"PASS {fn.__name__}")
+    print(f"\n{passed} tests passed" + (f", {skipped} skipped" if skipped else ""))
 
 
 if __name__ == "__main__":
