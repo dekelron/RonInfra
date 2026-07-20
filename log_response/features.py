@@ -71,11 +71,9 @@ class TorchvisionModel(FeatureModel):
         self.arch = arch
 
         model_fn = getattr(torchvision.models, arch)
-        weights = None
         if pretrained and weights_path is None:
             try:
-                weights = "IMAGENET1K_V1"
-                self.net = model_fn(weights=weights)
+                self.net = model_fn(weights="IMAGENET1K_V1")
             except Exception as exc:  # weight download blocked, etc.
                 warnings.warn(
                     f"could not load torchvision pretrained weights ({exc}); "
@@ -101,6 +99,7 @@ class TorchvisionModel(FeatureModel):
 
         self.layers = layers or self._default_layers(arch)
         self._acts: dict[str, np.ndarray] = {}
+        self._hooks: list = []
         self._register(self.layers)
 
     def _scramble_within_layers(self, seed: int) -> None:
@@ -120,7 +119,9 @@ class TorchvisionModel(FeatureModel):
             return ["features.0", "features.19", "classifier.3"]
         if arch.startswith("resnet"):
             return ["layer1", "layer2", "layer3", "layer4"]
-        # Generic: just tap the final module.
+        # Generic fallback: tap the last *registered* module. Registration order
+        # is not execution order, so for unknown archs pass ``layers`` explicitly
+        # if this guess taps the wrong point ('logits'/'prob' are always added).
         return [list(dict(self.net.named_modules()).keys())[-1]]
 
     def _register(self, names: list[str]) -> None:
@@ -132,7 +133,13 @@ class TorchvisionModel(FeatureModel):
             def hook(_m, _in, out, key=name):
                 self._acts[key] = out.detach().cpu().numpy()
 
-            modules[name].register_forward_hook(hook)
+            self._hooks.append(modules[name].register_forward_hook(hook))
+
+    def close(self) -> None:
+        """Remove the forward hooks (call if creating many models per process)."""
+        for handle in self._hooks:
+            handle.remove()
+        self._hooks = []
 
     def _preprocess(self, image: np.ndarray):
         torch = self.torch

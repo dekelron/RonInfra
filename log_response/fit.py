@@ -64,8 +64,12 @@ class LayerLogResult:
 
     @property
     def mean_r2(self) -> float:
-        """Mean per-frequency R^2 -- the headline log-linearity statistic."""
-        return float(np.mean([f.r2 for f in self.per_frequency]))
+        """Mean per-frequency R^2 -- the headline log-linearity statistic.
+
+        NaN R^2 (a frequency with constant response) is excluded rather than
+        propagated, matching the spacing-CV column in the experiment report.
+        """
+        return float(np.nanmean([f.r2 for f in self.per_frequency]))
 
 
 def summarise_layer(

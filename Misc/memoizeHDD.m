@@ -37,7 +37,7 @@
 function varargout = memoizeHDD( ...
         func, ...              % MANDATORY - what function to cache
         cache_root_dir, ...    % OPTIONAL  - directory path for cache
-        use_cache_prob, ...    % OPTIONAL - probability for use of cache, values: [0,1], dafult: 0.99, useful as a random verification
+        use_cache_prob, ...    % OPTIONAL - probability for use of cache, values: [0,1], default: 0.99, useful as a random verification
         is_function_call, ...  % DO NOT USE
         func_hash, ...         % DO NOT USE
         varargin ...           % DO NOT USE

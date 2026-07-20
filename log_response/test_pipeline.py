@@ -18,6 +18,15 @@ from __future__ import annotations
 
 import numpy as np
 
+if __package__ in (None, ""):  # script mode: python log_response/test_pipeline.py
+    import os
+    import sys
+
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import log_response  # noqa: F401  (makes the relative imports below resolvable)
+
+    __package__ = "log_response"
+
 from .gratings import (
     GratingConfig,
     make_grating,

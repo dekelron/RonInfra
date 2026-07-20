@@ -1,3 +1,4 @@
+% As the name implies: a potentially convenient mix of ndgrid and arrayfun
 function out = ron_cartesian_arrayfun(func, varargin)
     char_idx = find(cellfun(@ischar, varargin), 1, 'first');
     if isempty(char_idx), char_idx = length(varargin)+1; end

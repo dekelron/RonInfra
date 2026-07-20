@@ -1,4 +1,6 @@
 % finds the longest common dir
+% The no-argument self-test uses the "subdir" function, please obtain
+% separately: https://www.mathworks.com/matlabcentral/fileexchange/15859-subdir
 function lcd = common_dir(paths)
 
     if nargin < 1
