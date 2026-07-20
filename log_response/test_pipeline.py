@@ -16,6 +16,9 @@ Verifies:
    transformers are installed (SKIPPED otherwise, still no downloads) -- the
    full HFVLMModel plumbing against a tiny random-config LLaVA built in
    memory: default layer taps, terminal logits/prob, shape stability.
+6. SAM back-end: the ``sam[:MODEL_ID]`` spec parser, and (same skip rule) the
+   SAMModel plumbing against a tiny random-config SAM: encoder-only 'embed',
+   and the fixed-center-point mask-decoder taps.
 
 Run:  python -m pytest log_response/test_pipeline.py -q
   or: python log_response/test_pipeline.py
@@ -51,6 +54,7 @@ from .features import (
     load_prompts,
     parse_clip_spec,
     parse_hf_spec,
+    parse_sam_spec,
 )
 from .experiment import run_experiment
 
@@ -292,6 +296,96 @@ def test_vlm_backend_tiny_offline():
     result = run_experiment(m, cfg, repetitions=2, verbose=False)
     assert set(result.layers) == set(m.layers) | {"logits", "prob"}
     m.close()
+
+
+def test_parse_sam_spec():
+    assert parse_sam_spec("sam") == "facebook/sam-vit-base"
+    assert parse_sam_spec("sam:facebook/sam-vit-huge") == "facebook/sam-vit-huge"
+    for bad in ("sam:", "hf:x", "samx"):
+        try:
+            parse_sam_spec(bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"expected ValueError for {bad!r}")
+
+
+def _tiny_sam():
+    """A tiny random-config SAM + processor, built in memory (no downloads)."""
+    import torch
+    from transformers import (
+        SamConfig,
+        SamImageProcessor,
+        SamMaskDecoderConfig,
+        SamModel,
+        SamProcessor,
+        SamPromptEncoderConfig,
+        SamVisionConfig,
+    )
+
+    size, patch = 32, 8
+    # NB: HF SAM defaults to initializer_range=1e-10, which makes a *random*
+    # init produce vanishing activations; use a sane range for the test model.
+    vision_cfg = SamVisionConfig(
+        hidden_size=32, intermediate_size=64, num_hidden_layers=2,
+        num_attention_heads=2, image_size=size, patch_size=patch,
+        output_channels=16, num_pos_feats=8,  # num_pos_feats must be hidden/2 of the prompt encoder
+        global_attn_indexes=[1], window_size=2, initializer_range=0.02,
+    )
+    prompt_cfg = SamPromptEncoderConfig(
+        hidden_size=16, image_size=size, patch_size=patch,
+        image_embedding_size=size // patch,
+    )
+    decoder_cfg = SamMaskDecoderConfig(
+        hidden_size=16, num_hidden_layers=2, num_attention_heads=2,
+        mlp_dim=32, iou_head_hidden_dim=16,
+    )
+    torch.manual_seed(0)
+    model = SamModel(SamConfig(
+        vision_config=vision_cfg,
+        prompt_encoder_config=prompt_cfg,
+        mask_decoder_config=decoder_cfg,
+        initializer_range=0.02,
+    ))
+    processor = SamProcessor(image_processor=SamImageProcessor(
+        size={"longest_edge": size}, pad_size={"height": size, "width": size},
+    ))
+    return model, processor
+
+
+def test_sam_backend_tiny_offline():
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import transformers  # noqa: F401
+    except ImportError:
+        raise unittest.SkipTest("torch/transformers not installed")
+
+    from .features import SAMModel
+
+    model, processor = _tiny_sam()
+    m = SAMModel(model=model, processor=processor)
+    assert m.input_size == 32
+    assert any("vision" in layer for layer in m.layers)
+
+    img = to_rgb(make_grating(0.5, 7, size=m.input_size))
+    acts = m.represent(img)
+    assert "embed" in acts and "mask_logits" not in acts  # encoder-only default
+    acts2 = m.represent(to_rgb(make_grating(1.0, 14, 1.0, 2.0, size=m.input_size)))
+    assert all(acts2[k].shape == acts[k].shape for k in acts)
+    m.close()
+
+    # Mask-decoder mode adds the fixed-center-point terminal taps.
+    md = SAMModel(model=model, processor=processor, mask_decoder=True)
+    acts = md.represent(img)
+    assert "mask_logits" in acts and "iou_scores" in acts
+    assert np.isfinite(acts["mask_logits"]).all()
+
+    cfg = GratingConfig(size=md.input_size, contrasts=(0.05, 0.2, 1.0), frequencies_cpi=(7.0,))
+    result = run_experiment(md, cfg, repetitions=2, verbose=False)
+    assert "iou_scores" in result.layers
+    md.close()
 
 
 def _run_all():

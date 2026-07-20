@@ -40,11 +40,11 @@ driver cancels a phase-varying signed unit rather than accumulating its energy.
 |------|------|
 | `METHOD.md`     | The exact procedure: inputs, metric, fit, grids, expected numbers. |
 | `gratings.py`   | Sinusoidal gratings; Michelson contrast about mid-gray; the 14-contrast / 8-frequency grids; random orient/phase sampling (on the fly). |
-| `features.py`   | `TorchvisionModel` (real CNN; hook-tapped layers; `logits`+`prob`; within-layer weight **scrambling** control), `CLIPModel` (open_clip image tower; zero-shot-prompt `prob` layer), `HFVLMModel` (generative VLM; next-token `prob` layer), and `SyntheticFrontEnd` (offline, weight-free pipeline verifier). |
+| `features.py`   | `TorchvisionModel` (real CNN; hook-tapped layers; `logits`+`prob`; within-layer weight **scrambling** control), `CLIPModel` (open_clip image tower; zero-shot-prompt `prob` layer), `HFVLMModel` (generative VLM; next-token `prob` layer), `SAMModel` (Segment Anything encoder; optional mask-decoder taps), and `SyntheticFrontEnd` (offline, weight-free pipeline verifier). |
 | `fit.py`        | `D = a·log10(c) + b` least-squares fit, R² per-frequency and pooled; log-spacing uniformity (CV of consecutive gaps). |
 | `experiment.py` | End-to-end driver → `D(freq, contrast)` surface per layer, fits, figures. |
 | `run.py`        | CLI. |
-| `test_pipeline.py` | Offline self-tests (13, no downloaded weights; the VLM test builds a tiny random-config LLaVA in memory and skips when transformers is absent). |
+| `test_pipeline.py` | Offline self-tests (15, no downloaded weights; the VLM/SAM tests build tiny random-config models in memory and skip when transformers is absent). |
 
 ## Running it
 
@@ -137,6 +137,31 @@ decoder layer (introspected; override with `--layers`). Caveats:
 - As with CLIP: whether generative VLM training preserves the log-contrast
   response through the LLM is the open question this measures, not something
   the VGG numbers imply.
+
+## Segment Anything (SAM)
+
+The measurement also runs on the SAM image encoder (`facebook/sam-vit-base`
+/`-large`/`-huge` via transformers):
+
+```bash
+python -m log_response.run --model sam --device cuda --reps 50 --figures out_sam/
+python -m log_response.run --model sam:facebook/sam-vit-huge --mask-decoder \
+    --device cuda --dtype float16 --frequencies 3.5,7,14,28 --reps 25
+```
+
+SAM has no classifier and no contrastive head, so there is **no `prob`
+analogue** — the default measurement is encoder-only: vision-transformer
+blocks plus `embed`, the final image embedding. This asks whether
+log-contrast compression emerges in a representation trained for
+*segmentation*, completing the training-objective comparison
+(classification / contrastive / generative / dense prediction).
+`--mask-decoder` additionally runs the decoder with a **fixed center-point
+prompt**, adding `mask_logits` and `iou_scores` terminal layers — like the
+VLM instruction, those are prompt-conditional. SAM's native input is
+1024×1024, so forwards are heavy; shrink `--reps`/`--frequencies` to explore.
+(Note for tinkerers: HF SAM configs default to `initializer_range=1e-10`, so
+a *random-init* SAM produces vanishing activations — random-weight controls
+should scramble pretrained weights via `--scramble` instead.)
 
 ## Offline verification vs. the real phenomenon
 

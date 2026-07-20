@@ -31,6 +31,13 @@ for a 7B model, so use a GPU and shrink reps/frequencies::
         --device cuda --dtype float16 --reps 50 --figures out_llava/
     python -m log_response.run --model hf:Qwen/Qwen2-VL-2B-Instruct \
         --device cuda --dtype bfloat16 --frequencies 3.5,7,14,28 --reps 25
+
+Segment Anything encoder (no 'prob' analogue -- encoder representation only;
+add --mask-decoder for fixed-center-point 'mask_logits'/'iou_scores')::
+
+    python -m log_response.run --model sam --device cuda --reps 50 --figures out_sam/
+    python -m log_response.run --model sam:facebook/sam-vit-huge --mask-decoder \
+        --device cuda --dtype float16 --frequencies 3.5,7,14,28 --reps 25
 """
 
 from __future__ import annotations
@@ -43,11 +50,13 @@ from .features import (
     DEFAULT_INSTRUCTION,
     DEFAULT_PROMPTS,
     HFVLMModel,
+    SAMModel,
     SyntheticFrontEnd,
     TorchvisionModel,
     load_prompts,
     parse_clip_spec,
     parse_hf_spec,
+    parse_sam_spec,
 )
 from .experiment import run_experiment, save_figures
 
@@ -62,16 +71,22 @@ def build_model(args):
             (args.weights, "--weights"),
             (args.instruction, "--instruction"),
             (args.dtype, "--dtype"),
+            (args.mask_decoder, "--mask-decoder"),
         ):
             if value:
                 raise SystemExit(f"{flag} does not apply to the synthetic back-end")
         return SyntheticFrontEnd()
     is_clip = args.model == "clip" or args.model.startswith("clip:")
     is_hf = args.model.startswith("hf:")
+    is_sam = args.model == "sam" or args.model.startswith("sam:")
     if args.prompts and not is_clip:
         raise SystemExit("--prompts only applies to the CLIP back-end")
-    if (args.instruction or args.dtype) and not is_hf:
-        raise SystemExit("--instruction and --dtype only apply to the hf: VLM back-end")
+    if args.instruction and not is_hf:
+        raise SystemExit("--instruction only applies to the hf: VLM back-end")
+    if args.dtype and not (is_hf or is_sam):
+        raise SystemExit("--dtype only applies to the hf: and sam: back-ends")
+    if args.mask_decoder and not is_sam:
+        raise SystemExit("--mask-decoder only applies to the sam: back-end")
     if is_clip:
         arch, tag = parse_clip_spec(args.model)
         return CLIPModel(
@@ -93,6 +108,16 @@ def build_model(args):
             scramble=args.scramble,
             scramble_seed=args.seed,
         )
+    if is_sam:
+        return SAMModel(
+            model_id=args.weights or parse_sam_spec(args.model),
+            layers=layers,
+            device=args.device,
+            dtype=args.dtype,
+            mask_decoder=args.mask_decoder,
+            scramble=args.scramble,
+            scramble_seed=args.seed,
+        )
     return TorchvisionModel(
         arch=args.model,
         layers=layers,
@@ -111,8 +136,9 @@ def main(argv=None):
         default="synthetic",
         help="'synthetic' (offline), a torchvision arch name (vgg19, resnet152, "
         "...), 'clip[:ARCH[:PRETRAINED]]' (e.g. clip:ViT-B-32, "
-        "clip:ViT-B-32:laion2b_s34b_b79k), or 'hf:MODEL_ID' for a generative "
-        "VLM (e.g. hf:llava-hf/llava-1.5-7b-hf)",
+        "clip:ViT-B-32:laion2b_s34b_b79k), 'hf:MODEL_ID' for a generative "
+        "VLM (e.g. hf:llava-hf/llava-1.5-7b-hf), or 'sam[:MODEL_ID]' for a "
+        "Segment Anything encoder (default facebook/sam-vit-base)",
     )
     p.add_argument(
         "--weights",
@@ -143,7 +169,13 @@ def main(argv=None):
         "--dtype",
         default=None,
         choices=["auto", "float32", "float16", "bfloat16"],
-        help="hf only: model dtype (use float16/bfloat16 on GPU for 7B models)",
+        help="hf/sam only: model dtype (use float16/bfloat16 on GPU for big models)",
+    )
+    p.add_argument(
+        "--mask-decoder",
+        action="store_true",
+        help="sam only: also run the mask decoder with a fixed center-point "
+        "prompt, adding 'mask_logits' and 'iou_scores' terminal layers",
     )
     p.add_argument(
         "--frequencies",
@@ -193,6 +225,16 @@ def main(argv=None):
         print(
             f"instruction: {model.instruction!r} "
             "('prob' = next-token distribution at the final position)"
+        )
+    if isinstance(model, SAMModel):
+        print(
+            "encoder-only measurement (no 'prob' analogue)"
+            + (
+                "; mask decoder on a fixed center-point prompt "
+                "-> 'mask_logits' + 'iou_scores'"
+                if model.mask_decoder
+                else ""
+            )
         )
     result = run_experiment(
         model, cfg, repetitions=args.reps, seed=args.seed, verbose=not args.quiet

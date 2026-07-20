@@ -128,6 +128,34 @@ def parse_hf_spec(spec: str) -> str:
     return spec[3:]
 
 
+def parse_sam_spec(spec: str) -> str:
+    """Parse a ``sam[:MODEL_ID]`` spec; bare ``sam`` means facebook/sam-vit-base."""
+    if spec == "sam":
+        return "facebook/sam-vit-base"
+    if not spec.startswith("sam:") or len(spec) <= 4:
+        raise ValueError(f"not a SAM model spec: {spec!r} (expected sam[:MODEL_ID])")
+    return spec[4:]
+
+
+def _processor_input_size(processor, attrs: tuple[str, ...], keys: tuple[str, ...], default: int) -> int:
+    """Read the square input side from a HF image processor's size attributes.
+
+    Handles plain-dict (transformers 4) and SizeDict (transformers 5) values.
+    """
+    ip = getattr(processor, "image_processor", None) or processor
+    for attr in attrs:
+        d = getattr(ip, attr, None)
+        if d is None:
+            continue
+        if isinstance(d, int):
+            return d
+        for key in keys:
+            v = d.get(key) if isinstance(d, dict) else getattr(d, key, None)
+            if isinstance(v, int):
+                return v
+    return default
+
+
 def parse_clip_spec(spec: str) -> tuple[str, str]:
     """Parse a ``clip[:ARCH[:PRETRAINED]]`` model spec into (arch, tag).
 
@@ -557,19 +585,12 @@ class HFVLMModel(_TorchBackend):
         return f"{image_token}\n{self.instruction}"
 
     def _infer_input_size(self) -> int:
-        ip = getattr(self.processor, "image_processor", None)
-        for attr in ("crop_size", "size"):
-            d = getattr(ip, attr, None)
-            if d is None:
-                continue
-            if isinstance(d, int):
-                return d
-            # plain dict (transformers 4) or SizeDict (transformers 5)
-            for key in ("height", "shortest_edge", "width"):
-                v = d.get(key) if isinstance(d, dict) else getattr(d, key, None)
-                if isinstance(v, int):
-                    return v
-        return 336
+        return _processor_input_size(
+            self.processor,
+            attrs=("crop_size", "size"),
+            keys=("height", "shortest_edge", "width"),
+            default=336,
+        )
 
     def _default_layers(self) -> list[str]:
         import re
@@ -638,6 +659,143 @@ class HFVLMModel(_TorchBackend):
         logits = out.logits[:, -1, :].detach().float().cpu()
         acts["logits"] = logits.numpy()
         acts["prob"] = torch.softmax(logits, dim=-1).numpy()
+        return acts
+
+
+# --------------------------------------------------------------------------- #
+# Segment-Anything back-end (HF transformers, encoder-only by default)
+# --------------------------------------------------------------------------- #
+class SAMModel(_TorchBackend):
+    """Segment Anything (SAM) image encoder, with an optional mask-decoder tap.
+
+    SAM has no classifier and no contrastive head, so there is **no 'prob'
+    analogue**: the measurement is encoder-only by default -- transformer
+    blocks of the vision encoder plus ``embed``, the final image embedding
+    from ``get_image_embeddings`` (a (256, 64, 64) map for SAM-1 at 1024 px).
+    The question it answers: does log-contrast compression emerge in a
+    representation trained for *segmentation* (vs classification/contrastive/
+    generative training in the other back-ends)?
+
+    With ``mask_decoder=True`` the decoder is additionally run with a **fixed
+    center-point prompt**, adding two terminal layers: ``mask_logits`` (the
+    low-res multimask logits) and ``iou_scores`` (the predicted mask
+    qualities). Like the VLM instruction, this output is conditional on the
+    chosen prompt -- report that with any numbers.
+
+    Cost: SAM's native input is 1024x1024, so per-image forwards are heavy;
+    shrink ``--reps``/``--frequencies`` and use a GPU for the huge variant.
+    ``model_id`` is a HF hub id (facebook/sam-vit-base/large/huge) or a local
+    directory. ``model``/``processor`` can be injected (used by the offline
+    tiny-model test).
+    """
+
+    def __init__(
+        self,
+        model_id: str = "facebook/sam-vit-base",
+        layers: list[str] | None = None,
+        device: str = "cpu",
+        dtype: str | None = None,
+        mask_decoder: bool = False,
+        scramble: bool = False,
+        scramble_seed: int = 0,
+        model=None,
+        processor=None,
+    ):
+        import torch
+
+        try:
+            import transformers
+        except ImportError as exc:
+            raise ImportError(
+                "SAMModel requires the transformers package "
+                "(pip install transformers pillow)"
+            ) from exc
+
+        self.torch = torch
+        self.device = torch.device(device)
+        self.arch = model_id
+        self.mask_decoder = mask_decoder
+
+        if processor is None:
+            processor = transformers.AutoProcessor.from_pretrained(model_id)
+        if model is None:
+            torch_dtype = {
+                None: None,
+                "auto": "auto",
+                "float32": torch.float32,
+                "float16": torch.float16,
+                "bfloat16": torch.bfloat16,
+            }[dtype]
+            model_cls = getattr(
+                transformers, "AutoModelForMaskGeneration", None
+            ) or transformers.SamModel
+            kwargs: dict = {}
+            if torch_dtype is not None:
+                kwargs["dtype"] = torch_dtype
+            model = model_cls.from_pretrained(model_id, **kwargs)
+        if not hasattr(model, "get_image_embeddings"):
+            raise TypeError(
+                f"{type(model).__name__} has no get_image_embeddings; "
+                "SAMModel supports the SAM-1 family (facebook/sam-vit-*)"
+            )
+        self.net = model
+        self.processor = processor
+
+        if scramble:
+            self._scramble_within_layers(scramble_seed)
+        self.net.eval().to(self.device)
+
+        self.input_size = _processor_input_size(
+            self.processor,
+            attrs=("pad_size", "size"),
+            keys=("height", "longest_edge", "shortest_edge", "width"),
+            default=1024,
+        )
+
+        self.layers = layers or self._default_layers()
+        self._init_hooks()
+        self._register(self.layers)
+
+    def _default_layers(self) -> list[str]:
+        import re
+
+        groups: dict[str, list[int]] = {}
+        for n in dict(self.net.named_modules()):
+            m = re.fullmatch(r"(.+)\.(\d+)", n)
+            if m and re.search(r"vis", m.group(1)):
+                groups.setdefault(m.group(1), []).append(int(m.group(2)))
+        if not groups:
+            return ["vision_encoder"]
+        prefix, idx = max(groups.items(), key=lambda kv: len(kv[1]))
+        picks = [f"{prefix}.{min(idx)}", f"{prefix}.{max(idx) // 2}", f"{prefix}.{max(idx)}"]
+        return [p for i, p in enumerate(picks) if p not in picks[:i]]
+
+    def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
+        torch = self.torch
+        self._acts = {}
+        # Float values in [0, 255]: the processor's 1/255 rescale restores the
+        # exact [0,1] grating (no 8-bit quantisation).
+        arr = np.ascontiguousarray(image * 255.0, dtype=np.float32)
+        kwargs = {}
+        if self.mask_decoder:
+            center = image.shape[0] / 2.0
+            kwargs["input_points"] = [[[center, center]]]  # fixed center-point prompt
+        inputs = self.processor(images=arr, return_tensors="pt", **kwargs)
+        dtype = next(self.net.parameters()).dtype
+        pixel_values = inputs["pixel_values"].to(self.device, dtype=dtype)
+        with torch.no_grad():
+            embed = self.net.get_image_embeddings(pixel_values)
+            out = None
+            if self.mask_decoder:
+                points = inputs["input_points"].to(self.device, dtype=dtype)
+                out = self.net(
+                    input_points=points, image_embeddings=embed, multimask_output=True
+                )
+        acts = {k: v.copy() for k, v in self._acts.items()}
+        acts["embed"] = embed.detach().float().cpu().numpy()
+        if out is not None:
+            acts["mask_logits"] = out.pred_masks.detach().float().cpu().numpy()
+            acts["iou_scores"] = out.iou_scores.detach().float().cpu().numpy()
         return acts
 
 
