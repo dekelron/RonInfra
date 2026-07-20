@@ -1,4 +1,4 @@
-"""DNN feature extraction and the L1 representation-distance correlate.
+"""DNN feature extraction and the L1 representation-distance metric.
 
 The quantity measured is the *mean absolute change in DNN representation*
 between the gray reference and an input image -- an L1 distance per layer.

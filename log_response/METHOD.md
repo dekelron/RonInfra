@@ -108,5 +108,5 @@ Fit and **hold out contrasts** to compare candidate laws — log, soft-log
 `α+β log(1+c/σ)`, power `α+β c^γ`, saturating `α+β c^n/(σ^n+c^n)`; bootstrap
 phase/orientation samples for CIs; repeat across init/scramble seeds; compare
 **logits vs softmax**; compare **distance-of-means vs mean-of-distances**;
-analyse individual units vs the pooled response; extend contrast below 1/128 to find where
-the apparent log breaks.
+analyse individual units vs the pooled response; extend contrast below 1/128 to
+find where the apparent log breaks.

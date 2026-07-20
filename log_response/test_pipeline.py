@@ -119,11 +119,11 @@ def test_experiment_uses_distance_of_means_not_mean_of_distances():
     # not cancel and is therefore substantially larger.
     rng = np.random.default_rng(1)
     ref = model.represent(np.full((cfg.size, cfg.size, 3), 0.5))["signed"]
-    per_stim = [
+    per_image = [
         l1_distance(model.represent(img)["signed"], ref)
         for img in sample_gratings(1.0, 7.0, reps, rng, size=cfg.size)
     ]
-    d_mean_of_dists = float(np.mean(per_stim))
+    d_mean_of_dists = float(np.mean(per_image))
 
     assert d_mean_of_dists > 0.05  # the per-image signal is real
     assert d_mean_first < 0.4 * d_mean_of_dists  # ... but it cancels mean-first
