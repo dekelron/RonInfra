@@ -40,11 +40,11 @@ driver cancels a phase-varying signed unit rather than accumulating its energy.
 |------|------|
 | `METHOD.md`     | The exact procedure: inputs, metric, fit, grids, expected numbers. |
 | `gratings.py`   | Sinusoidal gratings; Michelson contrast about mid-gray; the 14-contrast / 8-frequency grids; random orient/phase sampling (on the fly). |
-| `features.py`   | `TorchvisionModel` (real CNN; hook-tapped layers; `logits`+`prob`; within-layer weight **scrambling** control) and `SyntheticFrontEnd` (offline, weight-free pipeline verifier). |
+| `features.py`   | `TorchvisionModel` (real CNN; hook-tapped layers; `logits`+`prob`; within-layer weight **scrambling** control), `CLIPModel` (open_clip image tower; zero-shot-prompt `prob` layer), and `SyntheticFrontEnd` (offline, weight-free pipeline verifier). |
 | `fit.py`        | `D = a·log10(c) + b` least-squares fit, R² per-frequency and pooled; log-spacing uniformity (CV of consecutive gaps). |
 | `experiment.py` | End-to-end driver → `D(freq, contrast)` surface per layer, fits, figures. |
 | `run.py`        | CLI. |
-| `test_pipeline.py` | Offline self-tests (8, no downloaded weights). |
+| `test_pipeline.py` | Offline self-tests (11, no downloaded weights). |
 
 ## Running it
 
@@ -66,7 +66,43 @@ python -m log_response.run --model resnet152 --weights r152.pth --figures out/
 ```
 
 Any `torchvision.models` arch works. Layer taps span early→late and always add
-`logits` (fc8) and the softmax `prob` — the layer where R² is highest.
+`logits` (fc8) and the softmax `prob` — the layer where R² is highest. Default
+intermediate taps exist for VGG and ResNet; for other archs pass module names
+explicitly, e.g.:
+
+```bash
+python -m log_response.run --model vit_b_16 --layers encoder.layers.encoder_layer_5,encoder.ln
+```
+
+## CLIP (VLM image towers)
+
+The same measurement runs on CLIP image encoders via `open_clip`
+(`pip install open_clip_torch`):
+
+```bash
+python -m log_response.run --model clip:ViT-B-32 --figures out_clip/
+python -m log_response.run --model clip:ViT-B-32 --scramble --figures out_clip_scr/
+python -m log_response.run --model clip:ViT-B-32:laion2b_s34b_b79k --figures out_laion/
+```
+
+CLIP has no class probabilities, so the terminal layers are rebuilt from the
+contrastive head: `embed` (image embedding), `zs_logits` (logit-scaled cosine
+similarities against a fixed text prompt set), and `prob` (their softmax — a
+zero-shot classifier). Two caveats:
+
+- **`prob` is prompt-set-conditional.** Unlike VGG, where the 1000 classes are
+  part of the trained model, the zero-shot classifier depends on the chosen
+  prompts (default: a built-in 64-prompt spread; override with `--prompts
+  file.txt`, one prompt per line). Report the prompt set with any numbers. The
+  TV bound becomes `0 ≤ D_prob ≤ 2/N` for N prompts.
+- **The headline VGG numbers do not transfer.** The R² ≈ 0.98 result is a
+  property of *classification* training; whether contrastive language-image
+  training produces the same log-contrast response is exactly the open question
+  this back-end lets you measure, not something to assume.
+
+Default intermediate taps are the first/middle/last visual transformer block
+(or `visual.layer1..4` for ResNet towers); `--scramble` permutes weights in
+both towers, with text features recomputed from the scrambled text encoder.
 
 ## Offline verification vs. the real phenomenon
 

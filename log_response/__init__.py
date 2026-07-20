@@ -14,7 +14,16 @@ from .gratings import (
     reference_rgb,
     to_rgb,
 )
-from .features import FeatureModel, TorchvisionModel, SyntheticFrontEnd, l1_distance
+from .features import (
+    FeatureModel,
+    TorchvisionModel,
+    CLIPModel,
+    SyntheticFrontEnd,
+    l1_distance,
+    DEFAULT_PROMPTS,
+    parse_clip_spec,
+    load_prompts,
+)
 from .fit import fit_log_linear, summarise_layer, LayerLogResult
 from .experiment import run_experiment, save_figures, ExperimentResult
 
@@ -29,8 +38,12 @@ __all__ = [
     "to_rgb",
     "FeatureModel",
     "TorchvisionModel",
+    "CLIPModel",
     "SyntheticFrontEnd",
     "l1_distance",
+    "DEFAULT_PROMPTS",
+    "parse_clip_spec",
+    "load_prompts",
     "fit_log_linear",
     "summarise_layer",
     "LayerLogResult",

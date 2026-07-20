@@ -9,6 +9,9 @@ Verifies:
    synthetic band-pass + compressive front-end yields a high-R^2 log-contrast
    response at its compressive "output" stage but not at the linear "energy"
    stage.
+4. CLIP helpers: the ``clip:ARCH[:PRETRAINED]`` model-spec parser, the built-in
+   zero-shot prompt set, and the prompt-file loader (the CLIPModel itself needs
+   torch + open_clip and is exercised by the real runs, not here).
 
 Run:  python -m pytest log_response/test_pipeline.py -q
   or: python log_response/test_pipeline.py
@@ -35,7 +38,14 @@ from .gratings import (
     CONTRASTS,
 )
 from .fit import fit_log_linear, linear_spacing_uniformity
-from .features import FeatureModel, SyntheticFrontEnd, l1_distance
+from .features import (
+    DEFAULT_PROMPTS,
+    FeatureModel,
+    SyntheticFrontEnd,
+    l1_distance,
+    load_prompts,
+    parse_clip_spec,
+)
 from .experiment import run_experiment
 
 
@@ -136,6 +146,47 @@ def test_experiment_uses_distance_of_means_not_mean_of_distances():
 
     assert d_mean_of_dists > 0.05  # the per-image signal is real
     assert d_mean_first < 0.4 * d_mean_of_dists  # ... but it cancels mean-first
+
+
+def test_parse_clip_spec():
+    assert parse_clip_spec("clip") == ("ViT-B-32", "openai")
+    assert parse_clip_spec("clip:ViT-L-14") == ("ViT-L-14", "openai")
+    assert parse_clip_spec("clip:ViT-B-32:laion2b_s34b_b79k") == (
+        "ViT-B-32",
+        "laion2b_s34b_b79k",
+    )
+    for bad in ("vgg19", "clip:a:b:c"):
+        try:
+            parse_clip_spec(bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"expected ValueError for {bad!r}")
+
+
+def test_default_prompts_wellformed():
+    assert len(DEFAULT_PROMPTS) >= 16  # enough classes for a meaningful softmax
+    assert len(set(DEFAULT_PROMPTS)) == len(DEFAULT_PROMPTS)  # no duplicates
+    assert all(p and p == p.strip() for p in DEFAULT_PROMPTS)
+
+
+def test_load_prompts():
+    import os
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        path = os.path.join(td, "prompts.txt")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("a photo of a dog\n\n  a photo of a cat  \n")
+        assert load_prompts(path) == ["a photo of a dog", "a photo of a cat"]
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("only one prompt\n")
+        try:
+            load_prompts(path)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("expected ValueError for a one-prompt file")
 
 
 def _run_all():
