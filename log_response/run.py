@@ -49,7 +49,7 @@ def main(argv=None):
     )
     p.add_argument("--weights", default=None, help="path to a local state_dict")
     p.add_argument("--device", default="cpu")
-    p.add_argument("--size", type=int, default=224, help="stimulus/image side in px")
+    p.add_argument("--size", type=int, default=224, help="image side in px")
     p.add_argument(
         "--reps",
         type=int,

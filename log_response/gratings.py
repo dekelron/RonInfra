@@ -1,14 +1,14 @@
-"""Sinusoidal grating stimuli for the log-contrast-response experiment.
+"""Sinusoidal grating images for the log-contrast-response experiment.
 
 Grating:
 
     I(c,f,theta,phi; x,y) = mu * [1 + c * sin(2*pi*f*(x*cos t + y*sin t)/W + phi)]
 
 with mu the mean gray level, f in cycles-per-image, W the image width, and c the
-Michelson contrast about mu. Every stimulus and the gray reference share the same
-mean luminance mu, so only the modulation changes with contrast/frequency.
+Michelson contrast about mu. Every grating and the gray reference share the same
+mean level mu, so only the modulation changes with contrast/frequency.
 
-The experiment draws 250 stimuli per (contrast, frequency) with **random
+The experiment draws 250 images per (contrast, frequency) with **random
 orientation** and **random phase**; these are generated on the fly (materialising
 the full 14x8x250 grid would be tens of GB), so this module exposes single-grating
 and sampler helpers rather than a pre-built array.
@@ -31,7 +31,7 @@ FREQUENCIES_CPI: tuple[float, ...] = (1.0, 1.75, 3.5, 7.0, 14.0, 28.0, 56.0, 75.
 
 @dataclass(frozen=True)
 class GratingConfig:
-    """Parameters of the grating stimulus grid."""
+    """Parameters of the grating image grid."""
 
     size: int = 224  # square image side, in pixels (model input size)
     contrasts: tuple[float, ...] = CONTRASTS

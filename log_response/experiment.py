@@ -3,7 +3,7 @@
 For each layer and each (contrast, frequency) cell the metric is a **distance of
 means**, not a mean of distances:
 
-    mu_i(c,f) = mean over the 250 random stimuli of unit i's activation
+    mu_i(c,f) = mean over the 250 random images of unit i's activation
     D(c,f)    = mean_i | mu_i(c,f) - a_i(gray) |
 
 Averaging activations across the random orientation/phase draws happens BEFORE
@@ -86,7 +86,7 @@ def run_experiment(
     done = 0
     for fi, f in enumerate(freqs):
         for ci, c in enumerate(contrasts):
-            # Accumulate activations across the random stimuli (mean first).
+            # Accumulate activations across the random images (mean first).
             sums = {layer: np.zeros_like(ref_rep[layer]) for layer in layers}
             for img in sample_gratings(c, f, reps, rng, size=cfg.size, mean=cfg.mean):
                 rep = model.represent(img)

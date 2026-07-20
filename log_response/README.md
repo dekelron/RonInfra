@@ -3,19 +3,19 @@
 A runnable measurement: feed an ImageNet-trained CNN sinusoidal gratings at
 log-spaced contrasts and show that the mean absolute change in its late-layer
 representation (relative to a gray reference) is a linear function of
-`log(contrast)`. The exact procedure — stimuli, metric, fit — is in
+`log(contrast)`. The exact procedure — inputs, metric, fit — is in
 [`METHOD.md`](METHOD.md); this file covers the implementation.
 
 ## The result
 
-- Stimuli: **full-field sinusoidal gratings** over a grid of **14 log-spaced
+- Inputs: **full-image sinusoidal gratings** over a grid of **14 log-spaced
   contrasts × 8 spatial frequencies**, each vs. a **uniform gray** reference.
-  Per `(contrast, frequency)` cell, **250 stimuli** with **random orientation and
+  Per `(contrast, frequency)` cell, **250 images** with **random orientation and
   random phase**.
-- Metric: for each unit, average its activation over the 250 stimuli, subtract
+- Metric: for each unit, average its activation over the 250 images, subtract
   its gray activation, take the absolute value, average over units —
   `D(c,f) = mean_i |mean_r a_i(x_r) − a_i(gray)|`. This is the **distance of the
-  class-mean representation from gray**, *not* the mean per-stimulus distance
+  class-mean representation from gray**, *not* the mean per-image distance
   (the ordering matters — see below).
 - End-layer response is **band-pass in spatial frequency at low contrast** and
   comparatively **frequency-flat at high contrast**.
@@ -38,7 +38,7 @@ driver cancels a phase-varying signed unit rather than accumulating its energy.
 
 | File | Role |
 |------|------|
-| `METHOD.md`     | The exact procedure: stimuli, metric, fit, grids, expected numbers. |
+| `METHOD.md`     | The exact procedure: inputs, metric, fit, grids, expected numbers. |
 | `gratings.py`   | Sinusoidal gratings; Michelson contrast about mid-gray; the 14-contrast / 8-frequency grids; random orient/phase sampling (on the fly). |
 | `features.py`   | `TorchvisionModel` (real CNN; hook-tapped layers; `logits`+`prob`; within-layer weight **scrambling** control) and `SyntheticFrontEnd` (offline, weight-free pipeline verifier). |
 | `fit.py`        | `D = a·log10(c) + b` least-squares fit, R² per-frequency and pooled; log-spacing uniformity (CV of consecutive gaps). |
@@ -84,5 +84,5 @@ pre-compression `energy` stage is **not** log-linear (mean R² ≈ 0.5); the
 compressive `output` stage **is** (mean R² ≈ 0.97), with the band-pass gain
 making the family band-pass across frequency. Its frequency curves stay parallel
 rather than converging at high contrast — a frequency-flat high-contrast regime
-needs divisive normalization and is expected to be measured on the trained CNN,
-not asserted from this stand-in.
+does not fall out of this stand-in and is expected to be measured on the trained
+CNN, not asserted here.

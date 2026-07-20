@@ -1,6 +1,6 @@
 """Log-contrast-response experiment.
 
-See METHOD.md for the exact procedure (stimuli, metric, fit) and README.md for
+See METHOD.md for the exact procedure (inputs, metric, fit) and README.md for
 the implementation and how to run it.
 """
 

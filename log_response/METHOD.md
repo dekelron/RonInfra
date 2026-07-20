@@ -3,9 +3,9 @@
 The exact contrast / log-response procedure, so the implementation in this
 directory can be checked against it.
 
-## Stimuli
+## Inputs
 
-Full-field sinusoidal gratings, one per `(contrast c, frequency f, orientation
+Full-image sinusoidal gratings, one per `(contrast c, frequency f, orientation
 θ, phase φ)`:
 
 ```
@@ -31,17 +31,17 @@ The near-geometric spacing is exactly what makes `log c` nearly evenly spaced.
 f ≈ {1, 1.75, 3.5, 7, 14, 28, 56, 75}
 ```
 
-**Nuisance sampling:** 250 stimuli per `(c,f)` with **random orientation** `θ ~
+**Nuisance sampling:** 250 images per `(c,f)` with **random orientation** `θ ~
 U[0,π)` and **random phase** `φ ~ U[0,2π)`. Total ≈ 14 × 8 × 250 = 28,000
 forward passes per model + one gray reference.
 
 ## The metric (this is the subtle part)
 
 For layer ℓ, scalar unit i (channel × spatial position flattened), the 250
-randomized stimuli `x_{c,f,r}`, and gray image `x₀`:
+randomized images `x_{c,f,r}`, and gray image `x₀`:
 
 ```
-μ_ℓi(c,f) = (1/250) Σ_r  a_ℓi(x_{c,f,r})      # mean activation over the 250 stimuli
+μ_ℓi(c,f) = (1/250) Σ_r  a_ℓi(x_{c,f,r})      # mean activation over the 250 images
 b_ℓi      = a_ℓi(x₀)                          # activation for uniform gray
 D_ℓ(c,f)  = (1/N_ℓ) Σ_i | μ_ℓi(c,f) − b_ℓi |  # mean |·| over units
 ```
@@ -100,7 +100,7 @@ Controls to run: within-layer weight scrambling; comparison of `logits` vs
   effect; the residual 0.60 (architecture + softmax + metric) is substantial, so
   "learning adds 0.38" is not a clean causal statement.
 * No individual unit computes a logarithm; the log-likeness is a property of the
-  pooled population response, not of any single unit.
+  pooled response across units, not of any single unit.
 
 ## Stronger tests to add
 
@@ -108,5 +108,5 @@ Fit and **hold out contrasts** to compare candidate laws — log, soft-log
 `α+β log(1+c/σ)`, power `α+β c^γ`, saturating `α+β c^n/(σ^n+c^n)`; bootstrap
 phase/orientation samples for CIs; repeat across init/scramble seeds; compare
 **logits vs softmax**; compare **distance-of-means vs mean-of-distances**;
-analyse individual units vs population; extend contrast below 1/128 to find where
+analyse individual units vs the pooled response; extend contrast below 1/128 to find where
 the apparent log breaks.

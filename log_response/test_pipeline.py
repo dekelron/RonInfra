@@ -1,7 +1,7 @@
 """Offline self-tests for the log-response pipeline (no downloaded weights).
 
 Verifies:
-1. Stimulus generator: gray mean preserved, Michelson contrast correct, uniform
+1. Input generator: gray mean preserved, Michelson contrast correct, uniform
    reference.
 2. Fitting: a synthetic log law is recovered (R^2 ~ 1); a linear-in-contrast
    signal is not; log-spaced contrasts land evenly under a true log law.
@@ -32,7 +32,7 @@ from .experiment import run_experiment
 
 def test_grating_mean_and_contrast():
     g = make_grating(contrast=0.5, frequency_cpi=8, size=128)
-    # Mean luminance preserved at 0.5 (same as the gray reference).
+    # Mean level preserved at 0.5 (same as the gray reference).
     assert abs(g.mean() - 0.5) < 1e-3
     # Michelson contrast of an unclipped grating equals the requested contrast.
     lmax, lmin = g.max(), g.min()
@@ -94,9 +94,9 @@ def test_synthetic_frontend_shows_log_response():
 class _PhaseSignedModel(FeatureModel):
     """A model whose single unit reads the center pixel (minus gray).
 
-    For a full-field sinusoid this is a *signed* quantity uniform in the phase,
+    For a full-image sinusoid this is a *signed* quantity uniform in the phase,
     so it cancels when activations are averaged over random phases first but not
-    when per-stimulus absolute values are averaged. Orientation-agnostic.
+    when per-image absolute values are averaged. Orientation-agnostic.
     """
 
     def __init__(self):
@@ -115,7 +115,7 @@ def test_experiment_uses_distance_of_means_not_mean_of_distances():
     # Mean-first ordering: the signed phase-dependent activity cancels -> small D.
     d_mean_first = result.surfaces["signed"][0, -1]  # highest contrast
 
-    # Compare against the *other* ordering (mean of per-stimulus |.|), which does
+    # Compare against the *other* ordering (mean of per-image |.|), which does
     # not cancel and is therefore substantially larger.
     rng = np.random.default_rng(1)
     ref = model.represent(np.full((cfg.size, cfg.size, 3), 0.5))["signed"]
@@ -125,7 +125,7 @@ def test_experiment_uses_distance_of_means_not_mean_of_distances():
     ]
     d_mean_of_dists = float(np.mean(per_stim))
 
-    assert d_mean_of_dists > 0.05  # the per-stimulus signal is real
+    assert d_mean_of_dists > 0.05  # the per-image signal is real
     assert d_mean_first < 0.4 * d_mean_of_dists  # ... but it cancels mean-first
 
 

@@ -1,7 +1,7 @@
 """DNN feature extraction and the L1 representation-distance correlate.
 
 The quantity measured is the *mean absolute change in DNN representation*
-between the gray reference and a stimulus -- an L1 distance computed per layer.
+between the gray reference and an input image -- an L1 distance per layer.
 Here we:
 
 * run images through a torchvision CNN,
@@ -205,7 +205,7 @@ class SyntheticFrontEnd(FeatureModel):
         return np.asarray(energies, dtype=np.float64)
 
     def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
-        gray = image[..., 0]  # grayscale stimuli: any channel is fine
+        gray = image[..., 0]  # grayscale images: any channel is fine
         energy = self._band_gain * self._bandpass_energy(gray)  # weighted, ~contrast^2
         # Compressive nonlinearity => log-like response to contrast.
         output = np.log1p(self.gain * energy)
