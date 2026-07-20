@@ -1,19 +1,19 @@
-"""CLI entry point for the log-response experiment (Dekel 2017, Eq. 4).
+"""CLI entry point for the log-response experiment.
 
 Examples
 --------
 Offline pipeline verification (no downloaded weights, runs anywhere). Use a
 small repetition count so it finishes quickly::
 
-    python -m psychophysics.log_response.run --model synthetic --reps 8 --figures out/
+    python -m log_response.run --model synthetic --reps 8 --figures out/
 
 Real ImageNet CNN (needs torchvision pretrained weights, or a local state_dict).
-The paper's default grid is 14 contrasts x 8 frequencies x 250 reps ~= 28k passes
+The fully-sampled grid is 14 contrasts x 8 frequencies x 250 reps ~= 28k passes
 per model::
 
-    python -m psychophysics.log_response.run --model vgg19 --figures out/
-    python -m psychophysics.log_response.run --model vgg19 --scramble --figures out_scrambled/
-    python -m psychophysics.log_response.run --model resnet152 --weights r152.pth --figures out/
+    python -m log_response.run --model vgg19 --figures out/
+    python -m log_response.run --model vgg19 --scramble --figures out_scrambled/
+    python -m log_response.run --model resnet152 --weights r152.pth --figures out/
 """
 
 from __future__ import annotations
@@ -54,13 +54,13 @@ def main(argv=None):
         "--reps",
         type=int,
         default=None,
-        help="random orient/phase draws per (c,f) cell (paper: 250)",
+        help="random orient/phase draws per (c,f) cell (default: 250)",
     )
     p.add_argument("--seed", type=int, default=0, help="RNG / scramble seed")
     p.add_argument(
         "--scramble",
         action="store_true",
-        help="scramble learned weights within each layer (paper control: R^2 -> 0.60)",
+        help="scramble learned weights within each layer (control: R^2 -> 0.60)",
     )
     p.add_argument("--figures", default=None, help="directory to write figures into")
     p.add_argument("--quiet", action="store_true")

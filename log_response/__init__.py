@@ -1,13 +1,13 @@
-"""Reverse-engineered log-contrast-response experiment from Dekel (2017).
+"""Log-contrast-response experiment.
 
-See METHOD.md for the exact procedure (Section 5 / Equation 4) and README.md for
+See METHOD.md for the exact procedure (stimuli, metric, fit) and README.md for
 the implementation and how to run it.
 """
 
 from .gratings import (
     GratingConfig,
-    PAPER_CONTRASTS,
-    PAPER_FREQUENCIES_CPI,
+    CONTRASTS,
+    FREQUENCIES_CPI,
     make_grating,
     make_reference,
     sample_gratings,
@@ -20,8 +20,8 @@ from .experiment import run_experiment, save_figures, ExperimentResult
 
 __all__ = [
     "GratingConfig",
-    "PAPER_CONTRASTS",
-    "PAPER_FREQUENCIES_CPI",
+    "CONTRASTS",
+    "FREQUENCIES_CPI",
     "make_grating",
     "make_reference",
     "sample_gratings",

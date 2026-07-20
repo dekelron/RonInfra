@@ -1,8 +1,8 @@
 """DNN feature extraction and the L1 representation-distance correlate.
 
-The correlate in Dekel (2017) is the *mean absolute change in DNN
-representation* between the gray reference and a stimulus -- an L1 distance
-computed per layer. Here we:
+The quantity measured is the *mean absolute change in DNN representation*
+between the gray reference and a stimulus -- an L1 distance computed per layer.
+Here we:
 
 * run images through a torchvision CNN,
 * tap a chosen set of layers with forward hooks,
@@ -20,9 +20,8 @@ Two model back-ends are provided:
   band-pass front-end followed by a compressive (log-like) nonlinearity. It
   exists to VERIFY the analysis pipeline offline (no downloaded weights): a
   linear stage that fails the log fit vs. a compressive stage that passes it,
-  and a CSF weighting that makes the response band-pass across spatial
-  frequency. It is a check on the *method*, not a model of any real network and
-  not a reproduction of the paper's numbers.
+  and a band-pass gain that makes the response peak at mid spatial frequency. It
+  is a check on the *method*, not a model of any real network.
 """
 
 from __future__ import annotations
@@ -93,8 +92,8 @@ class TorchvisionModel(FeatureModel):
                     state = state["state_dict"]
                 self.net.load_state_dict(state)
 
-        # Paper control: scramble learned weights *within each layer* (permute
-        # each weight tensor's own elements). Reported to drop prob R^2 0.98->0.60.
+        # Control: permute each weight tensor's own elements (scramble the learned
+        # weights within each layer). Drops the prob-layer R^2 from ~0.98 to ~0.60.
         if scramble:
             self._scramble_within_layers(scramble_seed)
 
@@ -150,7 +149,7 @@ class TorchvisionModel(FeatureModel):
             logits = self.net(self._preprocess(image))
         acts = {k: v.copy() for k, v in self._acts.items()}
         # Expose both the pre-softmax logits (fc8) and the softmax probabilities.
-        # The paper's headline R^2=0.98 is at 'prob'; comparing logits vs prob
+        # The near-linear fit is strongest at 'prob'; comparing logits vs prob
         # isolates how much of the compression is the softmax (see METHOD.md).
         acts["logits"] = logits.cpu().numpy()
         acts["prob"] = self.torch.softmax(logits, dim=1).cpu().numpy()
@@ -165,12 +164,12 @@ class SyntheticFrontEnd(FeatureModel):
     """Weight-free stand-in used to verify the pipeline offline.
 
     Pipeline: a small bank of radial band-pass filters (a crude spatial-frequency
-    front end), each weighted by a contrast-sensitivity-function-like (CSF) gain,
-    whose energy is passed through a compressive nonlinearity ``log(1 + k*energy)``
-    and pooled. Two properties of the 2017 result fall out of this by design and
-    let us check that the analysis reads them correctly:
+    front end), each weighted by a band-pass gain, whose energy is passed through
+    a compressive nonlinearity ``log(1 + k*energy)`` and pooled. Two properties of
+    the phenomenon fall out of this by design and let us check that the analysis
+    reads them correctly:
 
-    * the CSF weighting makes the low-contrast response *band-pass* in spatial
+    * the band-pass gain makes the low-contrast response *band-pass* in spatial
       frequency (mid frequencies respond most);
     * the compressive stage turns the (contrast^2) energy signal into a
       roughly log-in-contrast response.
@@ -184,10 +183,10 @@ class SyntheticFrontEnd(FeatureModel):
 
     def __post_init__(self):
         self.layers = ["energy", "output"]
-        # A band-pass CSF-like gain over the radial scales (peaks at mid scale).
+        # A band-pass gain over the radial scales (peaks at mid scale).
         idx = np.arange(self.n_scales, dtype=np.float64)
         peak = (self.n_scales - 1) / 2.0
-        self._csf = np.exp(-0.5 * ((idx - peak) / 1.2) ** 2) + 0.05
+        self._band_gain = np.exp(-0.5 * ((idx - peak) / 1.2) ** 2) + 0.05
 
     def _bandpass_energy(self, gray: np.ndarray) -> np.ndarray:
         # FFT-based band-pass energy at several radial scales.
@@ -207,7 +206,7 @@ class SyntheticFrontEnd(FeatureModel):
 
     def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
         gray = image[..., 0]  # grayscale stimuli: any channel is fine
-        energy = self._csf * self._bandpass_energy(gray)  # CSF-weighted, ~contrast^2
+        energy = self._band_gain * self._bandpass_energy(gray)  # weighted, ~contrast^2
         # Compressive nonlinearity => log-like response to contrast.
         output = np.log1p(self.gain * energy)
         return {"energy": energy, "output": output}

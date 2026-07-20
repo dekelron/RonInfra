@@ -1,11 +1,10 @@
 """Fitting the log-contrast response law.
 
-The 2017 result, stated operationally: the mean absolute change in an
-end-computation DNN representation (L1 distance from the gray reference) is a
-*linear* function of the *log* of input contrast. Equivalently, log-spaced
-contrasts land at (near) equal spacing in representation space. The reported
-quality of that linear fit is R^2 ~= 0.98 at the final ("prob") layer, averaged
-across spatial frequencies.
+Stated operationally: the mean absolute change in an end-computation DNN
+representation (L1 distance from the gray reference) is a *linear* function of
+the *log* of input contrast. Equivalently, log-spaced contrasts land at (near)
+equal spacing in representation space. The quality of that linear fit reaches
+R^2 ~= 0.98 at the final ("prob") layer, averaged across spatial frequencies.
 
 This module fits ``L1 = a * log10(contrast) + b`` and reports R^2, both per
 spatial frequency and pooled across frequencies.
@@ -65,7 +64,7 @@ class LayerLogResult:
 
     @property
     def mean_r2(self) -> float:
-        """Mean per-frequency R^2 -- the statistic the paper reports."""
+        """Mean per-frequency R^2 -- the headline log-linearity statistic."""
         return float(np.mean([f.r2 for f in self.per_frequency]))
 
 
@@ -107,8 +106,8 @@ def linear_spacing_uniformity(
     Under a perfect log law ``D = a + b*log c`` the per-interval slope
     ``ΔD / Δlog c`` is constant, so its coefficient of variation is 0 (lower is
     more "log-linear"). Pass ``log_contrast`` so the D-gaps are normalised by the
-    actual log-contrast spacing -- important because the paper's 14 contrasts are
-    only *approximately* even in log, so raw D-gaps would look uneven even for a
+    actual log-contrast spacing -- important because the 14 contrasts are only
+    *approximately* even in log, so raw D-gaps would look uneven even for a
     perfect log law. If ``log_contrast`` is omitted, even spacing is assumed.
     """
     response_row = np.asarray(response_row, dtype=np.float64)

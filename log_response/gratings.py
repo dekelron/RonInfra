@@ -1,6 +1,6 @@
 """Sinusoidal grating stimuli for the log-contrast-response experiment.
 
-Faithful to Dekel (2017), Section 5 / Equation 4 (see METHOD.md). Grating:
+Grating:
 
     I(c,f,theta,phi; x,y) = mu * [1 + c * sin(2*pi*f*(x*cos t + y*sin t)/W + phi)]
 
@@ -8,10 +8,10 @@ with mu the mean gray level, f in cycles-per-image, W the image width, and c the
 Michelson contrast about mu. Every stimulus and the gray reference share the same
 mean luminance mu, so only the modulation changes with contrast/frequency.
 
-The paper draws 250 stimuli per (contrast, frequency) with **random orientation**
-and **random phase**; these are generated on the fly (materialising the full
-14x8x250 grid would be tens of GB), so this module exposes single-grating and
-sampler helpers rather than a pre-built array.
+The experiment draws 250 stimuli per (contrast, frequency) with **random
+orientation** and **random phase**; these are generated on the fly (materialising
+the full 14x8x250 grid would be tens of GB), so this module exposes single-grating
+and sampler helpers rather than a pre-built array.
 """
 
 from __future__ import annotations
@@ -19,14 +19,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
 
-# Paper's 14 contrasts: integer amplitudes /128, ~half-octave apart above the
-# low end -- the near-geometric spacing is what makes log(c) nearly even.
-PAPER_CONTRASTS: tuple[float, ...] = tuple(
+# 14 contrasts: integer amplitudes /128, ~half-octave apart above the low end --
+# the near-geometric spacing is what makes log(c) nearly even.
+CONTRASTS: tuple[float, ...] = tuple(
     a / 128.0 for a in (1, 2, 3, 4, 6, 8, 11, 16, 23, 33, 46, 64, 92, 128)
 )
 
-# Paper's 8 spatial frequencies in cycles/image (read off Figure 3).
-PAPER_FREQUENCIES_CPI: tuple[float, ...] = (1.0, 1.75, 3.5, 7.0, 14.0, 28.0, 56.0, 75.0)
+# 8 spatial frequencies in cycles/image.
+FREQUENCIES_CPI: tuple[float, ...] = (1.0, 1.75, 3.5, 7.0, 14.0, 28.0, 56.0, 75.0)
 
 
 @dataclass(frozen=True)
@@ -34,8 +34,8 @@ class GratingConfig:
     """Parameters of the grating stimulus grid."""
 
     size: int = 224  # square image side, in pixels (model input size)
-    contrasts: tuple[float, ...] = PAPER_CONTRASTS
-    frequencies_cpi: tuple[float, ...] = PAPER_FREQUENCIES_CPI
+    contrasts: tuple[float, ...] = CONTRASTS
+    frequencies_cpi: tuple[float, ...] = FREQUENCIES_CPI
     repetitions: int = 250  # random (orientation, phase) draws per (c, f)
     mean: float = 0.5
 
@@ -93,8 +93,7 @@ def sample_gratings(
 ):
     """Yield ``repetitions`` RGB gratings with random orientation and phase.
 
-    Replication assumption (the manuscript does not state the distributions):
-    orientation ~ U[0, pi), phase ~ U[0, 2*pi).
+    Orientation ~ U[0, pi), phase ~ U[0, 2*pi).
     """
     for _ in range(repetitions):
         theta = rng.uniform(0.0, np.pi)
