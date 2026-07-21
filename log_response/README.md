@@ -42,9 +42,9 @@ driver cancels a phase-varying signed unit rather than accumulating its energy.
 | `gratings.py`   | Sinusoidal gratings; Michelson contrast about mid-gray; the 14-contrast / 8-frequency grids; random orient/phase sampling (on the fly). |
 | `features.py`   | `TorchvisionModel` (real CNN; hook-tapped layers; `logits`+`prob`; within-layer weight **scrambling** control), `CLIPModel` (open_clip image tower; zero-shot-prompt `prob` layer), `HFVLMModel` (generative VLM; next-token `prob` layer), `SAMModel` (Segment Anything encoder; optional mask-decoder taps), and `SyntheticFrontEnd` (offline, weight-free pipeline verifier). |
 | `fit.py`        | `D = a·log10(c) + b` least-squares fit, R² per-frequency and pooled; log-spacing uniformity (CV of consecutive gaps). |
-| `experiment.py` | End-to-end driver → `D(freq, contrast)` surface per layer, fits, figures. |
+| `experiment.py` | End-to-end driver → `D(freq, contrast)` surface per layer, fits, figures; save/load a run (`.npz` surfaces + `.json` fit summary). |
 | `run.py`        | CLI. |
-| `test_pipeline.py` | Offline self-tests (15, no downloaded weights; the VLM/SAM tests build tiny random-config models in memory and skip when transformers is absent). |
+| `test_pipeline.py` | Offline self-tests (16, no downloaded weights; the VLM/SAM tests build tiny random-config models in memory and skip when transformers is absent). |
 
 ## Running it
 
@@ -64,6 +64,24 @@ python -m log_response.run --model vgg19 --figures out/
 python -m log_response.run --model vgg19 --scramble --figures out_scrambled/
 python -m log_response.run --model resnet152 --weights r152.pth --figures out/
 ```
+
+### Saving and re-using a run
+
+The `D(freq, contrast)` surfaces are the expensive product (a full grid is ~28k
+forward passes). `--save` persists them so you never recompute to re-fit or
+re-plot:
+
+```bash
+python -m log_response.run --model vgg19 --save runs/vgg19          # writes runs/vgg19.{npz,json}
+python -m log_response.run --load runs/vgg19 --figures out_vgg19/   # re-fit + re-plot, no model
+```
+
+`<base>.npz` is the canonical artifact (surfaces + grids + metadata); the fits
+are re-derived on load (`summarise_layer` is deterministic), so the reloaded
+report is identical to the original. `<base>.json` is a human-readable fit
+summary — per-layer/per-frequency slopes and R² — convenient for cross-model
+aggregation (degenerate layers serialise as `null`). `--load` ignores all model
+flags. In Python: `save_result(result, path)` / `load_result(path)`.
 
 Any `torchvision.models` arch works. Layer taps span early→late and always add
 `logits` (fc8) and the softmax `prob` — the layer where R² is highest. Default

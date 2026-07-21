@@ -38,6 +38,13 @@ add --mask-decoder for fixed-center-point 'mask_logits'/'iou_scores')::
     python -m log_response.run --model sam --device cuda --reps 50 --figures out_sam/
     python -m log_response.run --model sam:facebook/sam-vit-huge --mask-decoder \
         --device cuda --dtype float16 --frequencies 3.5,7,14,28 --reps 25
+
+Persist an expensive run and re-fit / re-plot it later without re-running the
+model (``--save`` writes ``<base>.npz`` + ``<base>.json``; ``--load`` reads the
+npz back)::
+
+    python -m log_response.run --model vgg19 --save runs/vgg19
+    python -m log_response.run --load runs/vgg19 --figures out_vgg19/
 """
 
 from __future__ import annotations
@@ -58,7 +65,7 @@ from .features import (
     parse_hf_spec,
     parse_sam_spec,
 )
-from .experiment import run_experiment, save_figures
+from .experiment import run_experiment, save_figures, save_result, load_result
 
 
 def build_model(args):
@@ -203,8 +210,46 @@ def main(argv=None):
         help="scramble learned weights within each layer (control: R^2 -> 0.60)",
     )
     p.add_argument("--figures", default=None, help="directory to write figures into")
+    p.add_argument(
+        "--save",
+        default=None,
+        help="persist the run to <base>.npz (surfaces + grids + metadata) and "
+        "<base>.json (fit summary); re-fit/re-plot later with --load",
+    )
+    p.add_argument(
+        "--load",
+        default=None,
+        help="load a saved .npz and re-report/re-plot without running a model "
+        "(model flags are ignored)",
+    )
     p.add_argument("--quiet", action="store_true")
     args = p.parse_args(argv)
+
+    # Re-fit / re-plot a saved run without touching any model.
+    if args.load:
+        try:
+            result, meta = load_result(args.load)
+        except FileNotFoundError:
+            raise SystemExit(f"--load: no saved run at {args.load!r} (expected a .npz)")
+        print(f"loaded: {args.load}")
+        if meta.get("model"):
+            print(
+                f"model: {meta['model']}"
+                + (" (weights scrambled)" if meta.get("scramble") else "")
+            )
+        print()
+        print(result.report())
+        if args.save:
+            written = save_result(result, args.save, metadata=meta)
+            print()
+            print(f"saved: {written['npz']}, {written['json']}")
+        if args.figures:
+            paths = save_figures(result, args.figures)
+            print()
+            print("figures:")
+            for path in paths:
+                print(f"  {path}")
+        return
 
     model = build_model(args)
     size = args.size or getattr(model, "input_size", None) or 224
@@ -241,6 +286,25 @@ def main(argv=None):
     )
     print()
     print(result.report())
+
+    if args.save:
+        metadata = {
+            "model": args.model,
+            "scramble": bool(args.scramble),
+            "seed": args.seed,
+            "device": args.device,
+        }
+        if args.weights:
+            metadata["weights"] = args.weights
+        if isinstance(model, CLIPModel):
+            metadata["prompts"] = len(model.prompts)
+        if isinstance(model, HFVLMModel):
+            metadata["instruction"] = model.instruction
+        if isinstance(model, SAMModel):
+            metadata["mask_decoder"] = model.mask_decoder
+        written = save_result(result, args.save, metadata=metadata)
+        print()
+        print(f"saved: {written['npz']}, {written['json']}")
 
     if args.figures:
         paths = save_figures(result, args.figures)

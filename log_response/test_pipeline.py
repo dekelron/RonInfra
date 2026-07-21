@@ -19,6 +19,8 @@ Verifies:
 6. SAM back-end: the ``sam[:MODEL_ID]`` spec parser, and (same skip rule) the
    SAMModel plumbing against a tiny random-config SAM: encoder-only 'embed',
    and the fixed-center-point mask-decoder taps.
+7. Persistence: a run saved to .npz/.json and loaded back re-fits to identical
+   surfaces, fits, and report text without touching a model.
 
 Run:  python -m pytest log_response/test_pipeline.py -q
   or: python log_response/test_pipeline.py
@@ -56,7 +58,7 @@ from .features import (
     parse_hf_spec,
     parse_sam_spec,
 )
-from .experiment import run_experiment
+from .experiment import run_experiment, save_result, load_result
 
 
 def test_grating_mean_and_contrast():
@@ -197,6 +199,37 @@ def test_load_prompts():
             pass
         else:
             raise AssertionError("expected ValueError for a one-prompt file")
+
+
+def test_save_load_roundtrip():
+    import json
+    import os
+    import tempfile
+
+    cfg = GratingConfig(size=64, frequencies_cpi=(3.5, 7.0, 14.0))
+    result = run_experiment(SyntheticFrontEnd(), cfg, repetitions=6, seed=3, verbose=False)
+
+    with tempfile.TemporaryDirectory() as td:
+        base = os.path.join(td, "sub", "run")  # nested dir must be created
+        written = save_result(result, base, metadata={"model": "synthetic"})
+        assert os.path.exists(written["npz"]) and os.path.exists(written["json"])
+
+        loaded, meta = load_result(base)  # suffix omitted on purpose
+        assert meta["model"] == "synthetic"
+        assert loaded.layers == result.layers
+        assert loaded.repetitions == result.repetitions
+        # Surfaces persisted exactly; fits re-derived identically.
+        for layer in result.layers:
+            assert np.allclose(loaded.surfaces[layer], result.surfaces[layer])
+            assert abs(loaded.results[layer].mean_r2 - result.results[layer].mean_r2) < 1e-12
+        assert loaded.report() == result.report()
+
+        # JSON summary is valid and carries the per-layer fits.
+        with open(written["json"], encoding="utf-8") as fh:
+            summary = json.load(fh)
+        assert summary["metadata"]["model"] == "synthetic"
+        assert [d["layer"] for d in summary["layers"]] == result.layers
+        assert len(summary["frequencies"]) == 3
 
 
 def test_parse_hf_spec():

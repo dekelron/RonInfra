@@ -17,6 +17,9 @@ linear fits of D vs log10(contrast) with R^2; and optional figures.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+import math
+import os
 import numpy as np
 
 from .gratings import GratingConfig, sample_gratings, reference_rgb
@@ -113,6 +116,134 @@ def run_experiment(
     return ExperimentResult(
         config=cfg, repetitions=reps, layers=layers, surfaces=surfaces, results=results
     )
+
+
+# --------------------------------------------------------------------------- #
+# Persistence: save/load the D(freq, contrast) surfaces (the expensive part).
+# The fits are re-derived on load (summarise_layer is deterministic), so a
+# saved run can be re-fit and re-plotted without touching the model again.
+# --------------------------------------------------------------------------- #
+def _finite(x) -> float | None:
+    """JSON-safe float: NaN/inf (degenerate layers) become null."""
+    x = float(x)
+    return x if math.isfinite(x) else None
+
+
+def result_summary(result: ExperimentResult, metadata: dict | None = None) -> dict:
+    """A JSON-friendly summary: grids, per-layer fits (slopes, R^2), spacing CV."""
+    contrasts = result.config.contrast_array
+    log_c = np.log10(contrasts)
+    layers = []
+    for name in result.layers:
+        res = result.results[name]
+        cvs = [
+            linear_spacing_uniformity(res.response[fi], log_c)
+            for fi in range(res.response.shape[0])
+        ]
+        layers.append(
+            {
+                "layer": name,
+                "mean_r2": _finite(res.mean_r2),
+                "pooled_r2": _finite(res.pooled.r2),
+                "pooled_slope": _finite(res.pooled.slope),
+                "spacing_cv": _finite(np.nanmean(cvs)),
+                "per_frequency": [
+                    {
+                        "frequency": float(f),
+                        "r2": _finite(fit.r2),
+                        "slope": _finite(fit.slope),
+                        "intercept": _finite(fit.intercept),
+                    }
+                    for f, fit in zip(result.config.frequencies_cpi, res.per_frequency)
+                ],
+            }
+        )
+    return {
+        "metadata": dict(metadata or {}),
+        "repetitions": int(result.repetitions),
+        "size": int(result.config.size),
+        "mean": float(result.config.mean),
+        "contrasts": [float(c) for c in contrasts],
+        "frequencies": [float(f) for f in result.config.frequencies_cpi],
+        "layers": layers,
+    }
+
+
+def save_result(
+    result: ExperimentResult, path: str, metadata: dict | None = None
+) -> dict[str, str]:
+    """Persist a run: ``<base>.npz`` (surfaces + grids + metadata, the canonical
+    artifact that can be re-fit) and ``<base>.json`` (the fit summary, for
+    reading and cross-model aggregation). ``path`` may carry either suffix or
+    none. Returns the two written paths.
+    """
+    base = path
+    for suffix in (".npz", ".json"):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)]
+    directory = os.path.dirname(base)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+    layers = list(result.layers)
+    surfaces = np.stack(
+        [np.asarray(result.surfaces[name], dtype=np.float64) for name in layers], axis=0
+    )
+    meta = dict(metadata or {})
+    meta.setdefault("repetitions", int(result.repetitions))
+    meta.setdefault("size", int(result.config.size))
+    meta.setdefault("mean", float(result.config.mean))
+
+    npz_path = base + ".npz"
+    np.savez_compressed(
+        npz_path,
+        surfaces=surfaces,
+        layers=np.asarray(layers),
+        contrasts=result.config.contrast_array,
+        frequencies=result.config.frequency_array,
+        meta=np.asarray(json.dumps(meta)),
+    )
+    json_path = base + ".json"
+    with open(json_path, "w", encoding="utf-8") as fh:
+        json.dump(result_summary(result, metadata), fh, indent=2)
+    return {"npz": npz_path, "json": json_path}
+
+
+def load_result(path: str) -> tuple[ExperimentResult, dict]:
+    """Load a saved ``.npz`` and re-fit it into an ``ExperimentResult``.
+
+    The fits are recomputed from the stored surfaces (no model needed), so
+    ``report()`` and ``save_figures()`` work on the returned object exactly as
+    on a fresh run. ``path`` may omit the ``.npz`` suffix. Returns
+    ``(result, metadata)``.
+    """
+    npz_path = path
+    if not os.path.exists(npz_path) and os.path.exists(path + ".npz"):
+        npz_path = path + ".npz"
+    data = np.load(npz_path, allow_pickle=False)
+
+    layers = [str(name) for name in data["layers"]]
+    contrasts = np.asarray(data["contrasts"], dtype=np.float64)
+    frequencies = np.asarray(data["frequencies"], dtype=np.float64)
+    surfaces_arr = np.asarray(data["surfaces"], dtype=np.float64)
+    meta = json.loads(data["meta"].item()) if "meta" in data.files else {}
+
+    cfg = GratingConfig(
+        size=int(meta.get("size", 224)),
+        contrasts=tuple(float(c) for c in contrasts),
+        frequencies_cpi=tuple(float(f) for f in frequencies),
+        mean=float(meta.get("mean", 0.5)),
+    )
+    surfaces = {name: surfaces_arr[i] for i, name in enumerate(layers)}
+    results = {
+        name: summarise_layer(name, contrasts, frequencies, surfaces[name])
+        for name in layers
+    }
+    reps = int(meta.get("repetitions", cfg.repetitions))
+    result = ExperimentResult(
+        config=cfg, repetitions=reps, layers=layers, surfaces=surfaces, results=results
+    )
+    return result, meta
 
 
 def save_figures(result: ExperimentResult, out_dir: str) -> list[str]:

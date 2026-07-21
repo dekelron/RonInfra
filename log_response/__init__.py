@@ -30,7 +30,14 @@ from .features import (
     load_prompts,
 )
 from .fit import fit_log_linear, summarise_layer, LayerLogResult
-from .experiment import run_experiment, save_figures, ExperimentResult
+from .experiment import (
+    run_experiment,
+    save_figures,
+    save_result,
+    load_result,
+    result_summary,
+    ExperimentResult,
+)
 
 __all__ = [
     "GratingConfig",
@@ -59,5 +66,8 @@ __all__ = [
     "LayerLogResult",
     "run_experiment",
     "save_figures",
+    "save_result",
+    "load_result",
+    "result_summary",
     "ExperimentResult",
 ]
