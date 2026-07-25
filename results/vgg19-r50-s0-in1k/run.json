@@ -1,0 +1,40 @@
+{
+  "code": {
+    "available": true,
+    "branch": "master",
+    "commit": "d446b36e387a2f0d600684ee4fa5d64615a15e6a",
+    "dirty": false,
+    "dirty_files": null
+  },
+  "command": "run.py --model vgg19 --reps 50 --seed 0 --save-run results/vgg19-r50-s0-in1k --notes IMAGENET1K_V1 at 50 reps: the cell separating weight lineage from repetition count as the cause of the r50/r250 disagreement --figures out/",
+  "created_utc": "2026-07-25T12:44:59Z",
+  "device": "cpu",
+  "environment": {
+    "cpu_count": 4,
+    "executable": "/opt/hostedtoolcache/Python/3.11.15/x64/bin/python",
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    "wall_seconds": 1405.6
+  },
+  "layers": [
+    "features.0",
+    "features.19",
+    "classifier.3",
+    "logits",
+    "prob"
+  ],
+  "model": "vgg19",
+  "notes": "IMAGENET1K_V1 at 50 reps: the cell separating weight lineage from repetition count as the cause of the r50/r250 disagreement",
+  "scramble": false,
+  "seed": 0,
+  "versions": {
+    "numpy": "2.4.6",
+    "python": "3.11.15",
+    "torch": "2.13.0+cpu",
+    "torchvision": "0.28.0+cpu"
+  },
+  "weights": {
+    "pretrained_verified": true,
+    "source": "torchvision vgg19 IMAGENET1K_V1"
+  }
+}
