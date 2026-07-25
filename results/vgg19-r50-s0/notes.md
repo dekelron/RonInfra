@@ -7,6 +7,13 @@
 Primary measurement: does the log-contrast response reproduce on a trained
 ImageNet CNN in this environment?
 
+> **Superseded in part.** The full `--reps 250` grid on torchvision's canonical
+> `IMAGENET1K_V1` reports `prob` at 0.917 with the peak at `classifier.3`, not
+> at `prob` — see [Results](../../wiki/Results.md). Two variables differ between
+> that run and this one (weight lineage and repetition count), so neither
+> supersedes the other cleanly. Read the "peaks at `prob`" claim below as
+> specific to this run, not established.
+
 ## What it showed
 
 Yes. Mean R² of `D` vs `log10(c)`, per layer:
