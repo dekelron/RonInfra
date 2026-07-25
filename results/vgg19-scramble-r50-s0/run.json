@@ -1,0 +1,54 @@
+{
+  "code": {
+    "available": true,
+    "branch": "master",
+    "commit": "4c204e5f9b89a7387248f1c2f7d2ac9789b8c8e2",
+    "commit_note": "log_response/ unmodified at run time",
+    "dirty": false
+  },
+  "command": "python -m log_response.run --model vgg19 --weights <converted> --reps 50 --scramble --save runs/vgg19_scr",
+  "created_utc": "2026-07-25T07:02:00Z",
+  "device": "cpu",
+  "environment": {
+    "cpu_count": 4,
+    "machine": "x86_64",
+    "platform": "Linux-6.18.5",
+    "wall_seconds": 360
+  },
+  "layers": [
+    "features.0",
+    "features.19",
+    "classifier.3",
+    "logits",
+    "prob"
+  ],
+  "model": "vgg19",
+  "notes": "Control: within-layer weight scrambling, to separate the trained contribution from architecture + softmax + metric.",
+  "provenance_backfilled": true,
+  "provenance_note": "Run predates the provenance capture in run.py; fields reconstructed from the session record, not captured at run time.",
+  "scramble": true,
+  "seed": 0,
+  "versions": {
+    "numpy": "2.4.6",
+    "python": "3.11.15",
+    "torch": "2.13.0",
+    "torchvision": "0.28.0"
+  },
+  "weights": {
+    "caveat": "same lineage as torchvision IMAGENET1K_V1 but not verified bit-identical to it",
+    "conversion": "from Keras/caffe HDF5 (storage.googleapis.com/tensorflow/keras-applications/vgg19/vgg19_weights_tf_dim_ordering_tf_kernels.h5): kernels (kh,kw,in,out)->(out,in,kh,kw); conv1 input channels BGR->RGB; fc1 flatten reordered (H,W,C)->(C,H,W); caffe preprocessing folded into conv1 so the net takes the repo's normalised RGB input",
+    "file": {
+      "bytes": 574681781,
+      "path": "/home/user/w/vgg19_imagenet_torchvision.pth",
+      "sha256": "bcc31d5d56744e1ca5a1c87185dbb7dd28c301bf58543cc725e899d6b2628e1c"
+    },
+    "pretrained_verified": true,
+    "source": "Oxford VGG-19 ImageNet weights, converted to torchvision layout",
+    "validation": {
+      "image": "pytorch/hub images/dog.jpg",
+      "note": "all top-5 dog breeds; a layout or channel error yields garbage",
+      "probability": 0.899,
+      "top1": "Samoyed"
+    }
+  }
+}

@@ -50,6 +50,10 @@ npz back)::
 from __future__ import annotations
 
 import argparse
+import os
+import sys
+import time
+from datetime import datetime, timezone
 
 from .gratings import GratingConfig
 from .features import (
@@ -65,7 +69,56 @@ from .features import (
     parse_hf_spec,
     parse_sam_spec,
 )
-from .experiment import run_experiment, save_figures, save_result, load_result
+from .experiment import (
+    run_experiment,
+    save_figures,
+    save_result,
+    save_run_dir,
+    load_result,
+)
+from .provenance import (
+    environment,
+    file_fingerprint,
+    git_provenance,
+    package_versions,
+)
+
+
+def build_metadata(args, model, result, wall_seconds: float) -> dict:
+    """Everything needed to trust and reproduce this run.
+
+    ``weights.pretrained_verified`` is the field that matters most: True only if
+    trained weights demonstrably loaded, False if the net is random, None where
+    the question does not apply (the synthetic back-end).
+    """
+    weights: dict = {
+        "pretrained_verified": getattr(model, "weights_ok", None),
+        "source": getattr(model, "weights_source", "unknown"),
+    }
+    if args.weights:
+        weights["file"] = file_fingerprint(args.weights)
+    metadata = {
+        "model": args.model,
+        "scramble": bool(args.scramble),
+        "seed": args.seed,
+        "device": args.device,
+        "layers": list(result.layers),
+        "weights": weights,
+        "command": " ".join([os.path.basename(sys.argv[0]), *sys.argv[1:]]),
+        "code": git_provenance(),
+        "versions": package_versions(),
+        "environment": {**environment(), "wall_seconds": round(wall_seconds, 1)},
+        "created_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    if args.notes:
+        metadata["notes"] = args.notes
+    if isinstance(model, CLIPModel):
+        metadata["prompts"] = len(model.prompts)
+    if isinstance(model, HFVLMModel):
+        metadata["instruction"] = model.instruction
+    if isinstance(model, SAMModel):
+        metadata["mask_decoder"] = model.mask_decoder
+    return metadata
 
 
 def build_model(args):
@@ -104,6 +157,7 @@ def build_model(args):
             device=args.device,
             scramble=args.scramble,
             scramble_seed=args.seed,
+            allow_random_init=args.allow_random_init,
         )
     if is_hf:
         return HFVLMModel(
@@ -133,6 +187,7 @@ def build_model(args):
         device=args.device,
         scramble=args.scramble,
         scramble_seed=args.seed,
+        allow_random_init=args.allow_random_init,
     )
 
 
@@ -217,6 +272,26 @@ def main(argv=None):
         "<base>.json (fit summary); re-fit/re-plot later with --load",
     )
     p.add_argument(
+        "--save-run",
+        default=None,
+        help="persist the run as a committable directory: <dir>/result.npz, "
+        "result.json, run.json (full provenance) and a notes.md stub",
+    )
+    p.add_argument(
+        "--notes",
+        default=None,
+        help="one-line description of what this run is for; stored in run.json "
+        "and seeded into notes.md",
+    )
+    p.add_argument(
+        "--allow-random-init",
+        action="store_true",
+        help="permit an untrained net when pretrained weights cannot be loaded. "
+        "Off by default: the log response only exists in a trained net, so a "
+        "silent fallback yields meaningless numbers. Saved runs are stamped "
+        "pretrained_verified=false.",
+    )
+    p.add_argument(
         "--load",
         default=None,
         help="load a saved .npz and re-report/re-plot without running a model "
@@ -251,7 +326,12 @@ def main(argv=None):
                 print(f"  {path}")
         return
 
-    model = build_model(args)
+    try:
+        model = build_model(args)
+    except RuntimeError as exc:
+        # Untrusted-weights refusal: report it as a clean CLI failure (non-zero
+        # exit), not a traceback. The message is preserved verbatim.
+        raise SystemExit(f"error: {exc}")
     size = args.size or getattr(model, "input_size", None) or 224
     cfg_kwargs = {"size": size}
     if args.frequencies:
@@ -281,30 +361,34 @@ def main(argv=None):
                 else ""
             )
         )
+    started = time.time()
     result = run_experiment(
         model, cfg, repetitions=args.reps, seed=args.seed, verbose=not args.quiet
     )
+    wall_seconds = time.time() - started
     print()
     print(result.report())
 
-    if args.save:
-        metadata = {
-            "model": args.model,
-            "scramble": bool(args.scramble),
-            "seed": args.seed,
-            "device": args.device,
-        }
-        if args.weights:
-            metadata["weights"] = args.weights
-        if isinstance(model, CLIPModel):
-            metadata["prompts"] = len(model.prompts)
-        if isinstance(model, HFVLMModel):
-            metadata["instruction"] = model.instruction
-        if isinstance(model, SAMModel):
-            metadata["mask_decoder"] = model.mask_decoder
-        written = save_result(result, args.save, metadata=metadata)
-        print()
-        print(f"saved: {written['npz']}, {written['json']}")
+    if args.save or args.save_run:
+        metadata = build_metadata(args, model, result, wall_seconds)
+        # A run whose weights never loaded measures nothing; refuse to persist it
+        # as a result unless the caller asked for an untrained control on purpose.
+        if metadata["weights"]["pretrained_verified"] is False and not args.allow_random_init:
+            raise SystemExit(
+                "refusing to save: the model does not carry trained weights, so "
+                "these numbers are meaningless. Pass --weights, or "
+                "--allow-random-init to save it as a deliberate control."
+            )
+        if args.save:
+            written = save_result(result, args.save, metadata=metadata)
+            print()
+            print(f"saved: {written['npz']}, {written['json']}")
+        if args.save_run:
+            written = save_run_dir(result, args.save_run, metadata, notes=args.notes)
+            print()
+            print(f"saved run: {args.save_run}/")
+            for key in ("npz", "json", "run", "notes"):
+                print(f"  {os.path.basename(written[key])}")
 
     if args.figures:
         paths = save_figures(result, args.figures)

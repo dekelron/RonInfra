@@ -209,6 +209,91 @@ def save_result(
     return {"npz": npz_path, "json": json_path}
 
 
+NOTES_TEMPLATE = """# {slug}
+
+{summary}
+
+## What this run was for
+
+{notes}
+
+## What it showed
+
+_(fill in: the headline numbers, anything that disagreed with expectation)_
+
+## Reproduce
+
+```
+{command}
+```
+
+Code: `{commit}`{dirty}. Weights: {weights}.
+"""
+
+
+def save_run_dir(
+    result: ExperimentResult,
+    directory: str,
+    metadata: dict,
+    notes: str | None = None,
+) -> dict[str, str]:
+    """Persist a run as a committable directory.
+
+    Layout: ``result.npz`` (canonical surfaces), ``result.json`` (fit summary,
+    diffs readably in review), ``run.json`` (provenance -- commit, versions,
+    weight identity) and ``notes.md`` (prose, seeded from a template).
+
+    The surfaces are ``n_layers x n_freq x n_contrast`` floats -- a few KB
+    regardless of ``--reps`` -- so every run is cheap to keep in git. Figures are
+    deliberately not written here: they are ~100x larger than the data behind
+    them and regenerate from the npz with ``--load``.
+    """
+    os.makedirs(directory, exist_ok=True)
+    base = os.path.join(directory, "result")
+    written = save_result(result, base, metadata=metadata)
+
+    run_path = os.path.join(directory, "run.json")
+    with open(run_path, "w", encoding="utf-8") as fh:
+        json.dump(metadata, fh, indent=2, sort_keys=True)
+
+    notes_path = os.path.join(directory, "notes.md")
+    if not os.path.exists(notes_path):  # never clobber written-up prose
+        code = metadata.get("code", {})
+        weights = metadata.get("weights", {})
+        verified = weights.get("pretrained_verified")
+        weights_desc = weights.get("source", "unknown")
+        if verified is False:
+            weights_desc += " -- NOT pretrained, numbers are a control only"
+        # NaN mean_r2 (a degenerate layer) must not win the max: NaN comparisons
+        # are all False, so pick with an explicit nan-safe key.
+        best = max(
+            ((result.results[name].mean_r2, name) for name in result.layers),
+            key=lambda pair: (
+                pair[0] if math.isfinite(pair[0]) else float("-inf")
+            ),
+            default=(float("nan"), "n/a"),
+        )
+        with open(notes_path, "w", encoding="utf-8") as fh:
+            fh.write(
+                NOTES_TEMPLATE.format(
+                    slug=os.path.basename(os.path.normpath(directory)),
+                    summary=(
+                        f"`{metadata.get('model', '?')}`, "
+                        f"{result.repetitions} reps/cell, "
+                        f"best mean R² {best[0]:.3f} at `{best[1]}`."
+                    ),
+                    notes=notes or "_(fill in)_",
+                    command=metadata.get("command", "?"),
+                    commit=(code.get("commit") or "unknown")[:12],
+                    dirty=" (dirty tree)" if code.get("dirty") else "",
+                    weights=weights_desc,
+                )
+            )
+    written["run"] = run_path
+    written["notes"] = notes_path
+    return written
+
+
 def load_result(path: str) -> tuple[ExperimentResult, dict]:
     """Load a saved ``.npz`` and re-fit it into an ``ExperimentResult``.
 
@@ -218,8 +303,12 @@ def load_result(path: str) -> tuple[ExperimentResult, dict]:
     ``(result, metadata)``.
     """
     npz_path = path
-    if not os.path.exists(npz_path) and os.path.exists(path + ".npz"):
+    if os.path.isdir(path):  # a save_run_dir() directory
+        npz_path = os.path.join(path, "result.npz")
+    elif not os.path.exists(npz_path) and os.path.exists(path + ".npz"):
         npz_path = path + ".npz"
+    if not os.path.exists(npz_path):
+        raise FileNotFoundError(npz_path)
     data = np.load(npz_path, allow_pickle=False)
 
     layers = [str(name) for name in data["layers"]]

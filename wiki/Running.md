@@ -51,15 +51,32 @@ until [ -f runs/vgg19.json ]; do sleep 5; done; tail -20 run.log
 
 `--save` writes `<base>.npz` (the expensive surfaces) plus `<base>.json` (fit
 summary). Always pass it on a long run so a re-fit or re-plot never recomputes.
+For a run worth keeping, use `--save-run results/<slug>` instead: it writes the
+committable directory layout described in [results/](../results/README.md), with
+full provenance in `run.json`.
+
+## Trusting a run
+
+The log response only exists in a *trained* net, so a run whose weights failed to
+load measures nothing — and used to be indistinguishable from a real one. Two
+guards now make that state unreachable:
+
+- Failing to load pretrained weights **raises** rather than falling back to
+  random init. Use `--allow-random-init` to measure an untrained control
+  deliberately.
+- `--save`/`--save-run` **refuse** to persist a run that is not verifiably
+  pretrained, unless that flag was passed. Saved runs record
+  `weights.pretrained_verified` (`true` / `false` / `null` for weight-free
+  back-ends) alongside the commit, package versions, and the weight file's
+  sha256.
 
 ## This sandbox: weights are the blocker
 
 `download.pytorch.org` and `huggingface.co` are **blocked** by the network
-policy, and PyPI is not. That matters more than it looks: on a failed weight
-download `TorchvisionModel` falls back to random init with only a
-`RuntimeWarning`, so `--model vgg19` *appears to succeed and reports meaningless
-numbers* — the log response is a consequence of training and does not exist in an
-untrained net. Always check for that warning, or pass `--weights`.
+policy, and PyPI is not. So `--model vgg19` cannot fetch weights here and now
+exits with an error (before the guard described above, it silently fell back to
+random init and reported meaningless numbers). Pass `--weights` with a local
+`state_dict`.
 
 Workaround used for the run in [Results](Results.md): the original Oxford VGG-19
 ImageNet weights are mirrored on `storage.googleapis.com` (reachable) in Keras

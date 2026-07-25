@@ -264,6 +264,7 @@ class TorchvisionModel(_TorchBackend):
         device: str = "cpu",
         scramble: bool = False,
         scramble_seed: int = 0,
+        allow_random_init: bool = False,
     ):
         import torch
         import torchvision
@@ -272,16 +273,32 @@ class TorchvisionModel(_TorchBackend):
         self.device = torch.device(device)
         self.arch = arch
         self._norm_mean, self._norm_std = IMAGENET_MEAN, IMAGENET_STD
+        # Whether this model carries trained weights. False means the measured
+        # numbers are meaningless (the log response is a consequence of
+        # training), so callers must never persist such a run as a result.
+        self.weights_ok = False
+        self.weights_source = "random init"
 
         model_fn = getattr(torchvision.models, arch)
         if pretrained and weights_path is None:
             try:
                 self.net = model_fn(weights="IMAGENET1K_V1")
+                self.weights_ok = True
+                self.weights_source = f"torchvision {arch} IMAGENET1K_V1"
             except Exception as exc:  # weight download blocked, etc.
+                if not allow_random_init:
+                    raise RuntimeError(
+                        f"could not load torchvision pretrained weights for "
+                        f"{arch!r} ({exc}). The log response only exists in a "
+                        "trained net, so falling back to random init would "
+                        "produce plausible-looking but meaningless numbers. "
+                        "Pass weights_path with a local state_dict, or set "
+                        "allow_random_init=True if you genuinely want an "
+                        "untrained control."
+                    ) from exc
                 warnings.warn(
                     f"could not load torchvision pretrained weights ({exc}); "
-                    "falling back to random init -- the log law will NOT appear. "
-                    "Pass weights_path to load a local state_dict.",
+                    "falling back to random init -- the log law will NOT appear.",
                     RuntimeWarning,
                 )
                 self.net = model_fn(weights=None)
@@ -292,6 +309,15 @@ class TorchvisionModel(_TorchBackend):
                 if isinstance(state, dict) and "state_dict" in state:
                     state = state["state_dict"]
                 self.net.load_state_dict(state)
+                self.weights_ok = True
+                self.weights_source = f"local state_dict: {weights_path}"
+            elif not allow_random_init:
+                raise RuntimeError(
+                    f"{arch!r} requested with pretrained=False and no "
+                    "weights_path: the net is randomly initialised and the log "
+                    "response will not appear. Set allow_random_init=True to "
+                    "measure an untrained control deliberately."
+                )
 
         if scramble:
             self._scramble_within_layers(scramble_seed)
@@ -366,6 +392,7 @@ class CLIPModel(_TorchBackend):
         pretrained: bool = True,
         scramble: bool = False,
         scramble_seed: int = 0,
+        allow_random_init: bool = False,
     ):
         import torch
 
@@ -381,18 +408,32 @@ class CLIPModel(_TorchBackend):
         self.device = torch.device(device)
         self.arch = arch
 
+        # See TorchvisionModel.weights_ok -- a random-init CLIP tower measures
+        # nothing, so the failure is raised rather than warned past by default.
+        self.weights_ok = False
+        self.weights_source = "random init"
+
         tag = pretrained_tag if pretrained else ""
         try:
             self.net, _, preprocess = open_clip.create_model_and_transforms(
                 arch, pretrained=tag
             )
+            self.weights_ok = bool(tag)
+            self.weights_source = f"open_clip {arch}:{tag}" if tag else "random init"
         except Exception as exc:
             if not tag:
                 raise
+            if not allow_random_init:
+                raise RuntimeError(
+                    f"could not load CLIP pretrained weights {tag!r} ({exc}). "
+                    "The log response only exists in a trained net, so falling "
+                    "back to random init would produce meaningless numbers. "
+                    "Pass a local open_clip checkpoint path as the pretrained "
+                    "tag, or set allow_random_init=True for an untrained control."
+                ) from exc
             warnings.warn(
                 f"could not load CLIP pretrained weights {tag!r} ({exc}); "
-                "falling back to random init -- the log law will NOT appear. "
-                "Pass a local open_clip checkpoint path as the pretrained tag.",
+                "falling back to random init -- the log law will NOT appear.",
                 RuntimeWarning,
             )
             self.net, _, preprocess = open_clip.create_model_and_transforms(
@@ -524,6 +565,10 @@ class HFVLMModel(_TorchBackend):
 
         self.torch = torch
         self.device = torch.device(device)
+        # from_pretrained raises on a failed fetch, so a model that loads here is
+        # genuinely pretrained; an injected model (tests) is not.
+        self.weights_ok = model is None
+        self.weights_source = f"transformers {model_id}" if model is None else "injected"
 
         if model is None or processor is None:
             if not model_id:
@@ -715,6 +760,10 @@ class SAMModel(_TorchBackend):
         self.device = torch.device(device)
         self.arch = model_id
         self.mask_decoder = mask_decoder
+        # As HFVLMModel: from_pretrained raises on failure, injected models are
+        # random-config stand-ins used by the offline tests.
+        self.weights_ok = model is None
+        self.weights_source = f"transformers {model_id}" if model is None else "injected"
 
         if processor is None:
             processor = transformers.AutoProcessor.from_pretrained(model_id)
@@ -826,6 +875,10 @@ class SyntheticFrontEnd(FeatureModel):
 
     def __post_init__(self):
         self.layers = ["energy", "output"]
+        # Weight-free by construction: "are the weights trained?" does not apply,
+        # which is distinct from "the weights are untrained" (None vs False).
+        self.weights_ok = None
+        self.weights_source = "synthetic (weight-free)"
         # A band-pass gain over the radial scales (peaks at mid scale).
         idx = np.arange(self.n_scales, dtype=np.float64)
         peak = (self.n_scales - 1) / 2.0
