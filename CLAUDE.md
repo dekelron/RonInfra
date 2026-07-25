@@ -79,15 +79,17 @@ Runs come from one of two places, and `run.json` tells them apart after the fact
 
 Ordered. Nothing here is blocking — every quoted number now has a committed run.
 
-1. **`IMAGENET1K_V1` at `--reps 50`** — the single cell separating "weight
-   lineage" from "repetition count" as the cause of the disagreement below.
-   ~12–23 min on a runner; dispatch it and it commits itself.
-2. **Vary the scramble seed** before any control value is trusted. Three
-   disagreeing values exist and no seed has been repeated.
-3. **Reconcile `wiki/Method.md` with the r250 result.** Its "Expected results"
-   table still states 0.98 at `prob` and calls `prob` the peak; the measured
-   grid says 0.917 and peaks at `classifier.3`. Per rule 4, do not quietly edit
-   one to match the other — decide which is the claim and say why.
+1. **Audit the converted Caffe checkpoint.** It is now the only run disagreeing
+   with everything else (see below), and its conversion was validated only by
+   argmax accuracy — 89.9 % "Samoyed" survives a gain or channel-scaling error
+   that would still shift `D`. Compare its activations against `IMAGENET1K_V1`
+   layer by layer rather than by classification.
+2. **Vary the scramble seed** before any control value is trusted. Seeds 1–3 at
+   `IMAGENET1K_V1`/50 were dispatched; fold them into the series when they land.
+3. **Reconcile `wiki/Method.md` with the measured grid.** Its "Expected results"
+   table still states 0.98 at `prob` and calls `prob` the peak; two independent
+   `IMAGENET1K_V1` runs say 0.913–0.917 and peak at `classifier.3`. Per rule 4,
+   do not quietly edit one to match the other — decide which is the claim.
 
 ## Open threads
 
@@ -95,14 +97,19 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   counts** — `prob` at 0.917 not 0.98, R² peaking at `classifier.3` rather than
   `prob`, and the scrambled control *exceeding* the trained net at the early and
   middle taps. See `wiki/Results.md`.
-- The scrambled control has now measured **0.428** (Caffe weights, 50 reps) and
-  **0.768** (`IMAGENET1K_V1`, 250 reps) against the **0.60** documented. Three
-  values, no seed repeats yet — vary the scramble seed before trusting any.
+- **Weight lineage, not repetition count, drives the disagreement.** At fixed
+  reps, changing the checkpoint moves `prob` 0.063 and the control 0.332; at a
+  fixed checkpoint, changing reps 5× moves them 0.004 and 0.008. The converted
+  Caffe run is the outlier; everything measured on `IMAGENET1K_V1` agrees.
+- The scrambled control reads **0.428** (Caffe, 50), **0.760** (`IMAGENET1K_V1`,
+  50), **0.768** (`IMAGENET1K_V1`, 250) against **0.60** documented — splitting
+  by checkpoint, not sampling. Still one scramble seed each.
 - Runner wall time varies **2.0×** for identical work (58.6 / 69.7 / 116.5 /
   118.4 min over four jobs, byte-identical code). Size any new grid against the
   slow end or it can miss the 6 h cap.
-- Weight lineage and repetition count changed together between those two runs.
-  `IMAGENET1K_V1` at `--reps 50` is the single cell that separates them.
+- The Caffe conversion was validated by classification accuracy only (89.9 %
+  "Samoyed"), which cannot detect a gain or channel-scaling error that leaves
+  argmax intact while shifting `D`. It is the prime suspect for the outlier.
 - R² is a poor summary for the scrambled column: its spacing CV runs 3.5–4.1
   (against 0.6–0.9 trained), i.e. a spike at the top contrast that a line fits.
   Quote the CV alongside it, or prefer a different statistic.

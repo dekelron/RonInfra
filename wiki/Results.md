@@ -45,13 +45,30 @@ grossly non-uniform spacing — the scrambled response is a spike at the top
 contrast that a straight line happens to fit, not an even log ladder. R² alone
 is the wrong summary for that column.
 
-**This does not settle which number is right.** Against the `--reps 50` run
-below, two things changed at once — the weight lineage (converted Caffe →
-`IMAGENET1K_V1`) and the repetition count (50 → 250) — so the 0.976 → 0.917 and
-0.428 → 0.768 moves cannot be attributed to either alone. More reps should if
-anything *raise* R² by reducing noise, so the weight lineage is the likelier
-cause, but that is an inference, not a measurement. Run the canonical checkpoint
-at `--reps 50` to separate them.
+### Which variable moved it: the checkpoint
+
+Against the `--reps 50` run below, two things changed at once — weight lineage
+and repetition count. [`vgg19-r50-s0-in1k`](../results/vgg19-r50-s0-in1k/notes.md)
+holds reps at 50 and changes only the checkpoint, which separates them:
+
+| weights | reps | `prob` trained | `prob` scrambled |
+|---|---|---|---|
+| converted Caffe | 50 | 0.976 | 0.428 |
+| `IMAGENET1K_V1` | 50 | 0.913 | 0.760 |
+| `IMAGENET1K_V1` | 250 | 0.917 | 0.768 |
+
+Changing the checkpoint at fixed reps moves `prob` by **0.063** and the control
+by **0.332**. Changing reps 5× at a fixed checkpoint moves them by **0.004** and
+**0.008**. **The weight lineage is the cause; repetition count is not.** The
+whole r250 pattern — peak at `classifier.3`, dip at `logits`, control exceeding
+trained at `features.19` — reproduces at 50 reps.
+
+So the 0.976 that looked like it reproduced the documented 0.98 belongs to the
+converted Oxford/Caffe checkpoint, not to torchvision's. Either the checkpoints
+genuinely differ in this property, or the conversion carries an artifact that
+argmax accuracy cannot see — it was validated at 89.9 % "Samoyed", which a gain
+or channel-scaling error would survive while still shifting `D`. That is the
+open question now.
 
 ## VGG-19, verified run
 
