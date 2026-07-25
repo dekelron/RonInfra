@@ -56,14 +56,21 @@ python -m log_response.run --model synthetic --reps 12 --figures out/
 python -m log_response.test_pipeline
 ```
 
-Real ImageNet CNN. The full grid is 14×8×250 ≈ 28k forward passes per model
-(heavy on CPU; use a GPU and/or `--reps` below 250 to explore):
+Real ImageNet CNN. The full grid is 14×8×250 ≈ 28k forward passes per model —
+**≈ 1.3 h on 4 CPU cores** for VGG-19, so no GPU is needed for the headline
+result (drop `--reps` below 250 to explore faster):
 
 ```bash
 python -m log_response.run --model vgg19 --figures out/
 python -m log_response.run --model vgg19 --scramble --figures out_scrambled/
 python -m log_response.run --model resnet152 --weights r152.pth --figures out/
 ```
+
+[`COMPUTE.md`](COMPUTE.md) has measured per-arch costs and free ways to run
+this unattended — including a dispatchable
+[GitHub Actions workflow](../.github/workflows/log-response.yml) that runs the
+grid on a free public-repo runner and uploads the surfaces and figures. The
+`hf:` VLM and `sam:` back-ends are the ones that genuinely want a GPU.
 
 ### Saving and re-using a run
 
