@@ -8,7 +8,7 @@ means**, not a mean of distances:
 
 Averaging activations across the random orientation/phase draws happens BEFORE
 the absolute value, so phase/orientation-specific activity cancels first (see
-METHOD.md, Jensen's inequality note).
+wiki/Method.md, Jensen's inequality note).
 
 Produces, per layer: the L1 surface D(freq, contrast); per-frequency and pooled
 linear fits of D vs log10(contrast) with R^2; and optional figures.

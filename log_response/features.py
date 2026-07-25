@@ -321,7 +321,7 @@ class TorchvisionModel(_TorchBackend):
         acts = {k: v.copy() for k, v in self._acts.items()}
         # Expose both the pre-softmax logits (fc8) and the softmax probabilities.
         # The near-linear fit is strongest at 'prob'; comparing logits vs prob
-        # isolates how much of the compression is the softmax (see METHOD.md).
+        # isolates how much of the compression is the softmax (see wiki/Method.md).
         acts["logits"] = logits.cpu().numpy()
         acts["prob"] = self.torch.softmax(logits, dim=1).cpu().numpy()
         return acts
@@ -344,7 +344,7 @@ class CLIPModel(_TorchBackend):
     Unlike the torchvision back-end, where the 1000 ImageNet classes are part
     of the trained model, 'prob' here is conditional on the chosen prompt set
     (default ``DEFAULT_PROMPTS``, N=64) -- report the prompt set with any
-    numbers. The METHOD.md total-variation bound scales with the set size:
+    numbers. The wiki/Method.md total-variation bound scales with the set size:
     ``0 <= D_prob <= 2/N``. Text features are computed once at init, so per-
     image cost is the image tower only.
 
@@ -485,7 +485,7 @@ class HFVLMModel(_TorchBackend):
     distance-of-means metric applies unchanged.
 
     Caveats vs the CNN measurement: 'prob' depends on the instruction and chat
-    template (report both alongside any numbers), and the METHOD.md TV bound
+    template (report both alongside any numbers), and the wiki/Method.md TV bound
     becomes ``0 <= D_prob <= 2/V`` for vocab size V. Cost: the full grid is
     ~28k forward passes -- for a 7B model use a GPU (``device='cuda'``,
     ``dtype='float16'``/``'bfloat16'``) and reduce repetitions/frequencies.
