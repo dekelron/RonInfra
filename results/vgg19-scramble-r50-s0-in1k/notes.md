@@ -37,9 +37,34 @@ values differ by 0.008 across a 5× change in reps, while the Caffe value sits
 settings. The per-frequency fits fan out rather than describing one log ladder,
 so R² is summarising frequencies that disagree with each other.
 
-This is one scramble seed. A sweep over seeds 1–3 at these settings is what
-decides whether 0.760 is a property of the scrambled net or of this particular
-permutation.
+### The sweep, and what it settled
+
+Seeds 1–3 were run at identical settings. `prob` mean R²:
+
+| seed | R² | spacing CV | trained − scrambled |
+|---|---|---|---|
+| 0 | 0.760 | 3.70 | 0.153 |
+| 1 | **0.863** | 1.42 | 0.050 |
+| 2 | 0.704 | 2.89 | 0.209 |
+| 3 | **0.693** | 1.24 | 0.220 |
+
+**Spread 0.169, sd 0.078 — so no single control value is quotable, including
+0.760.** Worse for the comparison it exists to support: the learned contribution
+at `prob` ranges 0.050 to 0.220 depending only on which permutation was drawn.
+A one-seed control does not measure it, and the four values straddle the 0.60 in
+[Method](../../wiki/Method.md) rather than confirming or refuting it.
+
+The spacing CV moves with it, 1.24 to 4.15, and not in step with R²: seed 1 has
+both the highest R² and a low CV (a genuinely straighter response), while seed 3
+has the lowest R² *and* a low CV. So the scrambled net's behaviour is not one
+phenomenon with a noisy estimate — different permutations differ in kind.
+
+**Caveat on what was varied.** At the code version these ran on, `--seed` drove
+both the weight permutation and the orientation/phase draws, so the sweep moved
+both together. Sampling is unlikely to explain much of it: at a fixed seed,
+going 50 → 250 reps moved this value only 0.760 → 0.768. But that is an
+argument, not an isolation. `--scramble-seed` now exists precisely so the next
+sweep can hold the draws fixed and vary only the permutation.
 
 ## Reproduce
 

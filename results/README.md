@@ -9,7 +9,10 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`vgg19-r250-s0`](vgg19-r250-s0/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | **0.928** (`classifier.3`) | The documented grid. Disagrees with Method.md on three counts. |
 | [`vgg19-scramble-r250-s0`](vgg19-scramble-r250-s0/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 0.924 (`features.19`) | Control. Exceeds the trained net at the early/middle taps. |
 | [`vgg19-r50-s0-in1k`](vgg19-r50-s0-in1k/notes.md) | VGG-19, trained | 50 | `IMAGENET1K_V1` | 0.921 (`classifier.3`) | Separates weight lineage from reps: lineage is the cause. |
-| [`vgg19-scramble-r50-s0-in1k`](vgg19-scramble-r50-s0-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.924 (`features.19`) | Control, seed 0. Matches the r250 control, not the Caffe one. |
+| [`vgg19-scramble-r50-s0-in1k`](vgg19-scramble-r50-s0-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.924 (`features.19`) | Control, seed 0, and the seed-sweep write-up. |
+| [`vgg19-scramble-r50-s1-in1k`](vgg19-scramble-r50-s1-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.941 (`features.19`) | Seed 1. `prob` 0.863 — the high end. |
+| [`vgg19-scramble-r50-s2-in1k`](vgg19-scramble-r50-s2-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.920 (`features.19`) | Seed 2. `prob` 0.704. |
+| [`vgg19-scramble-r50-s3-in1k`](vgg19-scramble-r50-s3-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.843 (`features.19`) | Seed 3. `prob` 0.693 — the low end. |
 | [`vgg19-r50-s0`](vgg19-r50-s0/notes.md) | VGG-19, trained | 50 | converted Caffe | 0.976 (`prob`) | The outlier. Its checkpoint, not its reps, is why. |
 | [`vgg19-scramble-r50-s0`](vgg19-scramble-r50-s0/notes.md) | VGG-19, scrambled | 50 | converted Caffe | 0.428 (`prob`) | Control. Sits 0.33 below both `IMAGENET1K_V1` controls. |
 

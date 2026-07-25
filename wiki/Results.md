@@ -45,6 +45,28 @@ grossly non-uniform spacing — the scrambled response is a spike at the top
 contrast that a straight line happens to fit, not an even log ladder. R² alone
 is the wrong summary for that column.
 
+### The scrambled control is not a single number
+
+Four permutations at identical settings (`IMAGENET1K_V1`, 50 reps, seeds 0–3)
+give `prob` mean R² of **0.760, 0.863, 0.704, 0.693** — spread 0.169, sd 0.078.
+
+The consequence is not that the control is noisy, it is that **a one-seed
+control cannot measure what it is for**. The trained net scores 0.913 at these
+settings, so the learned contribution comes out anywhere from **0.050 to 0.220**
+depending only on which permutation was drawn. The four values straddle the 0.60
+in [Method](Method.md) rather than confirming or refuting it, and the earlier
+single values — 0.428 on the Caffe checkpoint, 0.768 at 250 reps — should be
+read as draws from that distribution, not as measurements of a constant.
+
+The spacing CV moves 1.24–4.15 and not in step with R²: seed 1 has the highest
+R² *and* a low CV (genuinely straighter), seed 3 the lowest R² and also a low
+CV. Different permutations differ in kind, not just in estimate.
+
+Caveat: at the code version these ran on, `--seed` drove both the permutation
+and the orientation/phase draws. Sampling is unlikely to explain much — at a
+fixed seed, 50 → 250 reps moved this value 0.760 → 0.768 — but the sweep did
+vary both. `--scramble-seed` now separates them for the next one.
+
 ### Which variable moved it: the checkpoint
 
 Against the `--reps 50` run below, two things changed at once — weight lineage

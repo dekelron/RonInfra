@@ -84,8 +84,9 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
    argmax accuracy — 89.9 % "Samoyed" survives a gain or channel-scaling error
    that would still shift `D`. Compare its activations against `IMAGENET1K_V1`
    layer by layer rather than by classification.
-2. **Vary the scramble seed** before any control value is trusted. Seeds 1–3 at
-   `IMAGENET1K_V1`/50 were dispatched; fold them into the series when they land.
+2. **Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.** The
+   done sweep varied both at once (one flag drove both until now), so it bounds
+   permutation variance rather than isolating it.
 3. **Reconcile `wiki/Method.md` with the measured grid.** Its "Expected results"
    table still states 0.98 at `prob` and calls `prob` the peak; two independent
    `IMAGENET1K_V1` runs say 0.913–0.917 and peak at `classifier.3`. Per rule 4,
@@ -101,9 +102,12 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   reps, changing the checkpoint moves `prob` 0.063 and the control 0.332; at a
   fixed checkpoint, changing reps 5× moves them 0.004 and 0.008. The converted
   Caffe run is the outlier; everything measured on `IMAGENET1K_V1` agrees.
-- The scrambled control reads **0.428** (Caffe, 50), **0.760** (`IMAGENET1K_V1`,
-  50), **0.768** (`IMAGENET1K_V1`, 250) against **0.60** documented — splitting
-  by checkpoint, not sampling. Still one scramble seed each.
+- **The scrambled control is not a single number.** Four permutations at
+  identical settings give `prob` 0.760 / 0.863 / 0.704 / 0.693 — spread 0.169,
+  sd 0.078. The trained net is 0.913 there, so the learned contribution reads
+  anywhere from 0.050 to 0.220 depending on the draw. Treat every single-seed
+  control value (0.428, 0.768, and the documented 0.60) as one sample, and do
+  not quote a trained-minus-scrambled gap from one seed.
 - Runner wall time varies **2.0×** for identical work (58.6 / 69.7 / 116.5 /
   118.4 min over four jobs, byte-identical code). Size any new grid against the
   slow end or it can miss the 6 h cap.

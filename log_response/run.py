@@ -85,6 +85,17 @@ from .provenance import (
 )
 
 
+def _scramble_seed(args) -> int:
+    """The weight-permutation seed, defaulting to the sampling seed.
+
+    Kept separate because they answer different questions: sweeping the
+    permutation measures how much the scrambled control depends on *which*
+    permutation, sweeping the draws measures nuisance noise. Moving both at
+    once conflates them.
+    """
+    return args.seed if args.scramble_seed is None else args.scramble_seed
+
+
 def build_metadata(args, model, result, wall_seconds: float) -> dict:
     """Everything needed to trust and reproduce this run.
 
@@ -102,6 +113,7 @@ def build_metadata(args, model, result, wall_seconds: float) -> dict:
         "model": args.model,
         "scramble": bool(args.scramble),
         "seed": args.seed,
+        "scramble_seed": _scramble_seed(args),
         "device": args.device,
         "layers": list(result.layers),
         "weights": weights,
@@ -157,7 +169,7 @@ def build_model(args):
             prompts=load_prompts(args.prompts) if args.prompts else None,
             device=args.device,
             scramble=args.scramble,
-            scramble_seed=args.seed,
+            scramble_seed=_scramble_seed(args),
             allow_random_init=args.allow_random_init,
         )
     if is_hf:
@@ -168,7 +180,7 @@ def build_model(args):
             device=args.device,
             dtype=args.dtype,
             scramble=args.scramble,
-            scramble_seed=args.seed,
+            scramble_seed=_scramble_seed(args),
         )
     if is_sam:
         return SAMModel(
@@ -178,7 +190,7 @@ def build_model(args):
             dtype=args.dtype,
             mask_decoder=args.mask_decoder,
             scramble=args.scramble,
-            scramble_seed=args.seed,
+            scramble_seed=_scramble_seed(args),
         )
     return TorchvisionModel(
         arch=args.model,
@@ -187,7 +199,7 @@ def build_model(args):
         pretrained=args.weights is None,
         device=args.device,
         scramble=args.scramble,
-        scramble_seed=args.seed,
+        scramble_seed=_scramble_seed(args),
         allow_random_init=args.allow_random_init,
     )
 
@@ -259,7 +271,18 @@ def main(argv=None):
         default=None,
         help="random orient/phase draws per (c,f) cell (default: 250)",
     )
-    p.add_argument("--seed", type=int, default=0, help="RNG / scramble seed")
+    p.add_argument(
+        "--seed", type=int, default=0, help="RNG seed for the orient/phase draws"
+    )
+    p.add_argument(
+        "--scramble-seed",
+        type=int,
+        default=None,
+        help="seed for the within-layer weight permutation (default: --seed). "
+        "Set it independently to separate permutation variance from sampling "
+        "variance -- sweeping --seed alone moves both at once, and the control "
+        "value varies more across permutations than across draws.",
+    )
     p.add_argument(
         "--scramble",
         action="store_true",
