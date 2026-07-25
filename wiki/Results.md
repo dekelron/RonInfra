@@ -86,11 +86,25 @@ whole r250 pattern — peak at `classifier.3`, dip at `logits`, control exceedin
 trained at `features.19` — reproduces at 50 reps.
 
 So the 0.976 that looked like it reproduced the documented 0.98 belongs to the
-converted Oxford/Caffe checkpoint, not to torchvision's. Either the checkpoints
-genuinely differ in this property, or the conversion carries an artifact that
-argmax accuracy cannot see — it was validated at 89.9 % "Samoyed", which a gain
-or channel-scaling error would survive while still shifting `D`. That is the
-open question now.
+converted Oxford/Caffe checkpoint, not to torchvision's. That left two
+explanations: the checkpoints genuinely differ in this property, or the
+conversion carries an artifact.
+
+**The artifact explanation is now ruled out**, at least for the input-side gain
+that was the specific worry. The suspect step was folding caffe preprocessing
+into conv1, because a gain error there rescales a grating's effective contrast
+and slides the contrast-response curve along its own axis — exactly mimicking a
+checkpoint difference, and exactly what argmax accuracy cannot see.
+`python -m log_response.convert_weights --verify` compares the folded conv1
+against a directly-computed caffe path: **relative error 2.9e-8, best-fit gain
+1.000000001**. The fold is an exact linear identity, and conv1 is the only layer
+that touches the input, so no input-gain or channel-scaling error survives
+anywhere in the converted net. `test_preprocessing_fold_is_exact` pins the
+arithmetic offline.
+
+What remains open is the narrower question: do the two checkpoints genuinely
+differ in this property? That needs their activations compared layer by layer,
+on a runner — `IMAGENET1K_V1` is unreachable from the sandbox.
 
 ## VGG-19, verified run
 
@@ -133,7 +147,10 @@ reduced repetition count.
   [Running](Running.md#this-sandbox-weights-are-the-blocker)), same lineage as
   `IMAGENET1K_V1` but not verified bit-identical to it. Conversion was checked
   end-to-end: 89.9 % "Samoyed" on the standard PyTorch test image, all top-5 dog
-  breeds.
+  breeds — and, more to the point, the preprocessing fold is verified exact to
+  2.9e-8 (see above), which argmax accuracy alone could not establish.
+  Regenerate the checkpoint with
+  `python -m log_response.convert_weights --out W.pth --verify`.
 
 ## Synthetic front-end
 

@@ -117,14 +117,29 @@ exits with an error (before the guard described above, it silently fell back to
 random init and reported meaningless numbers). Pass `--weights` with a local
 `state_dict`.
 
-Workaround used for the run in [Results](Results.md): the original Oxford VGG-19
-ImageNet weights are mirrored on `storage.googleapis.com` (reachable) in Keras
-HDF5 form, and convert to a torchvision `state_dict` by transposing kernels
-`(kh,kw,in,out)→(out,in,kh,kw)`, swapping conv1 input channels BGR→RGB,
-reordering the fc1 flatten from `(H,W,C)` to `(C,H,W)`, and folding caffe
-preprocessing into conv1 so the net accepts the repo's normalised RGB input.
-Verify any such conversion before trusting it — classifying a known image is
-enough; a layout or channel-order error yields obvious garbage.
+The original Oxford VGG-19 ImageNet weights are mirrored on
+`storage.googleapis.com` (reachable) in Keras HDF5 form, so one command produces
+a usable checkpoint — this is what `results/vgg19-r50-s0` ran on, and it works on
+a runner too:
+
+```bash
+pip install h5py
+python -m log_response.convert_weights --out vgg19_caffe.pth --verify
+python -m log_response.run --model vgg19 --weights vgg19_caffe.pth --reps 50
+```
+
+It bridges four differences: kernel layout `(kh,kw,in,out)→(out,in,kh,kw)`,
+conv1 input channels BGR→RGB, the fc1 flatten `(H,W,C)→(C,H,W)`, and caffe
+preprocessing (`x*255 − mean`, no std division) folded into conv1 so the net
+takes the repo's normalised RGB input.
+
+`--verify` checks that last one against a directly-computed caffe path and fails
+above 1e-5; it measures **2.9e-8**. That check matters more than it looks: a
+*gain* error in the fold would rescale a grating's effective contrast and slide
+the contrast-response curve along its own axis, which would masquerade as a
+difference between checkpoints. conv1 is the only layer touching the input, so
+its exactness rules that out everywhere. The arithmetic also has an offline test
+(`test_preprocessing_fold_is_exact`).
 
 Other reachable hosts: `pypi.org`, `github.com`, `raw.githubusercontent.com`,
 `storage.googleapis.com`. Check policy state with

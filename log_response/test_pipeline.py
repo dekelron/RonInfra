@@ -624,6 +624,55 @@ def test_pre_activation_taps_survive_inplace_relu():
     assert relu.min() == 0, "post-ReLU output should be rectified"
 
 
+def test_preprocessing_fold_is_exact():
+    """The Caffe->torchvision conv1 fold must introduce no input gain.
+
+    This is the arithmetic under suspicion when a converted checkpoint disagrees
+    with the canonical one: a gain error rescales a grating's effective contrast
+    and slides the whole contrast-response curve along its own axis, which would
+    look exactly like a difference between checkpoints. Checked here against a
+    directly-computed caffe path, on small random tensors so it needs neither
+    h5py nor the 575 MB checkpoint.
+    """
+    from .convert_weights import (
+        CAFFE_MEAN_RGB,
+        IMAGENET_MEAN,
+        IMAGENET_STD,
+        fold_preprocessing,
+    )
+
+    rng = np.random.default_rng(0)
+    weight = rng.normal(size=(4, 3, 3, 3))  # (out, in, kh, kw), RGB input
+    bias = rng.normal(size=4)
+    image = rng.random((3, 16, 16))  # RGB in [0,1]
+
+    folded_w, folded_b = fold_preprocessing(weight, bias)
+
+    def conv(x, w, b):
+        """Valid (unpadded) correlation -- the fold is exact on the interior."""
+        out = np.zeros((w.shape[0], x.shape[1] - 2, x.shape[2] - 2))
+        for o in range(w.shape[0]):
+            for i in range(x.shape[1] - 2):
+                for j in range(x.shape[2] - 2):
+                    out[o, i, j] = (x[:, i : i + 3, j : j + 3] * w[o]).sum() + b[o]
+        return out
+
+    # (a) caffe path: [0,255] RGB minus the caffe mean, original kernel.
+    caffe_x = image * 255.0 - CAFFE_MEAN_RGB[:, None, None]
+    expected = conv(caffe_x, weight, bias)
+
+    # (b) folded path: torchvision-normalised input, folded kernel.
+    norm_x = (image - IMAGENET_MEAN[:, None, None]) / IMAGENET_STD[:, None, None]
+    got = conv(norm_x, folded_w, folded_b)
+
+    scale = np.abs(expected).max()
+    assert np.abs(expected - got).max() / scale < 1e-12, "fold is not exact"
+
+    # A pure gain error would scale one path against the other; pin it at 1.
+    gain = float((expected * got).sum() / (got * got).sum())
+    assert abs(gain - 1.0) < 1e-12, f"input gain {gain} != 1"
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     import unittest

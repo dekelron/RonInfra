@@ -9,7 +9,7 @@
 | `wiki/Results.md` | Measured numbers: the verified VGG-19 run and its scrambled control, the synthetic pipeline check, and open deviations from the documented expectations. |
 | `wiki/Method.md` | The exact procedure — grating definition, contrast/frequency grids, the distance-of-means metric, the regression, caveats, and stronger tests to add. The spec the code is checked against. |
 | `results/` | Committed runs, one directory each: `result.npz` (surfaces), `result.json` (fits), `run.json` (provenance), `notes.md` (prose). `results/README.md` is the index and states the conventions. |
-| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure), `provenance.py` (commit/versions/weight digest), `run.py` (CLI), `test_pipeline.py` (offline tests). |
+| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure), `provenance.py` (commit/versions/weight digest), `convert_weights.py` (Caffe/Keras VGG-19 → torchvision, with the preprocessing fold), `run.py` (CLI), `test_pipeline.py` (offline tests). |
 
 Docs are intentionally few and short. Prefer extending an existing page over
 adding a new one.
@@ -102,11 +102,17 @@ fails without it. Re-run before quoting any early- or middle-layer number.
 
 Ordered. Nothing here is blocking — every quoted number now has a committed run.
 
-1. **Audit the converted Caffe checkpoint.** It is now the only run disagreeing
-   with everything else (see below), and its conversion was validated only by
-   argmax accuracy — 89.9 % "Samoyed" survives a gain or channel-scaling error
-   that would still shift `D`. Compare its activations against `IMAGENET1K_V1`
-   layer by layer rather than by classification.
+1. **Audit the converted Caffe checkpoint — half closed.** The conversion is now
+   `log_response/convert_weights.py`, so the run is reproducible rather than
+   prose. The gain worry specifically is **measured and dead**: `--verify`
+   compares the folded conv1 against a directly-computed caffe path and gets a
+   relative error of 2.9e-8 with a best-fit gain of 1.000000001, and
+   `test_preprocessing_fold_is_exact` pins the arithmetic offline. conv1 is the
+   only layer touching the input, so no input-gain or channel-scaling error
+   survives anywhere. What remains is the *cross-checkpoint* comparison — are
+   Caffe and `IMAGENET1K_V1` genuinely different weights? — which needs a runner,
+   since `IMAGENET1K_V1` is unreachable from the sandbox. Diverging only at the
+   late layers now means a real lineage difference, not a conversion artifact.
 2. **Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.** The
    done sweep varied both at once (one flag drove both until now), so it bounds
    permutation variance rather than isolating it.
