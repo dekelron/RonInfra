@@ -22,7 +22,15 @@ python -m log_response.run --model synthetic --reps 12 --figures out/ # offline 
 python -m log_response.run --model vgg19 --reps 50 --figures out/ --save runs/vgg19
 python -m log_response.run --model vgg19 --reps 50 --scramble         # control
 python -m log_response.run --load runs/vgg19 --figures out/           # re-plot, no model
+python -m log_response.run --load results/vgg19-r50-s0 --panels out/panels.png
 ```
+
+`--panels` writes the summary figure: one column per layer, contrast **linear**
+on the top row and **log** on the bottom with the per-frequency fits. The two
+rows together are the result — on a linear axis every layer looks like the same
+saturating curve, and only the log axis separates the late layers (straight)
+from the early ones (visibly bent). Frequency is encoded as a single-hue
+light→dark ramp, since it is ordered.
 
 Back-ends: `synthetic` (offline), any `torchvision.models` arch, `clip:ViT-B-32`,
 `hf:<model-id>` (generative VLM), `sam[:<model-id>]`. Useful flags: `--reps`

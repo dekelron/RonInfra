@@ -9,7 +9,7 @@
 | `wiki/Results.md` | Measured numbers: the verified VGG-19 run and its scrambled control, the synthetic pipeline check, and open deviations from the documented expectations. |
 | `wiki/Method.md` | The exact procedure — grating definition, contrast/frequency grids, the distance-of-means metric, the regression, caveats, and stronger tests to add. The spec the code is checked against. |
 | `results/` | Committed runs, one directory each: `result.npz` (surfaces), `result.json` (fits), `run.json` (provenance), `notes.md` (prose). `results/README.md` is the index and states the conventions. |
-| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends), `fit.py` (regression), `experiment.py` (driver + save/load), `provenance.py` (commit/versions/weight digest), `run.py` (CLI), `test_pipeline.py` (offline tests). |
+| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure), `provenance.py` (commit/versions/weight digest), `run.py` (CLI), `test_pipeline.py` (offline tests). |
 
 Docs are intentionally few and short. Prefer extending an existing page over
 adding a new one.

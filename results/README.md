@@ -12,6 +12,7 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 Re-fit and re-plot any run without torch, weights, or network:
 
 ```bash
+python -m log_response.run --load results/vgg19-r50-s0 --panels out/panels.png
 python -m log_response.run --load results/vgg19-r50-s0 --figures out/
 ```
 
