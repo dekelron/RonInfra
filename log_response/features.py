@@ -218,7 +218,17 @@ class _TorchBackend(FeatureModel):
                 if isinstance(out, (tuple, list)):  # e.g. blocks returning extras
                     out = out[0]
                 # .float() so half/bfloat16 nets (numpy has no bfloat16) work.
-                self._acts[key] = out.detach().float().cpu().numpy()
+                #
+                # .clone() is load-bearing, not defensive. On CPU with float32
+                # activations .float(), .cpu() and .numpy() are all no-ops that
+                # return a view onto the module's own output storage -- and
+                # torchvision builds VGG/ResNet with nn.ReLU(inplace=True), so
+                # the activation gets overwritten by the next layer before the
+                # forward returns. Without this, every pre-activation tap
+                # silently reports the post-activation values instead: a conv
+                # tap and the ReLU tap after it come back bit-identical, with no
+                # negative values anywhere in the "pre-ReLU" surface.
+                self._acts[key] = out.detach().clone().float().cpu().numpy()
 
             self._hooks.append(modules[name].register_forward_hook(hook))
 

@@ -590,6 +590,40 @@ def test_git_provenance_records_dirty_paths_verbatim():
         assert prov["dirty_files"] == [".hidden"], prov["dirty_files"]
 
 
+def test_pre_activation_taps_survive_inplace_relu():
+    """A conv tap must not come back holding its ReLU's output.
+
+    torchvision builds VGG with ``nn.ReLU(inplace=True)``. On CPU with float32
+    activations, ``.float().cpu().numpy()`` returns a *view* onto the module's
+    own storage, so the in-place ReLU overwrites the captured conv output before
+    the forward returns. The failure is silent and plausible-looking: the conv
+    tap equals the ReLU tap bit-for-bit and its surface simply has no negative
+    values, which reads as a real measurement of a rectified layer.
+    """
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import torchvision  # noqa: F401
+    except Exception as exc:
+        raise unittest.SkipTest(f"torch/torchvision not installed ({exc})")
+
+    from .features import TorchvisionModel
+
+    model = TorchvisionModel(
+        arch="vgg19",
+        pretrained=False,
+        layers=["features.0", "features.1"],
+        allow_random_init=True,
+    )
+    rep = model.represent(np.random.default_rng(0).random((64, 64, 3)))
+    conv, relu = rep["features.0"], rep["features.1"]
+
+    assert not np.array_equal(conv, relu), "conv tap captured its ReLU's output"
+    assert conv.min() < 0, "pre-activation conv output has no negative values"
+    assert relu.min() == 0, "post-ReLU output should be rectified"
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     import unittest

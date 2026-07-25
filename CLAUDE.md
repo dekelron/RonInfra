@@ -75,6 +75,29 @@ Runs come from one of two places, and `run.json` tells them apart after the fact
   minutes apart. Still **check the directory actually arrived** before quoting
   numbers; the artifact is a fallback the sandbox cannot read.
 
+## Pre-activation taps were post-activation until 2026-07-25
+
+Every hooked tap in every run committed before the `--layers all` sweep recorded
+the **post**-activation value, whatever its name said. The hook did
+`out.detach().float().cpu().numpy()`, which on CPU with float32 activations is
+three no-ops and a view onto the module's own storage; torchvision builds VGG
+with `nn.ReLU(inplace=True)`, so the ReLU overwrote the captured conv output
+before the forward returned.
+
+What this does and does not invalidate:
+
+- **`logits` and `prob` are unaffected** — they come from the returned tensor,
+  not from hooks. Every headline number (`prob` 0.917 / 0.976, the control
+  series, the seed sweep, the lineage finding) stands.
+- **`features.0`, `features.19` and `classifier.3` are mislabelled** in the
+  committed runs. They are valid measurements of the *following* ReLU, not of
+  the conv/linear output. Anything read off them as "pre-activation" is wrong.
+- The paper's second representation level is specifically the *before-ReLU*
+  conv1_1 output. It has never actually been measured here.
+
+Fixed by cloning in the hook; `test_pre_activation_taps_survive_inplace_relu`
+fails without it. Re-run before quoting any early- or middle-layer number.
+
 ## Needs doing
 
 Ordered. Nothing here is blocking — every quoted number now has a committed run.
