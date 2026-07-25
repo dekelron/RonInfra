@@ -83,12 +83,33 @@ def environment() -> dict:
     }
 
 
+def state_dict_digest(state) -> str:
+    """A digest of *weights*, stable across machines and re-saves.
+
+    ``torch.save`` is not byte-reproducible -- saving the same tensors twice in
+    one process yields different files -- so a file sha256 cannot answer "did
+    this run use the same checkpoint?". Hashing the tensors themselves can:
+    name, dtype, shape and bytes, in sorted key order.
+    """
+    digest = hashlib.sha256()
+    for key in sorted(state):
+        tensor = state[key].detach().cpu().contiguous()
+        digest.update(key.encode())
+        digest.update(str(tensor.dtype).encode())
+        digest.update(str(tuple(tensor.shape)).encode())
+        digest.update(tensor.numpy().tobytes())
+    return digest.hexdigest()
+
+
 def file_fingerprint(path: str) -> dict:
     """Identify a weights file by content, not by a path that will not survive.
 
     A local ``--weights`` path is meaningless to anyone else and disappears with
-    the machine; the digest is what lets a future run confirm it used the same
-    checkpoint.
+    the machine. Two digests are recorded because they answer different
+    questions: ``sha256`` identifies the *file* (and is not reproducible across
+    re-saves), while ``weights_sha256`` identifies the *tensors* and is what
+    pins a checkpoint -- a regenerated conversion matches on the second and not
+    the first.
     """
     info: dict = {"path": os.path.abspath(path)}
     try:
@@ -101,4 +122,24 @@ def file_fingerprint(path: str) -> dict:
     except OSError as exc:
         info["sha256"] = None
         info["error"] = f"could not hash: {exc}"
+        return info
+
+    # The weights digest needs the file to actually be a torch state_dict; CLIP
+    # checkpoints and hf: directories are not, so say why rather than omitting.
+    try:
+        import torch
+
+        state = torch.load(path, map_location="cpu")
+        if isinstance(state, dict) and "state_dict" in state:
+            state = state["state_dict"]
+        if isinstance(state, dict) and state and all(
+            hasattr(v, "detach") for v in state.values()
+        ):
+            info["weights_sha256"] = state_dict_digest(state)
+        else:
+            info["weights_sha256"] = None
+            info["weights_note"] = "not a flat tensor state_dict; file hash only"
+    except Exception as exc:  # not loadable as a state_dict
+        info["weights_sha256"] = None
+        info["weights_note"] = f"could not read as a state_dict: {exc}"
     return info

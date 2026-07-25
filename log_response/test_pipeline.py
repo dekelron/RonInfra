@@ -673,6 +673,49 @@ def test_preprocessing_fold_is_exact():
     assert abs(gain - 1.0) < 1e-12, f"input gain {gain} != 1"
 
 
+def test_weights_digest_is_stable_across_resaves():
+    """The trust record must survive a re-save; a file hash does not.
+
+    ``torch.save`` is not byte-reproducible, so ``run.json``'s file sha256
+    changes when a conversion is regenerated even though the weights are
+    identical -- which would read as a provenance failure. The weights digest is
+    what actually pins a checkpoint, so it is pinned here.
+    """
+    import os
+    import tempfile
+    import unittest
+
+    try:
+        import torch
+    except ImportError:
+        raise unittest.SkipTest("torch not installed")
+    from .provenance import file_fingerprint, state_dict_digest
+
+    state = {
+        "b.weight": torch.arange(6, dtype=torch.float32).reshape(2, 3),
+        "a.bias": torch.tensor([1.5, -2.0]),
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+        one, two = os.path.join(tmp, "one.pth"), os.path.join(tmp, "two.pth")
+        torch.save(state, one)
+        torch.save(state, two)
+        first, second = file_fingerprint(one), file_fingerprint(two)
+
+        assert first["weights_sha256"] == second["weights_sha256"]
+        assert first["weights_sha256"] == state_dict_digest(state)
+        # Key order must not change the digest; tensor values must.
+        assert state_dict_digest(dict(reversed(list(state.items())))) == state_dict_digest(state)
+        changed = dict(state, **{"a.bias": torch.tensor([1.5, -2.5])})
+        assert state_dict_digest(changed) != state_dict_digest(state)
+
+        # A file that is not a state_dict says so rather than going silent.
+        text = os.path.join(tmp, "not-weights.bin")
+        with open(text, "wb") as fh:
+            fh.write(b"not a checkpoint")
+        info = file_fingerprint(text)
+        assert info["sha256"] and info["weights_sha256"] is None and info["weights_note"]
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     import unittest

@@ -39,6 +39,13 @@ on:
         type: choice
         options: [both, pretrained, scrambled]
         default: both
+      weights:
+        description: "Which checkpoint. 'canonical' = torchvision IMAGENET1K_V1;
+          'caffe' = the original Oxford VGG-19 converted on the runner. The two
+          disagree, so the comparison needs both — vgg19 only."
+        type: choice
+        options: [canonical, caffe]
+        default: canonical
 
 jobs:
   measure:
@@ -72,6 +79,11 @@ jobs:
       NOTES: ${{ inputs.notes }}
       SLUG_SUFFIX: ${{ inputs.slug_suffix }}
       SCRAMBLE: ${{ matrix.scramble }}
+      WEIGHTS: ${{ inputs.weights || 'canonical' }}
+      # Kept out of the workspace so `git add results/<slug>` can never sweep a
+      # 575 MB checkpoint into a commit.
+      CAFFE_H5: ${{ github.workspace }}/../caffe-cache/vgg19_keras.h5
+      CAFFE_PTH: ${{ github.workspace }}/../caffe-cache/vgg19_caffe.pth
 
     steps:
       - uses: actions/checkout@v4
@@ -111,6 +123,29 @@ jobs:
       - name: Verify the pipeline offline
         run: python -m log_response.test_pipeline
 
+      # 575 MB against a ~14 GB disk, and both matrix jobs want the same file,
+      # so cache the HDF5 rather than fetching it twice per dispatch.
+      - name: Cache the Caffe HDF5
+        if: ${{ inputs.weights == 'caffe' }}
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../caffe-cache
+          key: caffe-vgg19-h5-v1
+
+      - name: Fetch and convert the Caffe checkpoint
+        if: ${{ inputs.weights == 'caffe' }}
+        # --verify fails above 1e-5. It is cheap and it guards the one step that
+        # could fake a result: a gain error in the preprocessing fold rescales
+        # effective contrast, sliding the contrast-response curve along its own
+        # axis. Measured at 2.9e-8, but the run should re-establish that rather
+        # than inherit the claim.
+        run: |
+          pip install h5py
+          mkdir -p "$(dirname "$CAFFE_H5")"
+          python -m log_response.convert_weights \
+            --cache "$CAFFE_H5" --out "$CAFFE_PTH" --verify
+          df -BG --output=avail / | tail -1 | tr -d ' ' | xargs echo "disk left:"
+
       # Resolved before the measurement so a name clash costs seconds, not the
       # 12-120 min the grid takes.
       - name: Resolve the run slug
@@ -122,7 +157,11 @@ jobs:
           slug="$slug-r$REPS-s$SEED"
           # A suffix rather than a full override: the variant marker must stay
           # automatic, or the two matrix jobs would write to the same directory.
-          if [ -n "$SLUG_SUFFIX" ]; then slug="$slug-$SLUG_SUFFIX"; fi
+          suffix="$SLUG_SUFFIX"
+          # Weight lineage is a real axis of disagreement, not a footnote, so a
+          # caffe run labels itself rather than relying on the operator to.
+          if [ -z "$suffix" ] && [ "$WEIGHTS" = "caffe" ]; then suffix="caffe"; fi
+          if [ -n "$suffix" ]; then slug="$slug-$suffix"; fi
 
           # The slug encodes model, variant, reps and seed -- but NOT weight
           # lineage, so `vgg19 --reps 50 --seed 0` collides whether the weights
@@ -147,11 +186,14 @@ jobs:
           if [ -z "$notes" ]; then
             notes="$MODEL, reps=$REPS, seed=$SEED"
             if [ "$SCRAMBLE" = "true" ]; then notes="$notes, weights scrambled"; fi
-            notes="$notes; GitHub-hosted runner"
+            notes="$notes; $WEIGHTS weights; GitHub-hosted runner"
           fi
 
           args=(--model "$MODEL" --reps "$REPS" --seed "$SEED"
                 --save-run "results/$slug" --notes "$notes" --figures out/)
+          # run.json records the weights digest, so which checkpoint produced a
+          # run is recoverable from the committed directory alone.
+          if [ "$WEIGHTS" = "caffe" ]; then args+=(--weights "$CAFFE_PTH"); fi
           if [ -n "$FREQUENCIES" ]; then args+=(--frequencies "$FREQUENCIES"); fi
           if [ -n "$LAYERS" ]; then args+=(--layers "$LAYERS"); fi
           if [ "$SCRAMBLE" = "true" ]; then args+=(--scramble); fi

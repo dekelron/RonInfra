@@ -102,21 +102,32 @@ fails without it. Re-run before quoting any early- or middle-layer number.
 
 Ordered. Nothing here is blocking — every quoted number now has a committed run.
 
-1. **Audit the converted Caffe checkpoint — half closed.** The conversion is now
-   `log_response/convert_weights.py`, so the run is reproducible rather than
-   prose. The gain worry specifically is **measured and dead**: `--verify`
-   compares the folded conv1 against a directly-computed caffe path and gets a
-   relative error of 2.9e-8 with a best-fit gain of 1.000000001, and
-   `test_preprocessing_fold_is_exact` pins the arithmetic offline. conv1 is the
-   only layer touching the input, so no input-gain or channel-scaling error
-   survives anywhere. What remains is the *cross-checkpoint* comparison — are
-   Caffe and `IMAGENET1K_V1` genuinely different weights? — which needs a runner,
-   since `IMAGENET1K_V1` is unreachable from the sandbox. Diverging only at the
-   late layers now means a real lineage difference, not a conversion artifact.
-2. **Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.** The
+1. ~~**Audit the converted Caffe checkpoint.**~~ **Done — hypothesis tested and
+   rejected.** Two distinct questions were being run together here; keep them
+   apart:
+
+   - *Is the conversion faithful?* — the audit. **Closed.** The suspect step was
+     folding caffe preprocessing into conv1, because a gain error there rescales
+     a grating's effective contrast and slides the contrast-response curve along
+     its own axis, mimicking a checkpoint difference while argmax accuracy sees
+     nothing. `convert_weights.py --verify` compares the folded conv1 against a
+     directly-computed caffe path: relative error **2.9e-8**, best-fit gain
+     **1.000000001**. conv1 is the only layer touching the input, so no
+     input-gain or channel-scaling error survives anywhere.
+     `test_preprocessing_fold_is_exact` pins the arithmetic offline.
+   - *Do the two checkpoints genuinely differ, and where?* — the science, in
+     item 2 below. The audit result makes this the only live explanation.
+2. **Measure the depth profile on both checkpoints.** Where along depth do Caffe
+   and `IMAGENET1K_V1` diverge? Both halves are now runnable on a runner with
+   the same code: `weights: caffe` on the workflow fetches and converts (the
+   HDF5 is cached, `--verify` re-establishes exactness per run) and auto-suffixes
+   the slug `-caffe` so it cannot collide with an `-in1k` run. Divergence
+   confined to the late layers is a real lineage difference — the conversion
+   explanation is gone.
+3. **Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.** The
    done sweep varied both at once (one flag drove both until now), so it bounds
    permutation variance rather than isolating it.
-3. **Reconcile `wiki/Method.md` with the measured grid.** Its "Expected results"
+4. **Reconcile `wiki/Method.md` with the measured grid.** Its "Expected results"
    table still states 0.98 at `prob` and calls `prob` the peak; two independent
    `IMAGENET1K_V1` runs say 0.913–0.917 and peak at `classifier.3`. Per rule 4,
    do not quietly edit one to match the other — decide which is the claim.
