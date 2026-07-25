@@ -39,13 +39,23 @@ This repository is public, and **standard GitHub-hosted runners are free and
 unmetered on public repositories** — 4 vCPU, 16 GB, with a hard **6 h per job**
 cap that the full VGG-19 grid clears with ~4.5 h to spare.
 
-[`.github/workflows/log-response.yml`](../.github/workflows/log-response.yml) is
-ready to dispatch: Actions → *log-response run* → **Run workflow**, set `model`
-/ `reps` / `frequencies`, and the run's `.npz` surfaces, `.json` fit summary and
-figures come back as a downloadable artifact (90-day retention). It installs the
-CPU-only torch wheel, runs `test_pipeline` first as a smoke check, and stops
-itself at 330 min so the upload step still fires if you dispatch something
-oversized.
+[`.github/workflows/log-response.yml`](../.github/workflows/log-response.yml)
+runs it: Actions → *log-response run* → **Run workflow**, set `model` / `reps` /
+`frequencies`, and the `.npz` surfaces, `.json` fit summary and figures come back
+as a downloadable artifact (90-day retention), with the fit table on the run
+summary page. It installs the CPU-only torch wheel, runs `test_pipeline` first
+as a smoke check, and stops itself at 330 min so the upload still fires if you
+dispatch something oversized.
+
+By default it launches the pretrained run **and** its weight-scrambled control
+as two parallel jobs — that pair is the actual claim (R² ≈ 0.98 vs ≈ 0.60 at
+`prob`), and on free runners the pair costs the same wall-clock as one. The
+`variants` input narrows it to one or the other.
+
+Note that GitHub only registers `workflow_dispatch` once the file is on the
+**default branch**; dispatching a workflow that exists only on a feature branch
+404s. Until this merges to `master`, the branch-scoped `push` trigger is what
+launches it — delete that trigger block once merged.
 
 Pull the artifact and re-fit or re-plot locally for free — no model needed:
 

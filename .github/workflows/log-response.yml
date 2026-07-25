@@ -21,10 +21,19 @@ on:
       layers:
         description: "Comma-separated module names to tap (blank = per-arch default)"
         default: ""
-      scramble:
-        description: "Scramble learned weights within each layer (the control run)"
-        type: boolean
-        default: false
+      variants:
+        description: "Which runs to launch (they go in parallel)"
+        type: choice
+        options: [both, pretrained, scrambled]
+        default: both
+  # GitHub only registers workflow_dispatch once the file is on the default
+  # branch, so until this merges the push trigger is the only way to launch it.
+  # Drop this block after merging; dispatch covers everything then.
+  push:
+    branches: [claude/free-online-compute-r0p8y2]
+    paths:
+      - ".github/workflows/log-response.yml"
+      - "log_response/**"
 
 jobs:
   measure:
@@ -32,14 +41,23 @@ jobs:
     # The runner kills the job at 6 h; stop first so the upload step still runs.
     timeout-minutes: 330
 
+    strategy:
+      fail-fast: false
+      # The pretrained run and its weight-scrambled control are the result as a
+      # pair (R^2 ~0.98 vs ~0.60 at 'prob'), so run both unless asked otherwise.
+      # On a push event `inputs` is empty and this falls through to both.
+      matrix:
+        scramble: ${{ fromJSON(inputs.variants == 'pretrained' && '[false]' || inputs.variants == 'scrambled' && '[true]' || '[false, true]') }}
+
     # Inputs reach the shell as environment variables, never interpolated into
-    # the script text.
+    # the script text. The `||` defaults cover the push trigger, where the
+    # `inputs` context is empty.
     env:
-      MODEL: ${{ inputs.model }}
-      REPS: ${{ inputs.reps }}
+      MODEL: ${{ inputs.model || 'vgg19' }}
+      REPS: ${{ inputs.reps || '250' }}
       FREQUENCIES: ${{ inputs.frequencies }}
       LAYERS: ${{ inputs.layers }}
-      SCRAMBLE: ${{ inputs.scramble }}
+      SCRAMBLE: ${{ matrix.scramble }}
 
     steps:
       - uses: actions/checkout@v4
@@ -72,11 +90,22 @@ jobs:
           if [ "$SCRAMBLE" = "true" ]; then args+=(--scramble); fi
           python -m log_response.run "${args[@]}" 2>&1 | tee run.log
 
+      - name: Summarise on the run page
+        if: always()
+        run: |
+          {
+            echo "## \`$MODEL\`${SCRAMBLE:+ (scramble=$SCRAMBLE)}"
+            echo '```'
+            sed -n '/^layer /,$p' run.log || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload surfaces, fits and figures
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: log-response-${{ github.run_id }}
+          # Artifact names cannot contain '/' or ':', which model specs do.
+          name: log-response-${{ matrix.scramble && 'scrambled' || 'pretrained' }}-${{ github.run_id }}
           path: |
             runs/
             out/
