@@ -47,11 +47,14 @@ the float64 accumulate over every tapped unit — not the forward alone. VGG-19,
 | Path | s / forward | `--reps 50` (5 600) | full `--reps 250` (28 000) |
 |---|---|---|---|
 | This sandbox, 4 cores | 0.170 | ~16 min | ~1 h 20 min |
-| GitHub-hosted runner   | **0.125** | ~12 min | **58 min** (measured) |
+| GitHub-hosted runner   | 0.125–0.250 | 12–23 min | **59–118 min** (measured) |
 
-The GitHub figure is not an estimate: run
-[30148332262](https://github.com/dekelron/RonInfra/actions/runs/30148332262)
-took 58 min 36 s wall for the full grid, 31.3 s per `(contrast, frequency)` cell.
+**Budget for the top of that range, not the middle.** Four measured jobs, all
+the same 28 000-pass grid on the same code at 4 cores, took 58.6, 69.7, 116.5
+and 118.4 min — a 2.0× spread with no code difference (`run_experiment` is
+byte-identical across the two runs). Runner speed varies that much, so a job
+sized against the fast end can miss the 6 h cap. `--reps 1000` would be ~8 h at
+the slow end and is not viable on a standard runner at all.
 
 Other back-ends, scaled from the same sandbox loop: `alexnet` 0.016 s/forward,
 `resnet50` 0.071, `vit_b_16` 0.157, `resnet152` 0.183. `synthetic --reps 12`
@@ -120,11 +123,17 @@ fine** (no egress restriction), so no conversion is needed — `--model vgg19`
 works directly, which is the whole reason to prefer it over the sandbox.
 
 [`.github/workflows/log-response.yml`](../.github/workflows/log-response.yml)
-is the entry point. Actions → *log-response run* → **Run workflow**; it writes
-`results/<slug>/` and uploads it as an artifact, prints the fit table on the run
-summary page, and by default launches the pretrained run and its scrambled
-control as two parallel jobs. Download the artifact, drop the directory into
-`results/`, commit.
+is the entry point. Actions → *log-response run* → **Run workflow**; by default
+it launches the pretrained run and its scrambled control as two parallel jobs,
+prints each fit table on the run summary page, and **commits `results/<slug>/`
+back to the ref it was launched from** — the artifact is the fallback copy, not
+the delivery mechanism, since the sandbox cannot reach the artifact blob host.
+Nothing to download: `git pull` and the run is there.
+
+The commit-back runs on every event, so a dispatch from `master` commits to
+`master`. Both matrix jobs push to the same ref minutes apart; the step rebases
+and retries up to five times, which is how the two r250 directories landed as
+consecutive commits.
 
 Facts worth knowing, measured rather than assumed (the workflow's *Runner facts*
 step prints them on every run):

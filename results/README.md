@@ -4,16 +4,21 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 `D(freq, contrast)` surfaces), `result.json` (fit summary, diffs readably),
 `run.json` (provenance) and `notes.md` (what it was for, what it showed).
 
-| Run | Model | Reps | Best mean R² | Notes |
-|---|---|---|---|---|
-| [`vgg19-r50-s0`](vgg19-r50-s0/notes.md) | VGG-19, trained | 50 | **0.976** (`prob`) | Converted Caffe weights. Partly superseded — see notes. |
-| [`vgg19-scramble-r50-s0`](vgg19-scramble-r50-s0/notes.md) | VGG-19, scrambled | 50 | 0.428 (`prob`) | Control. Three disagreeing values exist — see notes. |
+| Run | Model | Reps | Weights | Best mean R² | Notes |
+|---|---|---|---|---|---|
+| [`vgg19-r250-s0`](vgg19-r250-s0/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | **0.928** (`classifier.3`) | The documented grid. Disagrees with Method.md on three counts. |
+| [`vgg19-scramble-r250-s0`](vgg19-scramble-r250-s0/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 0.924 (`features.19`) | Control. Exceeds the trained net at the early/middle taps. |
+| [`vgg19-r50-s0`](vgg19-r50-s0/notes.md) | VGG-19, trained | 50 | converted Caffe | 0.976 (`prob`) | Partly superseded — see notes. |
+| [`vgg19-scramble-r50-s0`](vgg19-scramble-r50-s0/notes.md) | VGG-19, scrambled | 50 | converted Caffe | 0.428 (`prob`) | Control. Three disagreeing values exist — see notes. |
 
-> **Gap:** the full `--reps 250` grid on `IMAGENET1K_V1` is quoted in
-> [Results](../wiki/Results.md) but its run directories are **not committed
-> here** — that run exists only as a GitHub Actions artifact, which expires.
-> Those numbers currently cannot be re-fit or re-plotted from the repo. Commit
-> `vgg19-r250-s0` and `vgg19-scramble-r250-s0` to close it.
+Note that "best mean R²" is not `prob` for either r250 run — that is the finding,
+not a slip. Read the r250 rows with the spacing CV in their notes: the scrambled
+column reaches 0.76–0.92 with a CV of 3.5–4.1, so a high R² there is a line
+through frequencies that disagree, not an even log ladder.
+
+The r250 pair came from the GitHub path and committed themselves from the job;
+the r50 pair were run in the sandbox on converted weights. `run.json`
+distinguishes them (`environment.platform`, `weights.source`).
 
 Re-fit and re-plot any run without torch, weights, or network:
 

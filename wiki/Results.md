@@ -4,9 +4,20 @@
 
 The documented grid — 14 contrasts × 8 frequencies, **`--reps 250`** — on
 torchvision's **`IMAGENET1K_V1`** (`vgg19-dcbb9e9d.pth`, downloaded on the
-runner, not converted), via GitHub Actions run
-[30148332262](https://github.com/dekelron/RonInfra/actions/runs/30148332262).
-58 min 36 s per variant.
+runner, not converted). Committed as
+[`results/vgg19-r250-s0`](../results/vgg19-r250-s0/notes.md) and
+[`results/vgg19-scramble-r250-s0`](../results/vgg19-scramble-r250-s0/notes.md),
+so every number below re-fits from the repo:
+
+```bash
+python -m log_response.run --load results/vgg19-r250-s0 --panels out/panels.png
+```
+
+Measured twice, on different runner hardware at the same seed — runs
+[30148332262](https://github.com/dekelron/RonInfra/actions/runs/30148332262) and
+[30150601076](https://github.com/dekelron/RonInfra/actions/runs/30150601076) —
+and the two agree to every digit shown here. The committed directories are from
+the latter.
 
 | Layer | Trained | Weights scrambled |
 |---|---|---|

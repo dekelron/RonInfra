@@ -68,33 +68,26 @@ Runs come from one of two places, and `run.json` tells them apart after the fact
   that should be quoted. Standard runners are free and unmetered on this public
   repo, 4 cores, and the full `--reps 250` grid takes 58 min against a 6 h cap.
 
-  **Check that the run's `results/<slug>/` actually landed.** The commit-back
-  step is gated on `github.event_name == 'push'`, and the push trigger only
-  fires on `claude/free-online-compute-r0p8y2` — so a **workflow_dispatch run
-  from master uploads an artifact and commits nothing**. The sandbox cannot
-  download artifacts, so such a run is unreachable from the place that analyses
-  it and expires in 90 days. This has already cost one run (see below); until
-  the gate is widened, commit the directory by hand after a dispatch run.
+  The commit-back step runs on **every** event and pushes `results/<slug>/` to
+  the ref the run was launched from, so a dispatch from `master` commits to
+  `master`. It is verified working — the two r250 directories were pushed by
+  `github-actions[bot]`, and the rebase-retry handled both matrix jobs landing
+  minutes apart. Still **check the directory actually arrived** before quoting
+  numbers; the artifact is a fallback the sandbox cannot read.
 
 ## Needs doing
 
-Ordered. The first two are blocking — the repo currently quotes a result it
-cannot reproduce.
+Ordered. Nothing here is blocking — every quoted number now has a committed run.
 
-1. **Commit the `--reps 250` run directories.** `wiki/Results.md` quotes run
-   [30148332262](https://github.com/dekelron/RonInfra/actions/runs/30148332262)
-   as the headline result, but `results/vgg19-r250-s0/` and
-   `results/vgg19-scramble-r250-s0/` exist on no branch — the data is only in
-   that run's artifact. Download it and commit both directories (~21 KB each).
-   Whoever still has the artifact should do this before it expires; re-running
-   costs 2 × 58 min.
-2. **Widen the commit-back gate** in `.github/workflows/log-response.yml` so a
-   `workflow_dispatch` run from master also commits, not only a push to the
-   feature branch. Then drop the now-redundant push trigger, as its own comment
-   says to. Note this makes CI push to master — worth confirming that is wanted.
-3. **`IMAGENET1K_V1` at `--reps 50`** — the single cell separating "weight
+1. **`IMAGENET1K_V1` at `--reps 50`** — the single cell separating "weight
    lineage" from "repetition count" as the cause of the disagreement below.
-4. **Vary the scramble seed** before any control value is trusted.
+   ~12–23 min on a runner; dispatch it and it commits itself.
+2. **Vary the scramble seed** before any control value is trusted. Three
+   disagreeing values exist and no seed has been repeated.
+3. **Reconcile `wiki/Method.md` with the r250 result.** Its "Expected results"
+   table still states 0.98 at `prob` and calls `prob` the peak; the measured
+   grid says 0.917 and peaks at `classifier.3`. Per rule 4, do not quietly edit
+   one to match the other — decide which is the claim and say why.
 
 ## Open threads
 
@@ -105,6 +98,9 @@ cannot reproduce.
 - The scrambled control has now measured **0.428** (Caffe weights, 50 reps) and
   **0.768** (`IMAGENET1K_V1`, 250 reps) against the **0.60** documented. Three
   values, no seed repeats yet — vary the scramble seed before trusting any.
+- Runner wall time varies **2.0×** for identical work (58.6 / 69.7 / 116.5 /
+  118.4 min over four jobs, byte-identical code). Size any new grid against the
+  slow end or it can miss the 6 h cap.
 - Weight lineage and repetition count changed together between those two runs.
   `IMAGENET1K_V1` at `--reps 50` is the single cell that separates them.
 - R² is a poor summary for the scrambled column: its spacing CV runs 3.5–4.1
