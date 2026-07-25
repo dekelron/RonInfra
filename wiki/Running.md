@@ -61,6 +61,20 @@ Other back-ends, scaled from the same sandbox loop: `alexnet` 0.016 s/forward,
 takes seconds. The `hf:` VLM and `sam:` back-ends are the only ones that really
 want a GPU — a 7B model at 28 000 passes, and SAM's native 1024² input.
 
+`--layers all` taps every leaf module — 43 for VGG-19, both sides of every
+nonlinearity, Dropout skipped since it is the identity in eval mode. It costs
+**1.65×** (85 min against 51 for the full grid), all of it in the float64
+accumulate over 31M units per image rather than in the forward pass. The saved
+surface is still only ~41 KB.
+
+That 1.65× is reducible to ~1.10× by accumulating into torch tensors in place
+instead of `numpy` with a per-layer `.astype(np.float64)`, which currently
+copies 31M values three times per image. It is deliberately not done: the
+committed runs were accumulated in numpy float64 and the point of the wide
+sweep is comparability with them, so correctness outranks the 30 min. Measure
+before adopting it — averaging 250 float32 activations is exactly where a
+narrower accumulator would bite.
+
 Cost is linear in `reps × contrasts × frequencies`, so `--reps` and
 `--frequencies` scale it directly. Reps only average down the orientation/phase
 nuisance within a cell, at `1/√reps`; the 14-point contrast axis the fit runs

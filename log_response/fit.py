@@ -48,6 +48,27 @@ def fit_log_linear(contrast: np.ndarray, response: np.ndarray) -> LinearLogFit:
     return LinearLogFit(slope=float(slope), intercept=float(intercept), r2=r2, n=int(x.size))
 
 
+def fit_linear_in_contrast(contrast: np.ndarray, response: np.ndarray) -> LinearLogFit:
+    """Least-squares fit of ``response = slope * contrast + intercept``.
+
+    The null the log law is judged against: same data, same parameter count,
+    raw contrast instead of its logarithm. ``slope``/``intercept`` are in
+    contrast units here, so only ``r2`` is comparable with ``fit_log_linear``.
+    """
+    contrast = np.asarray(contrast, dtype=np.float64)
+    response = np.asarray(response, dtype=np.float64)
+    if contrast.size < 2:
+        raise ValueError("need at least two points to fit")
+    slope, intercept = np.polyfit(contrast, response, 1)
+    pred = slope * contrast + intercept
+    ss_res = float(np.sum((response - pred) ** 2))
+    ss_tot = float(np.sum((response - np.mean(response)) ** 2))
+    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
+    return LinearLogFit(
+        slope=float(slope), intercept=float(intercept), r2=r2, n=int(contrast.size)
+    )
+
+
 @dataclass
 class LayerLogResult:
     """Log-response summary for one layer.
@@ -70,6 +91,56 @@ class LayerLogResult:
         propagated, matching the spacing-CV column in the experiment report.
         """
         return float(np.nanmean([f.r2 for f in self.per_frequency]))
+
+    @property
+    def logness(self) -> float:
+        """Does the response follow log contrast or raw contrast? In [-1, +1].
+
+        ``R2_log - R2_linear``, averaged over frequencies: -1 is a perfectly
+        linear-in-contrast response, +1 perfectly linear in log contrast, 0
+        either a tie or noise.
+
+        R^2 alone cannot answer this. Any monotone rising response scores high
+        against *both* regressors -- conv1_1 reaches 0.94 against raw contrast
+        while scoring 0.55 against log contrast, so its low log-R^2 reads as a
+        weak response when the layer is in fact near-perfectly linear, which is
+        what a linear filter must do. Differencing cancels the shared "it rises"
+        variance and leaves only the shape.
+
+        Normalised by total variance rather than by the residuals: the ratio
+        form ``(RSS_lin - RSS_log)/(RSS_lin + RSS_log)`` is the same comparison
+        and equals ``-tanh(dAIC/2n)``, but its denominator shrinks as both fits
+        improve, which measured 2.4x noisier across scramble seeds.
+
+        Both models carry two parameters on identical data, so AIC and BIC
+        differences reduce to the plain likelihood ratio -- no complexity
+        penalty enters the comparison.
+        """
+        return float(np.nanmean([
+            f.r2 - lin.r2 for f, lin in zip(self.per_frequency, self._linear_fits)
+        ]))
+
+    @property
+    def fit_quality(self) -> float:
+        """Best R^2 of either law, in [0, 1] -- the companion to ``logness``.
+
+        ``logness`` is 0 both when the two laws fit equally well and when
+        neither fits at all; one scalar cannot separate those. This says which:
+        near 1 the response is well described and the laws are simply hard to
+        tell apart, near 0 nothing describes it.
+        """
+        return float(np.nanmean([
+            max(f.r2, lin.r2)
+            for f, lin in zip(self.per_frequency, self._linear_fits)
+        ]))
+
+    @property
+    def _linear_fits(self) -> list[LinearLogFit]:
+        """The same OLS against raw contrast, for the ``logness`` comparison."""
+        return [
+            fit_linear_in_contrast(self.contrasts, self.response[fi])
+            for fi in range(self.response.shape[0])
+        ]
 
 
 def summarise_layer(

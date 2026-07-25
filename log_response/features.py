@@ -327,9 +327,31 @@ class TorchvisionModel(_TorchBackend):
 
         self.net.eval().to(self.device)
 
+        if layers == ["all"]:
+            layers = self._all_layers()
         self.layers = layers or self._default_layers(arch)
         self._init_hooks()
         self._register(self.layers)
+
+    def _all_layers(self) -> list[str]:
+        """Every leaf module, so the depth profile is sampled continuously.
+
+        Both sides of each nonlinearity are included -- a Conv2d output is the
+        pre-activation and the ReLU that follows it the post-activation -- which
+        is the point: it locates *where* along the network the response changes
+        shape, rather than sampling three points and interpolating.
+
+        Dropout is skipped: it is the identity in eval mode, so it would
+        duplicate the preceding layer's surface exactly.
+        """
+        import torch.nn as nn
+
+        return [
+            name
+            for name, module in self.net.named_modules()
+            if not list(module.children())
+            and not isinstance(module, (nn.Dropout, nn.Dropout2d))
+        ]
 
     def _default_layers(self, arch: str) -> list[str]:
         # A spread from early to end computation. 'logits'/'prob' are appended in

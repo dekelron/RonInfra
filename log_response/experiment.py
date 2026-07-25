@@ -49,7 +49,10 @@ class ExperimentResult:
         lines.append(f"repetitions per cell (random orient/phase): {self.repetitions}")
         lines.append("")
         name_w = max(14, max(len(layer) for layer in self.layers) + 2)
-        header = f"{'layer':<{name_w}}{'mean R^2':>10}{'pooled R^2':>12}{'spacing CV':>12}"
+        header = (
+            f"{'layer':<{name_w}}{'mean R^2':>10}{'pooled R^2':>12}{'spacing CV':>12}"
+            f"{'logness':>10}{'quality':>9}"
+        )
         lines.append(header)
         lines.append("-" * len(header))
         log_c = np.log10(contrasts)
@@ -62,7 +65,17 @@ class ExperimentResult:
             cv = float(np.nanmean(cvs))
             lines.append(
                 f"{layer:<{name_w}}{res.mean_r2:>10.3f}{res.pooled.r2:>12.3f}{cv:>12.3f}"
+                f"{res.logness:>+10.3f}{res.fit_quality:>9.3f}"
             )
+        lines.append("")
+        lines.append(
+            "logness: -1 response linear in contrast, +1 linear in log contrast, "
+            "0 tie or noise."
+        )
+        lines.append(
+            "quality: best R^2 of either law -- read logness 0 as 'tie' when "
+            "high, 'noise' when low."
+        )
         return "\n".join(lines)
 
 
