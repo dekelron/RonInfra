@@ -85,6 +85,31 @@ from .provenance import (
 )
 
 
+def parse_contrasts(spec: str) -> tuple[float, ...]:
+    """Parse ``--contrasts``: an explicit list, or ``linear[:N]``.
+
+    ``linear`` spans the same endpoints as the default grid but samples them
+    evenly rather than geometrically, so the two differ only in *where* the
+    contrast axis is sampled. Running both is the way to tell a linear-vs-log
+    verdict that comes from the network from one that comes from the grid.
+    """
+    from .gratings import CONTRASTS
+
+    spec = spec.strip()
+    if spec == "linear" or spec.startswith("linear:"):
+        n = int(spec.split(":", 1)[1]) if ":" in spec else len(CONTRASTS)
+        if n < 2:
+            raise SystemExit("--contrasts linear:N needs N >= 2")
+        import numpy as np
+
+        values = tuple(float(v) for v in np.linspace(min(CONTRASTS), max(CONTRASTS), n))
+    else:
+        values = tuple(float(s) for s in spec.split(",") if s.strip())
+    if len(values) < 2 or any(not 0.0 < v <= 1.0 for v in values):
+        raise SystemExit("--contrasts needs >= 2 values in (0, 1]")
+    return values
+
+
 def _scramble_seed(args) -> int:
     """The weight-permutation seed, defaulting to the sampling seed.
 
@@ -258,6 +283,16 @@ def main(argv=None):
         help="comma-separated spatial frequencies in cycles/image "
         "(default: the full 8-frequency grid; shrink for expensive models)",
     )
+    p.add_argument(
+        "--contrasts",
+        default=None,
+        help="comma-separated Michelson contrasts, or 'linear[:N]' for N values "
+        "evenly spaced over the default range (default: the 14 log-spaced "
+        "values). The default grid is log-spaced, which hands the log law "
+        "evenly-spread leverage and bunches the linear law's points near zero -- "
+        "re-running on a linear grid is how you find out whether a linear-vs-log "
+        "verdict came from the data or from the sampling",
+    )
     p.add_argument("--device", default="cpu")
     p.add_argument(
         "--size",
@@ -375,6 +410,8 @@ def main(argv=None):
         if not freqs or any(f <= 0 for f in freqs):
             raise SystemExit("--frequencies needs positive cycles/image values")
         cfg_kwargs["frequencies_cpi"] = freqs
+    if args.contrasts:
+        cfg_kwargs["contrasts"] = parse_contrasts(args.contrasts)
     cfg = GratingConfig(**cfg_kwargs)
     print(f"model: {args.model}" + (" (weights scrambled)" if args.scramble else ""))
     if isinstance(model, CLIPModel):

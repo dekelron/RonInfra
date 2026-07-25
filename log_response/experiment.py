@@ -39,8 +39,23 @@ class ExperimentResult:
     def report(self) -> str:
         lines = []
         contrasts = self.config.contrast_array
+        # Say which spacing, rather than assuming: --contrasts linear changes it,
+        # and a linear-vs-log verdict is only trustworthy if you know the grid.
+        # Whichever axis has the more even gaps is the one it was sampled on.
+        # Thresholding log-gap evenness alone misreads the default grid: its
+        # bottom end is not evenly log-spaced (test_contrast_grid skips the
+        # first three gaps for the same reason).
+        def _cv(values: np.ndarray) -> float:
+            gaps = np.diff(values)
+            return float(gaps.std() / abs(gaps.mean())) if gaps.mean() else np.inf
+
+        spacing = (
+            "log-spaced"
+            if _cv(np.log10(contrasts)) < _cv(contrasts)
+            else "linearly spaced"
+        )
         lines.append(
-            f"contrasts: {len(contrasts)} log-spaced, "
+            f"contrasts: {len(contrasts)} {spacing}, "
             f"{contrasts.min():.4g} .. {contrasts.max():.4g}"
         )
         lines.append(
