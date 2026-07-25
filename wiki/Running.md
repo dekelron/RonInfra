@@ -17,7 +17,7 @@ CUDA/triton packages that are dead weight on a CPU box (measured: 2.7 GB
 ## Commands
 
 ```bash
-python -m log_response.test_pipeline                                  # 14 tests, no weights
+python -m log_response.test_pipeline                                  # fast check, no weights
 python -m log_response.run --model synthetic --reps 12 --figures out/ # offline check
 python -m log_response.run --model vgg19 --reps 50 --figures out/ --save runs/vgg19
 python -m log_response.run --model vgg19 --reps 50 --scramble         # control
