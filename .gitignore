@@ -1,2 +1,13 @@
 __pycache__/
 *.pyc
+
+# Figures are ~100x larger than the surfaces that generate them and regenerate
+# with `--load`, so they are never committed. Results themselves live in
+# results/ and ARE committed (see results/README.md).
+*.png
+out*/
+runs/
+
+# Console capture from a backgrounded run (wiki/Running.md) and from the
+# workflow; the run itself is preserved in results/, not here.
+run.log

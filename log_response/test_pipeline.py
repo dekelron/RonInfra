@@ -58,7 +58,8 @@ from .features import (
     parse_hf_spec,
     parse_sam_spec,
 )
-from .experiment import run_experiment, save_result, load_result
+from .experiment import run_experiment, save_result, save_run_dir, load_result
+from .provenance import git_provenance, package_versions
 
 
 def test_grating_mean_and_contrast():
@@ -419,6 +420,140 @@ def test_sam_backend_tiny_offline():
     result = run_experiment(md, cfg, repetitions=2, verbose=False)
     assert "iou_scores" in result.layers
     md.close()
+
+
+def test_torchvision_refuses_random_init_by_default():
+    """The critical guard: an untrained net must fail loudly, not silently.
+
+    A blocked weight download used to fall back to random init with only a
+    warning, so the run reported plausible-looking meaningless numbers. Both the
+    refusal and the opt-in escape hatch are pinned here.
+    """
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import torchvision  # noqa: F401
+    except ImportError:
+        raise unittest.SkipTest("torch/torchvision not installed")
+    from .features import TorchvisionModel
+
+    # pretrained=False without an explicit opt-in is refused.
+    try:
+        TorchvisionModel(arch="vgg11", pretrained=False)
+    except RuntimeError as exc:
+        assert "random" in str(exc).lower()
+    else:
+        raise AssertionError("expected RuntimeError for an untrained net")
+
+    # The opt-in works and is honestly labelled.
+    m = TorchvisionModel(arch="vgg11", pretrained=False, allow_random_init=True)
+    assert m.weights_ok is False
+    assert "random" in m.weights_source
+    m.close()
+
+
+def test_synthetic_reports_weights_not_applicable():
+    """Weight-free is None ('does not apply'), never False ('untrained')."""
+    model = SyntheticFrontEnd()
+    assert model.weights_ok is None
+    assert "synthetic" in model.weights_source
+
+
+def test_save_run_dir_records_provenance():
+    """A committed run must carry commit, versions and weight state."""
+    import json
+    import os
+    import tempfile
+
+    model = SyntheticFrontEnd()
+    cfg = GratingConfig(size=64, contrasts=(0.05, 0.2, 1.0), frequencies_cpi=(7.0, 14.0))
+    result = run_experiment(model, cfg, repetitions=2, verbose=False)
+
+    metadata = {
+        "model": "synthetic",
+        "command": "python -m log_response.run --model synthetic",
+        "weights": {"pretrained_verified": None, "source": "synthetic (weight-free)"},
+        "code": git_provenance(),
+        "versions": package_versions(),
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+        run_dir = os.path.join(tmp, "synthetic-r2-s0")
+        written = save_run_dir(result, run_dir, metadata, notes="pipeline check")
+        for key in ("npz", "json", "run", "notes"):
+            assert os.path.exists(written[key]), key
+
+        with open(written["run"], encoding="utf-8") as fh:
+            saved = json.load(fh)
+        assert saved["weights"]["pretrained_verified"] is None
+        assert "numpy" in saved["versions"]
+        assert "pipeline check" in open(written["notes"], encoding="utf-8").read()
+
+        # The directory itself reloads, and re-fits identically.
+        reloaded, meta = load_result(run_dir)
+        assert reloaded.layers == result.layers
+        for layer in result.layers:
+            assert np.allclose(reloaded.surfaces[layer], result.surfaces[layer])
+
+        # notes.md is never clobbered once written up.
+        with open(written["notes"], "w", encoding="utf-8") as fh:
+            fh.write("hand-written analysis")
+        save_run_dir(result, run_dir, metadata)
+        assert open(written["notes"], encoding="utf-8").read() == "hand-written analysis"
+
+
+def test_git_provenance_reports_unavailability_explicitly():
+    """A missing field must never look like a clean one."""
+    prov = git_provenance()
+    assert "available" in prov
+    if prov["available"]:
+        assert len(prov["commit"]) == 40 and "dirty" in prov
+    else:
+        assert prov["reason"]
+
+
+def test_git_provenance_records_dirty_paths_verbatim():
+    """The first dirty path must not lose its first character.
+
+    ``git status --porcelain`` encodes index/worktree state in two leading
+    columns, so an unstaged-only change begins with a space. Stripping leading
+    whitespace off the whole output eats that column on the *first* line alone,
+    truncating that one path -- turning `.github/x` into `github/x`, a path that
+    does not exist. A trust record that names the wrong file is worse than one
+    that names none.
+    """
+    import os
+    import shutil
+    import subprocess
+    import tempfile
+    import unittest
+
+    if shutil.which("git") is None:
+        raise unittest.SkipTest("git not available")
+
+    with tempfile.TemporaryDirectory() as tmp:
+
+        def git(*args):
+            subprocess.run(
+                ["git", *args], cwd=tmp, check=True, capture_output=True, text=True
+            )
+
+        git("init", "-q")
+        git("config", "user.email", "test@example.invalid")
+        git("config", "user.name", "test")
+        dotfile = os.path.join(tmp, ".hidden")
+        with open(dotfile, "w") as fh:
+            fh.write("one\n")
+        git("add", ".hidden")
+        git("commit", "-qm", "seed")
+
+        # Unstaged edit only -> the porcelain line is exactly " M .hidden".
+        with open(dotfile, "w") as fh:
+            fh.write("two\n")
+
+        prov = git_provenance(tmp)
+        assert prov["available"] and prov["dirty"], prov
+        assert prov["dirty_files"] == [".hidden"], prov["dirty_files"]
 
 
 def _run_all():

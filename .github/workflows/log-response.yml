@@ -1,10 +1,12 @@
 name: log-response run
 
-# Runs the log-contrast-response measurement on a GitHub-hosted runner and
-# uploads the saved surfaces + fit summary + figures as a build artifact.
-# Standard runners are free and unmetered on public repositories; the hard cap
-# is 6 h per job. A full 14x8x250 grid on VGG-19 takes ~1.3 h on the 4-vCPU
-# runner, so the default inputs fit comfortably. See log_response/COMPUTE.md.
+# The GitHub-hosted path for producing a run (the other is the sandbox --
+# see wiki/Running.md). Weights download fine here, so `--model vgg19` works
+# directly with no conversion; the limits are compute, disk and the 6 h job cap.
+#
+# Output is the committable `results/<slug>/` layout, uploaded as an artifact:
+# download it, drop it into results/ and commit. Provenance in run.json records
+# the runner, so a GitHub run and a sandbox run are told apart after the fact.
 
 on:
   workflow_dispatch:
@@ -15,11 +17,17 @@ on:
       reps:
         description: "Random orient/phase draws per (contrast, frequency) cell"
         default: "250"
+      seed:
+        description: "RNG / scramble seed (part of the run slug)"
+        default: "0"
       frequencies:
         description: "Comma-separated cycles/image (blank = the full 8-frequency grid)"
         default: ""
       layers:
         description: "Comma-separated module names to tap (blank = per-arch default)"
+        default: ""
+      notes:
+        description: "One-line description, stored in run.json and notes.md"
         default: ""
       variants:
         description: "Which runs to launch (they go in parallel)"
@@ -41,10 +49,16 @@ jobs:
     # The runner kills the job at 6 h; stop first so the upload step still runs.
     timeout-minutes: 330
 
+    # For the commit-back step below. Artifacts are the fallback, not the
+    # primary channel: the sandbox cannot reach the artifact blob host, so a run
+    # that only uploaded would be unreachable from the place that analyses it.
+    permissions:
+      contents: write
+
     strategy:
       fail-fast: false
       # The pretrained run and its weight-scrambled control are the result as a
-      # pair (R^2 ~0.98 vs ~0.60 at 'prob'), so run both unless asked otherwise.
+      # pair (R^2 ~0.98 vs the control), so run both unless asked otherwise.
       # On a push event `inputs` is empty and this falls through to both.
       matrix:
         scramble: ${{ fromJSON(inputs.variants == 'pretrained' && '[false]' || inputs.variants == 'scrambled' && '[true]' || '[false, true]') }}
@@ -55,8 +69,10 @@ jobs:
     env:
       MODEL: ${{ inputs.model || 'vgg19' }}
       REPS: ${{ inputs.reps || '250' }}
+      SEED: ${{ inputs.seed || '0' }}
       FREQUENCIES: ${{ inputs.frequencies }}
       LAYERS: ${{ inputs.layers }}
+      NOTES: ${{ inputs.notes }}
       SCRAMBLE: ${{ matrix.scramble }}
 
     steps:
@@ -67,9 +83,24 @@ jobs:
           python-version: "3.11"
           cache: pip
 
+      # wiki/Running.md quotes runner specs that decide whether a grid fits in
+      # 6 h, so have each run state them rather than trusting the doc.
+      - name: Runner facts
+        run: |
+          echo "cores:  $(nproc)"
+          echo "memory: $(free -g | awk '/^Mem:/ {print $2}') GB"
+          echo "disk:   $(df -BG --output=avail / | tail -1 | tr -d ' ') free"
+
+      # The VGG-19 checkpoint is ~550 MB; without this every run re-downloads it.
+      - name: Cache torch hub weights
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/torch
+          key: torch-hub-${{ env.MODEL }}
+
       - name: Install CPU-only deps
-        # The CPU wheel is a fraction of the default CUDA build's size. Only the
-        # deps the chosen back-end needs get installed.
+        # The CPU wheel index matters: plain `pip install torch` pulls ~3.4 GB of
+        # CUDA/triton packages onto a 14 GB disk for no benefit on a CPU runner.
         run: |
           python -m pip install --upgrade pip
           pip install numpy matplotlib
@@ -84,30 +115,77 @@ jobs:
 
       - name: Run the measurement
         run: |
-          args=(--model "$MODEL" --reps "$REPS" --save runs/run --figures out/)
+          # results/ slug convention: <model>[-<variant>]-r<reps>-s<seed>,
+          # with the model spec reduced to slug-safe characters.
+          slug=$(printf '%s' "$MODEL" | tr -c 'a-zA-Z0-9' '-' | sed 's/-\{1,\}/-/g; s/^-//; s/-$//')
+          if [ "$SCRAMBLE" = "true" ]; then slug="$slug-scramble"; fi
+          slug="$slug-r$REPS-s$SEED"
+          echo "SLUG=$slug" >> "$GITHUB_ENV"
+
+          notes="$NOTES"
+          if [ -z "$notes" ]; then
+            notes="$MODEL, reps=$REPS, seed=$SEED"
+            if [ "$SCRAMBLE" = "true" ]; then notes="$notes, weights scrambled"; fi
+            notes="$notes; GitHub-hosted runner"
+          fi
+
+          args=(--model "$MODEL" --reps "$REPS" --seed "$SEED"
+                --save-run "results/$slug" --notes "$notes" --figures out/)
           if [ -n "$FREQUENCIES" ]; then args+=(--frequencies "$FREQUENCIES"); fi
           if [ -n "$LAYERS" ]; then args+=(--layers "$LAYERS"); fi
           if [ "$SCRAMBLE" = "true" ]; then args+=(--scramble); fi
+
           python -m log_response.run "${args[@]}" 2>&1 | tee run.log
 
       - name: Summarise on the run page
         if: always()
         run: |
           {
-            echo "## \`$MODEL\`${SCRAMBLE:+ (scramble=$SCRAMBLE)}"
+            echo "## \`$MODEL\`${SCRAMBLE:+ (scramble=$SCRAMBLE)} — \`results/${SLUG:-?}\`"
             echo '```'
             sed -n '/^layer /,$p' run.log || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload surfaces, fits and figures
+      # results/ is committed by convention (results/README.md), and a surface is
+      # a few KB regardless of --reps. Pushing it here is what makes a runner
+      # result reachable from the sandbox, which cannot download artifacts.
+      # results/ is not in the push trigger's paths, so this cannot loop.
+      - name: Commit the run into results/
+        if: success() && github.event_name == 'push'
+        run: |
+          if [ ! -d "results/$SLUG" ]; then
+            echo "no results/$SLUG to commit"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "results/$SLUG"
+          if git diff --cached --quiet; then
+            echo "results/$SLUG already committed, unchanged"; exit 0
+          fi
+          git commit -q -m "Add results/$SLUG (run ${GITHUB_RUN_ID})"
+          # The two matrix jobs finish minutes apart and push to the same
+          # branch, so rebase onto whatever landed first before retrying.
+          for attempt in 1 2 3 4 5; do
+            if git push origin "HEAD:$GITHUB_REF_NAME"; then
+              echo "pushed on attempt $attempt"; exit 0
+            fi
+            sleep $((attempt * 5))
+            git pull --rebase --autostash origin "$GITHUB_REF_NAME"
+          done
+          echo "::error::could not push results/$SLUG after 5 attempts"
+          exit 1
+
+      - name: Upload the run directory
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          # Artifact names cannot contain '/' or ':', which model specs do.
-          name: log-response-${{ matrix.scramble && 'scrambled' || 'pretrained' }}-${{ github.run_id }}
+          # Artifact names cannot contain '/' or ':', which model specs can.
+          name: run-${{ matrix.scramble && 'scrambled' || 'pretrained' }}-${{ github.run_id }}
+          # results/ is the deliverable; figures are deliberately not committed
+          # (results/README.md) but are useful to eyeball off the artifact.
           path: |
-            runs/
+            results/
             out/
             run.log
           if-no-files-found: warn

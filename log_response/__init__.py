@@ -1,7 +1,7 @@
 """Log-contrast-response experiment.
 
-See METHOD.md for the exact procedure (inputs, metric, fit) and README.md for
-the implementation and how to run it.
+See wiki/Method.md for the exact procedure (inputs, metric, fit) and
+wiki/Running.md for how to run it.
 """
 
 from .gratings import (

@@ -1,8 +1,19 @@
 # RonInfra
 
-[`log_response/`](log_response/) — a runnable Python experiment measuring the
-log-contrast response of ImageNet-trained CNNs. See its
-[README](log_response/README.md) for the implementation,
-[METHOD](log_response/METHOD.md) for the exact procedure, and
-[COMPUTE](log_response/COMPUTE.md) for measured run costs and free ways to run
-it (the full VGG-19 grid is ≈ 1.3 h on 4 CPU cores).
+[`log_response/`](log_response/) — a runnable experiment measuring the
+log-contrast response of ImageNet-trained CNNs: feed sinusoidal gratings at
+log-spaced contrasts, and the mean absolute change in the net's late-layer
+representation is close to linear in `log(contrast)`.
+
+```bash
+pip install numpy matplotlib
+python -m log_response.run --model synthetic --reps 12 --figures out/   # offline, seconds
+```
+
+Docs live in [`wiki/`](wiki/):
+
+| Page | Contents |
+|------|----------|
+| [Running](wiki/Running.md) | Install, back-ends, flags, and per-environment tips (local / sandbox / GitHub runners). |
+| [Results](wiki/Results.md) | Measured numbers, including a verified VGG-19 run. |
+| [Method](wiki/Method.md)   | The exact procedure: inputs, metric, fit, caveats. |

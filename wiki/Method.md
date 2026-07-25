@@ -90,6 +90,10 @@ Controls to run: within-layer weight scrambling; comparison of `logits` vs
 `prob`; comparison of distance-of-means vs mean-of-distances. Inputs 224×224 (or
 227×227 for archs that expect it).
 
+For what a run actually produced against this table, see [Results](Results.md) —
+`prob` reproduces at 0.976, but the scrambled control measured 0.428 rather than
+the 0.60 above.
+
 ## Caveats
 
 * `D = α + β log c` is **not** a power law (`log P = log k + γ log c`), and a high

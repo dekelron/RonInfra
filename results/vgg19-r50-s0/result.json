@@ -1,0 +1,372 @@
+{
+  "metadata": {
+    "provenance_backfilled": true,
+    "provenance_note": "Run predates the provenance capture in run.py; fields reconstructed from the session record, not captured at run time.",
+    "seed": 0,
+    "device": "cpu",
+    "weights": {
+      "pretrained_verified": true,
+      "source": "Oxford VGG-19 ImageNet weights, converted to torchvision layout",
+      "file": {
+        "path": "/home/user/w/vgg19_imagenet_torchvision.pth",
+        "sha256": "bcc31d5d56744e1ca5a1c87185dbb7dd28c301bf58543cc725e899d6b2628e1c",
+        "bytes": 574681781
+      },
+      "conversion": "from Keras/caffe HDF5 (storage.googleapis.com/tensorflow/keras-applications/vgg19/vgg19_weights_tf_dim_ordering_tf_kernels.h5): kernels (kh,kw,in,out)->(out,in,kh,kw); conv1 input channels BGR->RGB; fc1 flatten reordered (H,W,C)->(C,H,W); caffe preprocessing folded into conv1 so the net takes the repo's normalised RGB input",
+      "validation": {
+        "image": "pytorch/hub images/dog.jpg",
+        "top1": "Samoyed",
+        "probability": 0.899,
+        "note": "all top-5 dog breeds; a layout or channel error yields garbage"
+      },
+      "caveat": "same lineage as torchvision IMAGENET1K_V1 but not verified bit-identical to it"
+    },
+    "code": {
+      "available": true,
+      "commit": "4c204e5f9b89a7387248f1c2f7d2ac9789b8c8e2",
+      "commit_note": "log_response/ unmodified at run time",
+      "branch": "master",
+      "dirty": false
+    },
+    "versions": {
+      "python": "3.11.15",
+      "numpy": "2.4.6",
+      "torch": "2.13.0",
+      "torchvision": "0.28.0"
+    },
+    "environment": {
+      "platform": "Linux-6.18.5",
+      "machine": "x86_64",
+      "cpu_count": 4,
+      "wall_seconds": 360
+    },
+    "created_utc": "2026-07-25T06:52:00Z",
+    "model": "vgg19",
+    "scramble": false,
+    "command": "python -m log_response.run --model vgg19 --weights <converted> --reps 50 --save runs/vgg19",
+    "layers": [
+      "features.0",
+      "features.19",
+      "classifier.3",
+      "logits",
+      "prob"
+    ],
+    "notes": "Primary measurement: does the log-contrast response reproduce on a trained ImageNet CNN in this environment?"
+  },
+  "repetitions": 50,
+  "size": 224,
+  "mean": 0.5,
+  "contrasts": [
+    0.0078125,
+    0.015625,
+    0.0234375,
+    0.03125,
+    0.046875,
+    0.0625,
+    0.0859375,
+    0.125,
+    0.1796875,
+    0.2578125,
+    0.359375,
+    0.5,
+    0.71875,
+    1.0
+  ],
+  "frequencies": [
+    1.0,
+    1.75,
+    3.5,
+    7.0,
+    14.0,
+    28.0,
+    56.0,
+    75.0
+  ],
+  "layers": [
+    {
+      "layer": "features.0",
+      "mean_r2": 0.6688401140137565,
+      "pooled_r2": 0.48782221235373247,
+      "pooled_slope": 13.158192436346907,
+      "spacing_cv": 1.2967704696155677,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.6235561890556802,
+          "slope": 4.112456158441676,
+          "intercept": 6.150603381579454
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.6282666586255066,
+          "slope": 4.467146334561977,
+          "intercept": 6.703066829537533
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.6406407223047086,
+          "slope": 5.473961477532467,
+          "intercept": 8.260030388819741
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6591017723189828,
+          "slope": 7.713545410766056,
+          "intercept": 11.727629469530374
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6810010020563875,
+          "slope": 12.289470014842578,
+          "intercept": 18.858761803826972
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.700533622779139,
+          "slope": 20.310104946844206,
+          "intercept": 31.45941361706035
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7109301390973024,
+          "slope": 26.899127313660685,
+          "intercept": 41.9206975034285
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7066908058723451,
+          "slope": 23.999727834125572,
+          "intercept": 37.31472292290366
+        }
+      ]
+    },
+    {
+      "layer": "features.19",
+      "mean_r2": 0.7176834140433621,
+      "pooled_r2": 0.6200726034631985,
+      "pooled_slope": 246.44143336635636,
+      "spacing_cv": 1.186265561056659,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.7071464372819332,
+          "slope": 99.87277854938675,
+          "intercept": 156.14460680138646
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.7301245632029453,
+          "slope": 128.07981608488103,
+          "intercept": 205.8930265100728
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7317441598261107,
+          "slope": 178.6802793275408,
+          "intercept": 296.50030207287244
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7214321328105696,
+          "slope": 239.24777328455355,
+          "intercept": 408.37765508149346
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.7085394090375701,
+          "slope": 290.0577362982688,
+          "intercept": 498.0302389456294
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.7101521148639826,
+          "slope": 296.3880983238832,
+          "intercept": 515.4251141525474
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7122369163718894,
+          "slope": 373.035087542017,
+          "intercept": 629.108915740688
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7200915789518957,
+          "slope": 366.1698975203202,
+          "intercept": 616.0645227359638
+        }
+      ]
+    },
+    {
+      "layer": "classifier.3",
+      "mean_r2": 0.9718357098648833,
+      "pooled_r2": 0.9186783665103583,
+      "pooled_slope": 0.20001464803403457,
+      "spacing_cv": 0.40601231152062445,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9584471861121076,
+          "slope": 0.27605427501621954,
+          "intercept": 0.4941082526385882
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9948739198472133,
+          "slope": 0.27063961789474306,
+          "intercept": 0.5588768046930253
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9896376744366912,
+          "slope": 0.21640765178406576,
+          "intercept": 0.559200922961429
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9716342044746895,
+          "slope": 0.18914133697071758,
+          "intercept": 0.5532255965565895
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9471107322048571,
+          "slope": 0.19797348898169878,
+          "intercept": 0.5781315230442103
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9583395390834349,
+          "slope": 0.15991410052457797,
+          "intercept": 0.49026628158380225
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9723471741719857,
+          "slope": 0.14156651935143985,
+          "intercept": 0.4291338479491063
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9822952485880879,
+          "slope": 0.14842019374881518,
+          "intercept": 0.41972881446147586
+        }
+      ]
+    },
+    {
+      "layer": "logits",
+      "mean_r2": 0.9407619277819879,
+      "pooled_r2": 0.8171883508495286,
+      "pooled_slope": 0.5794964785053303,
+      "spacing_cv": 0.5907541767138577,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.946775269413459,
+          "slope": 0.9469040736973252,
+          "intercept": 1.659733339499068
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9883136971228441,
+          "slope": 0.9277664124890401,
+          "intercept": 1.8690985073079414
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9633931145523125,
+          "slope": 0.5966651148663551,
+          "intercept": 1.5889368922940983
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.884118430848881,
+          "slope": 0.5425167440869766,
+          "intercept": 1.5465454365903881
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8450255579219312,
+          "slope": 0.5702254961256011,
+          "intercept": 1.5865011188469231
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9323949860412565,
+          "slope": 0.3565744143419619,
+          "intercept": 1.242997851351061
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.988971609796693,
+          "slope": 0.34397194694712924,
+          "intercept": 1.1740296352875503
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9771027565585259,
+          "slope": 0.3513476254882539,
+          "intercept": 1.136992339282365
+        }
+      ]
+    },
+    {
+      "layer": "prob",
+      "mean_r2": 0.9759198634678686,
+      "pooled_r2": 0.8845712467715052,
+      "pooled_slope": 0.0005818160284598333,
+      "spacing_cv": 0.42151405135595194,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9635626229725669,
+          "slope": 0.0009188549958080235,
+          "intercept": 0.0016670980368095173
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.984272950361573,
+          "slope": 0.000830079620461788,
+          "intercept": 0.0018050751026395984
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9926617006542117,
+          "slope": 0.0005609181429372717,
+          "intercept": 0.0016719993326253255
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.969853446791902,
+          "slope": 0.0005183616308508614,
+          "intercept": 0.0016986218530275806
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9858151463574126,
+          "slope": 0.0006040497281522043,
+          "intercept": 0.0019090767848726415
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9716423712098305,
+          "slope": 0.0004771312621236593,
+          "intercept": 0.0016738600589821144
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9871761471752519,
+          "slope": 0.00036365594866362915,
+          "intercept": 0.0014448522594886647
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9523745222202007,
+          "slope": 0.0003814768986812296,
+          "intercept": 0.0014034726187833171
+        }
+      ]
+    }
+  ]
+}
