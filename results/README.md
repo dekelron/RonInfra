@@ -36,3 +36,10 @@ New runs write this layout themselves:
 python -m log_response.run --model vgg19 --weights W --reps 250 \
     --save-run results/vgg19-r250-s0 --notes "full grid"
 ```
+
+Runs produced on the GitHub-hosted path
+([workflow](../.github/workflows/log-response.yml)) commit their own directory
+here from the job — the sandbox cannot download Actions artifacts, so CI pushing
+the result is what makes it reachable. Their `run.json` carries the runner's
+provenance, so they are distinguishable from sandbox runs without a naming
+convention for it.

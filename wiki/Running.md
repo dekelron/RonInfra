@@ -40,14 +40,28 @@ Back-ends: `synthetic` (offline), any `torchvision.models` arch, `clip:ViT-B-32`
 ## Cost and wait times
 
 The grid is 14 contrasts × 8 frequencies × `--reps` forward passes, batch-1.
-Measured on 4 CPU cores, VGG-19 at ~0.10 s/forward:
+Per-image cost is the whole driver loop — grating synthesis, the forward, and
+the float64 accumulate over every tapped unit — not the forward alone. VGG-19,
+224², default taps, measured on both paths:
 
-| Run | Forwards | Wall time (4 cores) |
-|---|---|---|
-| `--model synthetic --reps 12` | 1 344 | seconds |
-| `--model vgg19 --reps 50` | 5 600 | ~6 min |
-| `--model vgg19 --reps 50 --scramble` | 5 600 | ~6 min |
-| `--model vgg19` (full, `--reps 250`) | 28 000 | ~30 min (not yet run) |
+| Path | s / forward | `--reps 50` (5 600) | full `--reps 250` (28 000) |
+|---|---|---|---|
+| This sandbox, 4 cores | 0.170 | ~16 min | ~1 h 20 min |
+| GitHub-hosted runner   | **0.125** | ~12 min | **58 min** (measured) |
+
+The GitHub figure is not an estimate: run
+[30148332262](https://github.com/dekelron/RonInfra/actions/runs/30148332262)
+took 58 min 36 s wall for the full grid, 31.3 s per `(contrast, frequency)` cell.
+
+Other back-ends, scaled from the same sandbox loop: `alexnet` 0.016 s/forward,
+`resnet50` 0.071, `vit_b_16` 0.157, `resnet152` 0.183. `synthetic --reps 12`
+takes seconds. The `hf:` VLM and `sam:` back-ends are the only ones that really
+want a GPU — a 7B model at 28 000 passes, and SAM's native 1024² input.
+
+Cost is linear in `reps × contrasts × frequencies`, so `--reps` and
+`--frequencies` scale it directly. Reps only average down the orientation/phase
+nuisance within a cell, at `1/√reps`; the 14-point contrast axis the fit runs
+along is untouched. `--reps 50` explores, `--reps 250` is the reported grid.
 
 Anything past a few minutes should be backgrounded and waited on rather than
 watched — progress prints every ~11 cells:
@@ -101,17 +115,50 @@ Other reachable hosts: `pypi.org`, `github.com`, `raw.githubusercontent.com`,
 
 ## GitHub-hosted runners
 
-Different trade-offs from the sandbox — **weights download fine** (no egress
-restriction), so no conversion is needed; use `--model vgg19` directly. The
-limits are compute and disk:
+The second run path, and the better one for a real grid: **weights download
+fine** (no egress restriction), so no conversion is needed — `--model vgg19`
+works directly, which is the whole reason to prefer it over the sandbox.
 
-- **2 cores** on standard `ubuntu-latest` (4 on larger runners) — roughly double
-  the wall times in the table above. Budget ~15 min for `--reps 50`.
+[`.github/workflows/log-response.yml`](../.github/workflows/log-response.yml)
+is the entry point. Actions → *log-response run* → **Run workflow**; it writes
+`results/<slug>/` and uploads it as an artifact, prints the fit table on the run
+summary page, and by default launches the pretrained run and its scrambled
+control as two parallel jobs. Download the artifact, drop the directory into
+`results/`, commit.
+
+Facts worth knowing, measured rather than assumed (the workflow's *Runner facts*
+step prints them on every run):
+
+- **4 cores, 16 GB** on standard `ubuntu-latest` — that is the *public*
+  repository allocation, and this repo is public. Private repos get 2 cores and
+  are roughly twice as slow. Standard runners are free and unmetered on public
+  repos.
 - **~14 GB disk.** Install the CPU torch wheel; the CUDA packages alone would eat
   a fifth of it.
-- **6 h job limit.** A full `--reps 250` grid at ~1–2 h on 2 cores fits, but keep
-  headroom; prefer sharding over `--frequencies` across matrix jobs.
+- **6 h job limit.** The full `--reps 250` grid takes 58 min, so it fits with
+  ~5 h of headroom — shrink `--reps` rather than sharding `--frequencies`, since
+  nothing merges per-frequency shards back into one surface.
 - Cache both pip and the torch hub weights (`~/.cache/torch`) — the VGG-19
   download is ~550 MB per run otherwise.
-- Upload `runs/*.npz` as an artifact; re-fit and re-plot later with `--load`,
-  which needs neither torch nor the weights.
+- `--load` re-fits and re-plots from the artifact's `result.npz` with neither
+  torch nor weights, so iterate on the analysis locally and for free.
+
+Provenance separates the two paths after the fact: `run.json` records
+`environment.platform`, `cpu_count`, `wall_seconds` and `weights.source`, so a
+runner result (`torchvision vgg19 IMAGENET1K_V1`) is distinguishable from a
+sandbox one (`local state_dict: ...`) without relying on memory.
+
+### When a runner is not enough
+
+Only the GPU back-ends need more than the above. Free options, in order of
+how well they suit an unattended grid:
+
+- **Kaggle notebooks** — ~30 GPU-h/week (T4 ×2 or P100), 12 h sessions, and
+  *Save & Run All* executes headless, so nothing depends on a live tab. The
+  right home for `hf:` and `sam:` runs. Write to `/kaggle/working/`.
+- **Colab** — free T4 under a dynamic quota, but the ~90 min idle timeout keys
+  on browser-tab interaction rather than on whether the code is running. Fine
+  for poking at a short `--reps`, unreliable for a full grid.
+- **Oracle Cloud Always Free** — no wall-clock cap at all, so it suits "slow
+  CPU, just let it grind"; the free Ampere A1 allowance was halved to 2 OCPU /
+  12 GB in June 2026 and capacity is scarce in busy regions.

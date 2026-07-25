@@ -546,6 +546,50 @@ def test_save_panels_writes_a_figure():
         assert os.path.exists(out) and os.path.getsize(out) > 5000
 
 
+def test_git_provenance_records_dirty_paths_verbatim():
+    """The first dirty path must not lose its first character.
+
+    ``git status --porcelain`` encodes index/worktree state in two leading
+    columns, so an unstaged-only change begins with a space. Stripping leading
+    whitespace off the whole output eats that column on the *first* line alone,
+    truncating that one path -- turning `.github/x` into `github/x`, a path that
+    does not exist. A trust record that names the wrong file is worse than one
+    that names none.
+    """
+    import os
+    import shutil
+    import subprocess
+    import tempfile
+    import unittest
+
+    if shutil.which("git") is None:
+        raise unittest.SkipTest("git not available")
+
+    with tempfile.TemporaryDirectory() as tmp:
+
+        def git(*args):
+            subprocess.run(
+                ["git", *args], cwd=tmp, check=True, capture_output=True, text=True
+            )
+
+        git("init", "-q")
+        git("config", "user.email", "test@example.invalid")
+        git("config", "user.name", "test")
+        dotfile = os.path.join(tmp, ".hidden")
+        with open(dotfile, "w") as fh:
+            fh.write("one\n")
+        git("add", ".hidden")
+        git("commit", "-qm", "seed")
+
+        # Unstaged edit only -> the porcelain line is exactly " M .hidden".
+        with open(dotfile, "w") as fh:
+            fh.write("two\n")
+
+        prov = git_provenance(tmp)
+        assert prov["available"] and prov["dirty"], prov
+        assert prov["dirty_files"] == [".hidden"], prov["dirty_files"]
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     import unittest

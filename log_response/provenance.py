@@ -31,7 +31,11 @@ def _git(*args: str, repo: str) -> str | None:
         )
     except (OSError, subprocess.SubprocessError):
         return None
-    return out.stdout.strip()
+    # Trailing newline only: `git status --porcelain` encodes the index/worktree
+    # state in two leading columns, so an unstaged-only change begins with a
+    # space. Stripping leading whitespace would eat that column on the first
+    # line alone and silently truncate the first character of its path.
+    return out.stdout.rstrip("\n")
 
 
 def git_provenance(repo: str | None = None) -> dict:

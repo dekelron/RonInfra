@@ -7,3 +7,7 @@ __pycache__/
 *.png
 out*/
 runs/
+
+# Console capture from a backgrounded run (wiki/Running.md) and from the
+# workflow; the run itself is preserved in results/, not here.
+run.log
