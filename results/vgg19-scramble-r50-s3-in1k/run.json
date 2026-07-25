@@ -1,0 +1,40 @@
+{
+  "code": {
+    "available": true,
+    "branch": "master",
+    "commit": "d446b36e387a2f0d600684ee4fa5d64615a15e6a",
+    "dirty": false,
+    "dirty_files": null
+  },
+  "command": "run.py --model vgg19 --reps 50 --seed 3 --save-run results/vgg19-scramble-r50-s3-in1k --notes Scramble-seed sweep: seed 3 at IMAGENET1K_V1/50 reps, to test whether the control value is stable across seeds --figures out/ --scramble",
+  "created_utc": "2026-07-25T13:08:24Z",
+  "device": "cpu",
+  "environment": {
+    "cpu_count": 4,
+    "executable": "/opt/hostedtoolcache/Python/3.11.15/x64/bin/python",
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    "wall_seconds": 1413.2
+  },
+  "layers": [
+    "features.0",
+    "features.19",
+    "classifier.3",
+    "logits",
+    "prob"
+  ],
+  "model": "vgg19",
+  "notes": "Scramble-seed sweep: seed 3 at IMAGENET1K_V1/50 reps, to test whether the control value is stable across seeds",
+  "scramble": true,
+  "seed": 3,
+  "versions": {
+    "numpy": "2.4.6",
+    "python": "3.11.15",
+    "torch": "2.13.0+cpu",
+    "torchvision": "0.28.0+cpu"
+  },
+  "weights": {
+    "pretrained_verified": true,
+    "source": "torchvision vgg19 IMAGENET1K_V1"
+  }
+}
