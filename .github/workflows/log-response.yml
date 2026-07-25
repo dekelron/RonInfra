@@ -29,6 +29,11 @@ on:
       notes:
         description: "One-line description, stored in run.json and notes.md"
         default: ""
+      slug_suffix:
+        description: "Appended to the computed results/ slug, e.g. 'in1k'. Needed
+          when the default would collide with a run made from different weights —
+          the slug encodes model/variant/reps/seed but not weight lineage."
+        default: ""
       variants:
         description: "Which runs to launch (they go in parallel)"
         type: choice
@@ -65,6 +70,7 @@ jobs:
       FREQUENCIES: ${{ inputs.frequencies }}
       LAYERS: ${{ inputs.layers }}
       NOTES: ${{ inputs.notes }}
+      SLUG_SUFFIX: ${{ inputs.slug_suffix }}
       SCRAMBLE: ${{ matrix.scramble }}
 
     steps:
@@ -105,15 +111,38 @@ jobs:
       - name: Verify the pipeline offline
         run: python -m log_response.test_pipeline
 
-      - name: Run the measurement
+      # Resolved before the measurement so a name clash costs seconds, not the
+      # 12-120 min the grid takes.
+      - name: Resolve the run slug
         run: |
           # results/ slug convention: <model>[-<variant>]-r<reps>-s<seed>,
           # with the model spec reduced to slug-safe characters.
           slug=$(printf '%s' "$MODEL" | tr -c 'a-zA-Z0-9' '-' | sed 's/-\{1,\}/-/g; s/^-//; s/-$//')
           if [ "$SCRAMBLE" = "true" ]; then slug="$slug-scramble"; fi
           slug="$slug-r$REPS-s$SEED"
-          echo "SLUG=$slug" >> "$GITHUB_ENV"
+          # A suffix rather than a full override: the variant marker must stay
+          # automatic, or the two matrix jobs would write to the same directory.
+          if [ -n "$SLUG_SUFFIX" ]; then slug="$slug-$SLUG_SUFFIX"; fi
 
+          # The slug encodes model, variant, reps and seed -- but NOT weight
+          # lineage, so `vgg19 --reps 50 --seed 0` collides whether the weights
+          # are IMAGENET1K_V1 or a converted local checkpoint. Overwriting would
+          # replace a committed run's data while save_run_dir preserves its
+          # notes.md, leaving prose that describes different numbers. Refuse.
+          if [ -e "results/$slug" ]; then
+            echo "::error::results/$slug already exists. The slug does not encode"
+            echo "::error::weight lineage, so this would overwrite a different run's"
+            echo "::error::data while keeping its notes.md. Set the 'slug_suffix'"
+            echo "::error::input (e.g. in1k -> ${slug}-in1k) if this is a distinct run."
+            exit 1
+          fi
+
+          echo "SLUG=$slug" >> "$GITHUB_ENV"
+          echo "will write results/$slug"
+
+      - name: Run the measurement
+        run: |
+          slug="$SLUG"
           notes="$NOTES"
           if [ -z "$notes" ]; then
             notes="$MODEL, reps=$REPS, seed=$SEED"

@@ -30,6 +30,12 @@ python -m log_response.run --load results/vgg19-r50-s0 --figures out/
 ## Conventions
 
 - **Slug**: `<model>[-<variant>]-r<reps>-s<seed>` — the axes that actually vary.
+  It does **not** encode weight lineage, so `vgg19-r50-s0` is ambiguous between
+  the converted Caffe checkpoint and `IMAGENET1K_V1`. When they would collide,
+  append a lineage tag (`-in1k`, `-caffe`); the workflow's `slug_suffix` input
+  does this, and it refuses to start rather than overwrite an existing
+  directory. Overwriting is worse than it looks: `save_run_dir` never clobbers
+  `notes.md`, so the prose would survive while the numbers underneath changed.
 - **Always committed**: the four files above. A surface is
   `n_layers × n_freq × n_contrast` floats — a few KB regardless of `--reps`, so
   even a 28 000-forward run costs ~7 KB. Keep every run.
