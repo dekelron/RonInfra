@@ -356,6 +356,8 @@ def main(argv=None):
             for path in paths:
                 print(f"  {path}")
         if args.panels:
+            # The loaded directory name is the run's identity; put it on the figure.
+            meta = {**meta, "slug": os.path.basename(args.load.rstrip("/"))}
             print()
             print(f"panels: {save_panels(result, args.panels, meta)}")
         return
@@ -437,6 +439,8 @@ def main(argv=None):
         meta = metadata if (args.save or args.save_run) else build_metadata(
             args, model, result, wall_seconds
         )
+        if args.save_run:
+            meta = {**meta, "slug": os.path.basename(args.save_run.rstrip("/"))}
         print()
         print(f"panels: {save_panels(result, args.panels, meta)}")
 

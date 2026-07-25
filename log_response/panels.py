@@ -40,6 +40,44 @@ def frequency_colours(n: int) -> list[str]:
     return [to_hex(cmap(v)) for v in np.linspace(0.0, 1.0, n)]
 
 
+def _identity(result, metadata: dict | None) -> str:
+    """What run this is, in the title.
+
+    Figures travel without their directory -- into a chat, a slide, an issue --
+    and several of them side by side are indistinguishable unless the title
+    itself says which is which. Reps and the scramble flag are the axes that
+    actually vary between runs, so they belong here rather than in fine print.
+    """
+    meta = metadata or {}
+    variant = "weights scrambled" if meta.get("scramble") else "trained"
+    bits = [variant, f"{result.repetitions} reps/cell"]
+    seed = meta.get("scramble_seed") if meta.get("scramble") else meta.get("seed")
+    if seed is None:
+        seed = meta.get("seed")
+    if seed is not None:
+        bits.append(f"seed {seed}")
+    # Lead with the slug: model/variant/reps/seed do not pin a run down on their
+    # own -- two runs differing only in weight lineage share all four -- and the
+    # slug is how results/ names them.
+    head = meta.get("slug") or meta.get("model", "model")
+    return f"{head}  —  " + "  ·  ".join(bits)
+
+
+def _provenance_line(result, metadata: dict | None) -> str:
+    """Which weights and which grid -- the rest of "what am I looking at"."""
+    meta = metadata or {}
+    parts = [meta.get("model", "model")]
+    source = (meta.get("weights") or {}).get("source")
+    if source:
+        parts.append(source)
+    parts.append(
+        f"{len(result.config.contrast_array)} contrasts × "
+        f"{len(result.config.frequency_array)} frequencies"
+    )
+    parts.append(_stamp(metadata))
+    return "  ·  ".join(parts)
+
+
 def _stamp(metadata: dict | None) -> str:
     """Weight state, so a figure that travels alone still says what it is."""
     meta = metadata or {}
@@ -150,15 +188,18 @@ def save_panels(
         cbar.outline.set_edgecolor(GRID)
         cbar.ax.tick_params(length=0)
 
-    model = (metadata or {}).get("model", "model")
     fig.suptitle(
-        f"{title or model} — log-contrast response by layer",
-        color=INK, fontsize=13, x=0.045, ha="left", y=0.985,
+        title or _identity(result, metadata),
+        color=INK, fontsize=14, x=0.045, ha="left", y=1.055, fontweight="bold",
     )
     fig.text(
-        0.045, 0.935,
-        "Top: contrast linear. Bottom: contrast log, with per-frequency fits.  "
-        f"{result.repetitions} reps/cell · {_stamp(metadata)}",
+        0.045, 1.012, _provenance_line(result, metadata),
+        color=INK, fontsize=9.5, ha="left",
+    )
+    fig.text(
+        0.045, 0.975,
+        "Log-contrast response by layer. Top: contrast linear. "
+        "Bottom: contrast log, with per-frequency fits.",
         color=INK_MUTED, fontsize=8.5, ha="left",
     )
 
