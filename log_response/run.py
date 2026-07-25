@@ -76,6 +76,7 @@ from .experiment import (
     save_run_dir,
     load_result,
 )
+from .panels import save_panels
 from .provenance import (
     environment,
     file_fingerprint,
@@ -262,9 +263,16 @@ def main(argv=None):
     p.add_argument(
         "--scramble",
         action="store_true",
-        help="scramble learned weights within each layer (control: R^2 -> 0.60)",
+        help="scramble learned weights within each layer (control: collapses the "
+        "prob-layer R^2; see results/vgg19-scramble-r50-s0)",
     )
     p.add_argument("--figures", default=None, help="directory to write figures into")
+    p.add_argument(
+        "--panels",
+        default=None,
+        help="write the per-layer panel figure to this .png path: one column per "
+        "layer, contrast linear on the top row and log on the bottom",
+    )
     p.add_argument(
         "--save",
         default=None,
@@ -324,6 +332,9 @@ def main(argv=None):
             print("figures:")
             for path in paths:
                 print(f"  {path}")
+        if args.panels:
+            print()
+            print(f"panels: {save_panels(result, args.panels, meta)}")
         return
 
     try:
@@ -396,6 +407,15 @@ def main(argv=None):
         print("figures:")
         for path in paths:
             print(f"  {path}")
+
+    if args.panels:
+        # Reuse the saved metadata when there is one, so the figure's weight-state
+        # stamp matches what was persisted.
+        meta = metadata if (args.save or args.save_run) else build_metadata(
+            args, model, result, wall_seconds
+        )
+        print()
+        print(f"panels: {save_panels(result, args.panels, meta)}")
 
 
 if __name__ == "__main__":

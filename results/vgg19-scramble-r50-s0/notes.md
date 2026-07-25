@@ -29,6 +29,13 @@ The scrambled response is also **~4000× smaller in absolute magnitude** and
 degenerates into a spike at the top contrast rather than a graded curve, so the
 surviving 0.428 is fitting a nearly-flat surface, not a weaker log law.
 
+> **A third value now exists.** The full `--reps 250` grid on `IMAGENET1K_V1`
+> puts this control at 0.768 — see [Results](../../wiki/Results.md). So the
+> control has been measured at 0.428 (here), 0.768 (full grid) and 0.60
+> (documented), and the full grid also has the scrambled net *beating* the
+> trained one at the early and middle taps. Three disagreeing values on the same
+> control is the finding; do not quote any of them as settled.
+
 ## Disagreement with the documented expectation
 
 `wiki/Method.md` documents this control at **0.60**; it measured **0.428**. The

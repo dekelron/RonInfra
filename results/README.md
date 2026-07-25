@@ -6,12 +6,19 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 
 | Run | Model | Reps | Best mean R² | Notes |
 |---|---|---|---|---|
-| [`vgg19-r50-s0`](vgg19-r50-s0/notes.md) | VGG-19, trained | 50 | **0.976** (`prob`) | Primary measurement; reproduces the documented 0.98. |
-| [`vgg19-scramble-r50-s0`](vgg19-scramble-r50-s0/notes.md) | VGG-19, scrambled | 50 | 0.428 (`prob`) | Control. Disagrees with the documented 0.60 — see notes. |
+| [`vgg19-r50-s0`](vgg19-r50-s0/notes.md) | VGG-19, trained | 50 | **0.976** (`prob`) | Converted Caffe weights. Partly superseded — see notes. |
+| [`vgg19-scramble-r50-s0`](vgg19-scramble-r50-s0/notes.md) | VGG-19, scrambled | 50 | 0.428 (`prob`) | Control. Three disagreeing values exist — see notes. |
+
+> **Gap:** the full `--reps 250` grid on `IMAGENET1K_V1` is quoted in
+> [Results](../wiki/Results.md) but its run directories are **not committed
+> here** — that run exists only as a GitHub Actions artifact, which expires.
+> Those numbers currently cannot be re-fit or re-plotted from the repo. Commit
+> `vgg19-r250-s0` and `vgg19-scramble-r250-s0` to close it.
 
 Re-fit and re-plot any run without torch, weights, or network:
 
 ```bash
+python -m log_response.run --load results/vgg19-r50-s0 --panels out/panels.png
 python -m log_response.run --load results/vgg19-r50-s0 --figures out/
 ```
 

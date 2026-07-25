@@ -231,7 +231,10 @@ class _TorchBackend(FeatureModel):
     def _scramble_within_layers(self, seed: int) -> None:
         # Control: permute each weight tensor's own elements (scramble the
         # learned weights within each layer, for every parameter named
-        # '*weight*'). On VGG-19 this drops the prob-layer R^2 ~0.98 -> ~0.60.
+        # '*weight*'). On VGG-19 this collapses the prob-layer R^2 from ~0.98:
+        # wiki/Method.md documents 0.60, one measured run gives 0.428 (see
+        # results/vgg19-scramble-r50-s0/notes.md) -- unreconciled, so no single
+        # number is asserted here.
         torch = self.torch
         gen = torch.Generator().manual_seed(seed)
         with torch.no_grad():

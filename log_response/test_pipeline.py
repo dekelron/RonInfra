@@ -512,6 +512,40 @@ def test_git_provenance_reports_unavailability_explicitly():
         assert prov["reason"]
 
 
+def test_panel_frequency_colours_scale_with_count():
+    """Ordered frequencies get an ordered ramp at any grid size."""
+    from .panels import ORDINAL_STEPS, frequency_colours
+
+    assert frequency_colours(1) == [ORDINAL_STEPS[2]]
+    # At or below the discrete-step count, use the validated steps end to end.
+    for n in range(2, len(ORDINAL_STEPS) + 1):
+        got = frequency_colours(n)
+        assert len(got) == n and len(set(got)) == n
+        assert got[0] == ORDINAL_STEPS[0] and got[-1] == ORDINAL_STEPS[-1]
+    # Past them, interpolate the band -- still monotone, still distinct.
+    for n in (8, 14):
+        got = frequency_colours(n)
+        assert len(got) == n and len(set(got)) == n
+
+
+def test_save_panels_writes_a_figure():
+    import os
+    import tempfile
+
+    model = SyntheticFrontEnd()
+    cfg = GratingConfig(size=64, contrasts=(0.05, 0.2, 1.0), frequencies_cpi=(7.0, 14.0))
+    result = run_experiment(model, cfg, repetitions=2, verbose=False)
+    from .panels import save_panels
+
+    with tempfile.TemporaryDirectory() as tmp:
+        out = save_panels(
+            result,
+            os.path.join(tmp, "sub", "panels.png"),  # nested dir is created
+            {"model": "synthetic", "weights": {"pretrained_verified": None}},
+        )
+        assert os.path.exists(out) and os.path.getsize(out) > 5000
+
+
 def test_git_provenance_records_dirty_paths_verbatim():
     """The first dirty path must not lose its first character.
 

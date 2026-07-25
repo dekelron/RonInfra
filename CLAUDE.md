@@ -5,11 +5,11 @@
 | File | Contents |
 |---|---|
 | `README.md` | Entry point: one-paragraph summary, offline quickstart, index of `wiki/`. Keep short. |
-| `wiki/Running.md` | Install, commands, back-ends, flags; cost/wait-time table; per-environment tips — this sandbox (blocked weight hosts) and GitHub-hosted runners (2 cores, 14 GB disk, 6 h limit). |
+| `wiki/Running.md` | Install, commands, back-ends, flags; cost/wait-time table; per-environment tips — this sandbox (blocked weight hosts) and GitHub-hosted runners (4 cores on this public repo, 14 GB disk, 6 h cap). |
 | `wiki/Results.md` | Measured numbers: the verified VGG-19 run and its scrambled control, the synthetic pipeline check, and open deviations from the documented expectations. |
 | `wiki/Method.md` | The exact procedure — grating definition, contrast/frequency grids, the distance-of-means metric, the regression, caveats, and stronger tests to add. The spec the code is checked against. |
 | `results/` | Committed runs, one directory each: `result.npz` (surfaces), `result.json` (fits), `run.json` (provenance), `notes.md` (prose). `results/README.md` is the index and states the conventions. |
-| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends), `fit.py` (regression), `experiment.py` (driver + save/load), `provenance.py` (commit/versions/weight digest), `run.py` (CLI), `test_pipeline.py` (offline tests). |
+| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure), `provenance.py` (commit/versions/weight digest), `run.py` (CLI), `test_pipeline.py` (offline tests). |
 
 Docs are intentionally few and short. Prefer extending an existing page over
 adding a new one.
@@ -17,12 +17,29 @@ adding a new one.
 ## Working on this repo
 
 - Run from the repo root: `python -m log_response.run`, never as a script.
-- `python -m log_response.test_pipeline` is the fast check — 14 tests, no
+- `python -m log_response.test_pipeline` is the fast check — 21 tests, no
   downloaded weights, runs anywhere.
 - Long runs: background them and wait on the output file rather than watching
-  (see the cost table in `wiki/Running.md`). Always `--save`; the `D(freq,
+  (see the cost table in `wiki/Running.md`). Always `--save-run`; the `D(freq,
   contrast)` surfaces are the expensive product and `--load` re-fits without a
   model.
+
+## Rules
+
+Four, and the first one is the one that has actually been broken:
+
+1. **Every number quoted in a doc must have a committed run behind it.** If you
+   cannot link `results/<slug>/`, do not quote the number. A run that lives only
+   in a CI artifact does not count — artifacts expire, and the sandbox cannot
+   download them. Finish a run by committing its directory.
+2. **Never commit figures.** They are ~100× the surfaces that generate them and
+   regenerate with `--load <run> --panels out/panels.png`. `.gitignore` enforces
+   this; do not add exceptions.
+3. **A new back-end sets `weights_ok` and `weights_source`** (see the trap
+   below). `run.py` reads them to decide whether a run may be saved at all.
+4. **Do not assert a contested number.** Where runs disagree — as they currently
+   do on the scrambled control — state the disagreement and link the runs.
+   Editing one number to match another hides the finding.
 
 ## The trap, and why it is now closed
 
@@ -50,10 +67,36 @@ Runs come from one of two places, and `run.json` tells them apart after the fact
   normally, so `--model vgg19` works directly — this is the path for a run
   that should be quoted. Standard runners are free and unmetered on this public
   repo, 4 cores, and the full `--reps 250` grid takes 58 min against a 6 h cap.
-  The job **commits `results/<slug>/` back to the branch itself**, because the
-  sandbox cannot reach the artifact blob host; the artifact is the fallback copy.
 
-Open threads:
+  **Check that the run's `results/<slug>/` actually landed.** The commit-back
+  step is gated on `github.event_name == 'push'`, and the push trigger only
+  fires on `claude/free-online-compute-r0p8y2` — so a **workflow_dispatch run
+  from master uploads an artifact and commits nothing**. The sandbox cannot
+  download artifacts, so such a run is unreachable from the place that analyses
+  it and expires in 90 days. This has already cost one run (see below); until
+  the gate is widened, commit the directory by hand after a dispatch run.
+
+## Needs doing
+
+Ordered. The first two are blocking — the repo currently quotes a result it
+cannot reproduce.
+
+1. **Commit the `--reps 250` run directories.** `wiki/Results.md` quotes run
+   [30148332262](https://github.com/dekelron/RonInfra/actions/runs/30148332262)
+   as the headline result, but `results/vgg19-r250-s0/` and
+   `results/vgg19-scramble-r250-s0/` exist on no branch — the data is only in
+   that run's artifact. Download it and commit both directories (~21 KB each).
+   Whoever still has the artifact should do this before it expires; re-running
+   costs 2 × 58 min.
+2. **Widen the commit-back gate** in `.github/workflows/log-response.yml` so a
+   `workflow_dispatch` run from master also commits, not only a push to the
+   feature branch. Then drop the now-redundant push trigger, as its own comment
+   says to. Note this makes CI push to master — worth confirming that is wanted.
+3. **`IMAGENET1K_V1` at `--reps 50`** — the single cell separating "weight
+   lineage" from "repetition count" as the cause of the disagreement below.
+4. **Vary the scramble seed** before any control value is trusted.
+
+## Open threads
 
 - **`--reps 250` on `IMAGENET1K_V1` disagrees with `wiki/Method.md` on three
   counts** — `prob` at 0.917 not 0.98, R² peaking at `classifier.3` rather than
