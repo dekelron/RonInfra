@@ -19,6 +19,33 @@
 > re-fit, and `result.json` now carries `lambda`, `lambda_ci`, `lambda_r2`.
 > Which findings changed is stated below.
 
+## λ at a glance
+
+Every 45-tap run, re-fitted from its committed surfaces. λ = 0 is the log law,
+λ = 1 linear in contrast. Interval on `prob` is the 95% profile-F.
+
+| Run | Weights | `features.0` | conv median | `classifier.4` | `prob` | mean R² |
+|---|---|---|---|---|---|---|
+| [`vgg19-r250-s0-alllayers-fixed-caffe`](../results/vgg19-r250-s0-alllayers-fixed-caffe/notes.md) | trained · Caffe | +0.922 | +1.06 | +0.211 | **+0.059** [−0.05, +0.13] | 0.998 |
+| [`vgg19-r250-s0-alllayers-fixed`](../results/vgg19-r250-s0-alllayers-fixed/notes.md) | trained · IN1K | +0.923 | +0.69 | +0.010 | **+0.165** [−0.09, +0.29] | 0.978 |
+| [`vgg19-r250-s0-alllayers-linear`](../results/vgg19-r250-s0-alllayers-linear/notes.md) | trained · IN1K, linear grid | +0.934 | +0.75 | +0.086 | **+0.180** [+0.06, +0.29] | 0.984 |
+| [`vgg19-scramble-r250-s0-alllayers-fixed-caffe`](../results/vgg19-scramble-r250-s0-alllayers-fixed-caffe/notes.md) | scrambled · Caffe | +0.926 | +1.29 | +2.748 | **+2.743** [+2.20, +3.54] | 0.989 |
+| [`vgg19-scramble-r250-s0-alllayers-fixed`](../results/vgg19-scramble-r250-s0-alllayers-fixed/notes.md) | scrambled · IN1K | +0.926 | +0.35 | +0.163 | **+0.169** [−0.18, +0.63] | 0.918 |
+| [`vgg19-scramble-r250-s0-alllayers-linear`](../results/vgg19-scramble-r250-s0-alllayers-linear/notes.md) | scrambled · IN1K, linear grid | +0.934 | +0.35 | +0.123 | **+0.128** [−1.47, +0.77] | 0.869 |
+
+Four things to read off it before the prose:
+
+- **`features.0` is +0.92–0.93 in all six.** A convolution must be linear in the
+  grating's amplitude, so that column is a check on the pipeline, not a result.
+- **The conv median separates the checkpoints** (+1.06 Caffe, +0.69 IN1K) far
+  more than `prob` does.
+- **λ at `prob` does not separate trained from scrambled on IN1K** — +0.165
+  against +0.169. The R² column does (0.978 against 0.918), and the intervals do
+  ([−0.09, +0.29] against [−0.18, +0.63]).
+- **The linear-grid rows track the log-grid rows**, which is the grid control.
+
+Regenerate the whole table with `--load <dir>`; nothing here needs a model.
+
 ## Where the log response appears along depth
 
 All 45 leaf modules, `--reps 250`, both checkpoints, trained and scrambled —

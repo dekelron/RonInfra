@@ -45,9 +45,29 @@ contrast axis the shapes are inverted from the intuition**: the *log* law is the
 straight line and linear-in-contrast bends upward. The axis label says so.
 
 Back-ends: `synthetic` (offline), any `torchvision.models` arch, `clip:ViT-B-32`,
-`hf:<model-id>` (generative VLM), `sam[:<model-id>]`. Useful flags: `--reps`
-(draws per cell, default 250), `--frequencies`, `--layers`, `--device`,
-`--weights` (local `state_dict`), `--save`/`--load`.
+`hf:<model-id>` (generative VLM), `sam[:<model-id>]`.
+
+### Flags
+
+| Flag | What it does |
+|---|---|
+| `--reps N` | Draws per cell, default 250. The cost knob — see the table below. |
+| `--layers all` | Every leaf module (45 on VGG-19) instead of the three-tap default. How the depth profile is measured. |
+| `--frequencies` | Override the 8 spatial frequencies (cycles/image). |
+| `--contrasts linear` | Sample the same contrast endpoints evenly instead of geometrically. The grid control; λ should not move, and [measurably does not](Results.md). |
+| `--size N` | Input side in pixels, default 224. Use 227 for architectures that expect it. Changes the stimulus, so runs at different sizes are not comparable. |
+| `--scramble` | Permute weights within each layer — the control. Pair with `--scramble-seed`, because one permutation is one sample. |
+| `--scramble-seed N` | Permutation seed, independent of `--seed`. Set both explicitly: a sweep that varies them together bounds the wrong thing. |
+| `--weights PATH` | Local `state_dict`. Required in this sandbox, where weight hosts are blocked. |
+| `--device` / `--dtype` | Placement and precision. **Leave `--dtype` alone unless you mean it** — D is accumulated in float64 and every committed run is float64. |
+| `--noise-blocks K` | Split the reps K ways round-robin and report the standard error of D from their spread. Costs no extra forward passes, only K extra accumulators. This is what turns "which law fits better" into "does *any* law fit within measurement error" — it adds a `chi2/dof` column. **No committed run has used it yet.** |
+| `--save` / `--save-run` / `--load` | See *Storing a run* below. |
+| `--notes "..."` | Prose written into the run directory's `notes.md`. `--save-run` never overwrites an existing `notes.md`. |
+| `--allow-random-init` | Deliberate opt-in for an untrained control; stamps `pretrained_verified: false`. |
+| `--quiet` | Suppress the per-cell progress output. |
+
+`--instruction`, `--prompts` and `--mask-decoder` apply only to the VLM and SAM
+back-ends.
 
 ## Cost and wait times
 
@@ -100,11 +120,34 @@ python -m log_response.run --model vgg19 --reps 50 --save runs/vgg19 > run.log 2
 until [ -f runs/vgg19.json ]; do sleep 5; done; tail -20 run.log
 ```
 
-`--save` writes `<base>.npz` (the expensive surfaces) plus `<base>.json` (fit
-summary). Always pass it on a long run so a re-fit or re-plot never recomputes.
-For a run worth keeping, use `--save-run results/<slug>` instead: it writes the
-committable directory layout described in [results/](../results/README.md), with
-full provenance in `run.json`.
+## Storing a run
+
+**The `D(freq, contrast)` surfaces are the expensive product; everything else
+re-derives from them.** A surface is `n_layers × n_freq × n_contrast` float64 —
+a few KB whatever `--reps` was, so even a 28 000-forward run costs ~7 KB. Never
+throw one away, and never recompute a fit you could re-load.
+
+`--save <base>` writes `<base>.npz` (the surfaces) plus `<base>.json` (the fit
+summary). Pass it on any long run.
+
+`--save-run results/<slug>` is what to use for a run worth keeping. It writes
+the committable four-file directory — `result.npz`, `result.json`, `run.json`
+(provenance), `notes.md` — described in [results/](../results/README.md), which
+is also where the slug convention and the "never commit figures" rule live.
+
+`--load <dir-or-base>` re-fits and re-plots from the stored surfaces with no
+model, no weights and no network. This is how every number in
+[Results](Results.md) survived two changes of metric without a single re-run:
+
+```bash
+python -m log_response.run --load results/vgg19-r250-s0-alllayers-fixed-caffe
+python -m log_response.run --load results/vgg19-r250-s0 --figures out/
+```
+
+Two things worth knowing before you overwrite anything: `--save-run` refuses to
+start rather than clobber an existing directory, and it never overwrites an
+existing `notes.md` — so a careless re-run would otherwise leave prose describing
+numbers that had changed underneath it.
 
 ## Trusting a run
 
