@@ -9,7 +9,7 @@
 | `wiki/Results.md` | Measured numbers: the verified VGG-19 run and its scrambled control, the synthetic pipeline check, and open deviations from the documented expectations. |
 | `wiki/Method.md` | The exact procedure — grating definition, contrast/frequency grids, the distance-of-means metric, the regression, caveats, and stronger tests to add. The spec the code is checked against. |
 | `results/` | Committed runs, one directory each: `result.npz` (surfaces), `result.json` (fits), `run.json` (provenance), `notes.md` (prose). `results/README.md` is the index and states the conventions. |
-| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure), `provenance.py` (commit/versions/weight digest), `convert_weights.py` (Caffe/Keras VGG-19 → torchvision, with the preprocessing fold), `run.py` (CLI), `test_pipeline.py` (offline tests). |
+| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure and the λ depth profile), `provenance.py` (commit/versions/weight digest), `convert_weights.py` (Caffe/Keras VGG-19 → torchvision, with the preprocessing fold), `run.py` (CLI), `test_pipeline.py` (offline tests). |
 
 Docs are intentionally few and short. Prefer extending an existing page over
 adding a new one.
@@ -17,7 +17,7 @@ adding a new one.
 ## Working on this repo
 
 - Run from the repo root: `python -m log_response.run`, never as a script.
-- `python -m log_response.test_pipeline` is the fast check — 29 tests, no
+- `python -m log_response.test_pipeline` is the fast check — 30 tests, no
   downloaded weights, runs anywhere.
 - Long runs: background them and wait on the output file rather than watching
   (see the cost table in `wiki/Running.md`). Always `--save-run`; the `D(freq,
@@ -33,8 +33,9 @@ Four, and the first one is the one that has actually been broken:
    in a CI artifact does not count — artifacts expire, and the sandbox cannot
    download them. Finish a run by committing its directory.
 2. **Never commit figures.** They are ~100× the surfaces that generate them and
-   regenerate with `--load <run> --panels out/panels.png`. `.gitignore` enforces
-   this; do not add exceptions.
+   regenerate from a committed run: `--load <run> --panels out/panels.png` for
+   the summary, `--load <run> --figures out/` for the per-layer set plus
+   `lambda_profile.png`. `.gitignore` enforces this; do not add exceptions.
 3. **A new back-end sets `weights_ok` and `weights_source`** (see the trap
    below). `run.py` reads them to decide whether a run may be saved at all.
 4. **Do not assert a contested number.** Where runs disagree — as they currently

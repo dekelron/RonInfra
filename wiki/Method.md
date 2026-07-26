@@ -78,6 +78,54 @@ R̄²_ℓ = (1/8) Σ_k R²_ℓk   # average R² across the 8 frequencies
 average the R² (each frequency keeps its own α, β). A rigorous run should also
 report the alternative (average responses across frequency, then one fit).
 
+## Contrast-exponent regression (λ) — the headline statistic
+
+The regression above answers *how well does a straight line in log c fit?* It
+cannot answer *is log the right shape at all?*, which is the first caveat below.
+λ answers that one directly, and is what the code reports.
+
+Per layer ℓ and frequency f_k, fit the nested power family:
+
+```
+y_j = a + b·(c_j^λ − 1)/λ      the λ → 0 limit is  a + b·ln c
+```
+
+`a` and `b` enter linearly at fixed λ, so they are profiled out by OLS and the
+search over λ is one-dimensional (grid scan for the basin, golden section
+inside it). Per layer, report:
+
+```
+λ_ℓ  = median over the 8 frequencies    # median: a non-monotone frequency
+R²_ℓ = mean   over the 8 frequencies    #   returns an arbitrary exponent
+CI   = { λ : RSS(λ) ≤ RSS_min·(1 + F(1, n−3, 0.95)/(n−3)) }   # profile-F
+```
+
+| λ | response |
+|---|---|
+| 0 | `a + b·ln c` — **the log law** |
+| 0.5 | `∝ √c` |
+| 1 | `a + b·c` — **linear in contrast** |
+| < 0 | saturating |
+| > 1 | accelerating |
+
+Two properties the R²-of-a-log-fit does not have:
+
+- **A forced calibration point.** `features.0` is a convolution, so its response
+  to `gray + c·g` is exactly linear in `c` whatever the weights — λ *must* be 1
+  there. It measures 0.922–0.926 across all four 45-tap runs, trained and
+  scrambled, which is a check on the whole pipeline for free.
+- **An uninformative fit is visible.** Pure noise returns the entire search
+  range as its interval rather than a confident number.
+
+**Always quote λ with its R².** λ locates a response only insofar as the family
+describes it, and this is where the scrambled control bites: at `prob` on
+`IMAGENET1K_V1` the trained and scrambled runs return λ 0.165 and 0.169 —
+indistinguishable — and only R² (0.952 against 0.823) separates them.
+
+This replaced a statistic called `logness` on 2026-07-26, which raced the log
+fit against a linear-in-contrast fit and reported which lost less. See
+[Results](Results.md) for why that framing was wrong and what it changed.
+
 ## Expected results (VGG-19)
 
 | Representation | Mean R² (D vs log c) |
@@ -100,6 +148,13 @@ the 0.60 above.
   in-sample R² over 14 points does **not** uniquely identify a logarithm — a
   soft-log `log(1+c/σ)`, a power law `c^γ`, or a saturating form `c^n/(σ^n+c^n)`
   can fit similarly over this range.
+  - **Partly addressed by λ**, which nests the power-law alternative and
+    measures its exponent instead of leaving it as a possibility: the log law is
+    λ = 0, `c^γ` is λ = γ, and a saturating form gives λ < 0. Measured, the
+    conv stack of the converted Caffe checkpoint is λ ≈ 1 (linear in contrast,
+    R² 0.999) and only `prob` reaches λ = 0.059 — so over most of the network
+    the answer to this caveat is that the response is **not** a logarithm. The
+    soft-log and Naka-Rushton forms are still not nested and remain untested.
 * Scrambling dropping R² 0.98→0.60 shows learned organisation *strengthens* the
   effect; the residual 0.60 (architecture + softmax + metric) is substantial, so
   "learning adds 0.38" is not a clean causal statement.

@@ -32,6 +32,18 @@ saturating curve, and only the log axis separates the late layers (straight)
 from the early ones (visibly bent). Frequency is encoded as a single-hue
 light→dark ramp, since it is ordered.
 
+`--figures <dir>` writes the per-layer figures **and `lambda_profile.png`**, the
+depth profile: λ per tap against the λ = 1 (linear in contrast) and λ = 0 (log
+law) reference lines, with the 95% interval as a band and the fit's R² in a row
+underneath. That row is not optional decoration — at `prob` on `IMAGENET1K_V1`
+the trained and scrambled runs both return λ ≈ 0.167 and only R² separates them,
+so the figure never shows one without the other.
+
+Each per-layer figure's right panel scales every frequency to its own range and
+overlays its fitted power law against the same two references. **On a log
+contrast axis the shapes are inverted from the intuition**: the *log* law is the
+straight line and linear-in-contrast bends upward. The axis label says so.
+
 Back-ends: `synthetic` (offline), any `torchvision.models` arch, `clip:ViT-B-32`,
 `hf:<model-id>` (generative VLM), `sam[:<model-id>]`. Useful flags: `--reps`
 (draws per cell, default 250), `--frequencies`, `--layers`, `--device`,
