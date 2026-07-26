@@ -164,6 +164,22 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   the control 0.332; at a fixed checkpoint, changing reps 5× moves them 0.004
   and 0.008. The `IMAGENET1K_V1` runs are internally consistent across reps and
   grids — which is not the same as agreeing with the paper.
+- **Both grids are the paper's, recovered from Figure 3b's geometry.** §8.5 does
+  not list them and the axis labels were flattened to outlines, but the curves
+  survive as polylines in PDF object 470: four sub-panels (`data`, `conv1_1`,
+  `fc8`, `prob`), each 15 polylines × 8 vertices. Frequencies come back exactly
+  — 1, 1.750, 3.501, 7.005, 14.009, 28.018, 56.062, 74.731 — and the lowest
+  curve is flat at the same height in all four panels, so it is `c = 0` and
+  there are **14 contrasts**. Their values, read off the two panels linear in
+  `c`, match `{1,2,3,4,6,8,11,16,23,33,46,64,92,128}/128` at r = 0.9999, median
+  error 1.8%. Span and count are confirmed; the individual integers are within
+  the figure's noise, so those stay the repo's reading.
+  - **Corrected 2026-07-26.** Committed earlier the same day as "the grids are
+    not in the paper — treat them as this repo's choice", on the basis of §8.5's
+    prose alone, without checking the figure.
+  - Bonus: the paper's `data` panel has a median 44% frequency-to-frequency
+    spread with no trend in contrast — the noise floor, and
+    `results/data-r250-s0` reproduces it at 41%.
 - **The metric has a zero-population floor at every affine layer, and
   `features.0` is on it.** Phase ~ U[0,2π) makes `E[grating] = gray` exactly, so
   the distance-of-*means* metric has population `D` = 0 wherever the layer is

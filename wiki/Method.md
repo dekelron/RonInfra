@@ -6,10 +6,11 @@ directory can be checked against it.
 > **Provenance.** The metric, the 250 random-orientation/phase draws, the
 > within-layer scrambling control, the before-ReLU taps and the 224/227 input
 > size are all specified in [the paper](1701.04674-adaptation-as-readout.pdf)
-> (eq. 4 and §§8.1–8.2, 8.5). The **contrast and frequency grids below are
-> not** — the paper's §8.5 says only that images "depicted sine gratings at
-> different contrast, spatial frequency, sine phase, and sine orientation
-> combinations". Treat the specific grids as this repo's choice.
+> (eq. 4 and §§8.1–8.2, 8.5). The grids are not stated in prose — §8.5 says only
+> that images "depicted sine gratings at different contrast, spatial frequency,
+> sine phase, and sine orientation combinations" — but they are recoverable from
+> Figure 3b's vector geometry, and both match. See
+> [below](#where-the-grids-come-from).
 
 ## Inputs
 
@@ -42,6 +43,56 @@ f ≈ {1, 1.75, 3.5, 7, 14, 28, 56, 75}
 **Nuisance sampling:** 250 images per `(c,f)` with **random orientation** `θ ~
 U[0,π)` and **random phase** `φ ~ U[0,2π)`. Total ≈ 14 × 8 × 250 = 28,000
 forward passes per model + one gray reference.
+
+### Where the grids come from
+
+The paper's §8.5 does not list them, and Figure 3's axis labels were converted
+to outlines when the MATLAB figure was embedded, so there is no text to read.
+But the plotted curves survive as vector polylines, and the grids fall out of
+their geometry. `Figure3.pdf` is object 470 in the PDF; its four sub-panels
+(`data`, `conv1_1`, `fc8`, `prob`) each hold **15 polylines of 8 vertices**.
+
+**Frequencies — recovered exactly.** All curves share one set of 8 x-positions.
+Their spacing is six equal steps with a shorter one at each end, and reading the
+equal step as a doubling gives:
+
+```
+1, 1.750, 3.501, 7.005, 14.009, 28.018, 56.062, 74.731
+```
+
+against the `{1, 1.75, 3.5, 7, 14, 28, 56, 75}` above — agreement to 0.007 in
+units of the doubling step. The frequency grid is the paper's.
+
+**Contrasts — 14, plus a zero reference.** 15 curves in a jet colormap, and the
+lowest is flat to 0.0000 at the same height in all four panels: that is `c = 0`,
+leaving 14 contrasts. Their values read off the two panels that are *linear* in
+contrast, where curve height is proportional to `c` (`data` is the image itself;
+`conv1_1` is a convolution). Normalising by the top curve, from `conv1_1`:
+
+```
+×128:  1.02  1.97  2.93  3.82  5.96  8.00  11.17  16.60  22.21  31.96  44.67  64.33  93.35  128
+grid:  1     2     3     4     6     8     11     16     23     33     46     64     92     128
+```
+
+r = 0.9999, median error 1.8%, worst 4.5% (`data` gives the same at 2.6% median).
+That confirms the span (exactly 1/128 to 1), the count, and the near-geometric
+half-octave spacing — but the residual scatter is larger than the gap between
+adjacent integers up top, so the *individual* values are the repo's reading, not
+a measurement.
+
+The scatter itself is informative. In the paper's `data` panel the
+frequency-to-frequency spread is a **median 44%** of the curve height and shows
+no trend with contrast — a multiplicative random factor, not a response. That is
+the [noise floor](#the-noise-floor) signature, and `results/data-r250-s0`
+reproduces it:
+
+| | paper's `data` panel (digitised) | `data-r250-s0` |
+|---|---|---|
+| relative spread across frequency | median **44.1%** | median **41.4%** |
+| max/min at `c = 1` | **1.64** | **1.78** |
+
+So the paper's own `data` row is showing sampling noise, and this repo
+reproduces it to within the precision of reading a figure.
 
 ## The metric (this is the subtle part)
 
