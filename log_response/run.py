@@ -7,6 +7,12 @@ small repetition count so it finishes quickly::
 
     python -m log_response.run --model synthetic --reps 8 --figures out/
 
+Raw image pixels -- the paper's ``data`` representation. Also the reference
+noise floor: E[grating] = gray exactly, so any affine layer has population
+D = 0 and measures only 1/sqrt(reps) sampling noise (see ``RawPixelModel``)::
+
+    python -m log_response.run --model data --save-run results/data-r250-s0
+
 Real ImageNet CNN (needs torchvision pretrained weights, or a local state_dict).
 The fully-sampled grid is 14 contrasts x 8 frequencies x 250 reps ~= 28k passes
 per model::
@@ -61,6 +67,7 @@ from .features import (
     DEFAULT_INSTRUCTION,
     DEFAULT_PROMPTS,
     HFVLMModel,
+    RawPixelModel,
     SAMModel,
     SyntheticFrontEnd,
     TorchvisionModel,
@@ -161,7 +168,7 @@ def build_metadata(args, model, result, wall_seconds: float) -> dict:
 
 def build_model(args):
     layers = [s.strip() for s in args.layers.split(",") if s.strip()] if args.layers else None
-    if args.model == "synthetic":
+    if args.model in ("synthetic", "data"):
         for value, flag in (
             (args.scramble, "--scramble"),
             (layers, "--layers"),
@@ -172,8 +179,8 @@ def build_model(args):
             (args.mask_decoder, "--mask-decoder"),
         ):
             if value:
-                raise SystemExit(f"{flag} does not apply to the synthetic back-end")
-        return SyntheticFrontEnd()
+                raise SystemExit(f"{flag} does not apply to the {args.model} back-end")
+        return SyntheticFrontEnd() if args.model == "synthetic" else RawPixelModel()
     is_clip = args.model == "clip" or args.model.startswith("clip:")
     is_hf = args.model.startswith("hf:")
     is_sam = args.model == "sam" or args.model.startswith("sam:")
@@ -234,7 +241,9 @@ def main(argv=None):
     p.add_argument(
         "--model",
         default="synthetic",
-        help="'synthetic' (offline), a torchvision arch name (vgg19, resnet152, "
+        help="'synthetic' (offline), 'data' (raw image pixels -- the paper's "
+        "'data' row, and the metric's 1/sqrt(reps) noise floor), a torchvision "
+        "arch name (vgg19, resnet152, "
         "...), 'clip[:ARCH[:PRETRAINED]]' (e.g. clip:ViT-B-32, "
         "clip:ViT-B-32:laion2b_s34b_b79k), 'hf:MODEL_ID' for a generative "
         "VLM (e.g. hf:llava-hf/llava-1.5-7b-hf), or 'sam[:MODEL_ID]' for a "

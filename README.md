@@ -15,6 +15,6 @@ Docs live in [`wiki/`](wiki/):
 | Page | Contents |
 |------|----------|
 | [Running](wiki/Running.md) | Install, back-ends, flags, and per-environment tips (local / sandbox / GitHub runners). |
-| [Results](wiki/Results.md) | Measured numbers, including a verified VGG-19 run. |
+| [Results](wiki/Results.md) | Measured numbers. The paper's `prob` R² reproduces at **0.980** on the checkpoint the paper used (Oxford/Caffe); torchvision's `IMAGENET1K_V1` gives a different profile. |
 | [Method](wiki/Method.md)   | The exact procedure: inputs, metric, fit, caveats. |
 | [1701.04674](wiki/1701.04674-adaptation-as-readout.pdf) | The source paper (PDF): *Adaptation as Readout*, ICLR 2017 submission. |

@@ -1,0 +1,138 @@
+{
+  "metadata": {
+    "model": "data",
+    "scramble": false,
+    "seed": 0,
+    "scramble_seed": 0,
+    "device": "cpu",
+    "layers": [
+      "data"
+    ],
+    "weights": {
+      "pretrained_verified": null,
+      "source": "none (raw pixels)"
+    },
+    "command": "run.py --model data --reps 50 --save-run results/data-r50-s0 --quiet --notes Raw image pixels at 50 reps: the companion to data-r250-s0 that makes the 1/sqrt(reps) scaling of the noise floor checkable from committed surfaces.",
+    "code": {
+      "available": true,
+      "commit": "3ecbdfe9cdb96d12e296b9ee6b0eebfa2fc7e5d2",
+      "branch": "claude/free-online-compute-r0p8y2",
+      "dirty": true,
+      "dirty_files": [
+        "log_response/features.py",
+        "log_response/run.py",
+        "log_response/test_pipeline.py",
+        "results/data-r250-s0/"
+      ]
+    },
+    "versions": {
+      "python": "3.11.15",
+      "numpy": "2.4.6",
+      "torch": "2.13.0+cu130",
+      "torchvision": "0.28.0+cu130"
+    },
+    "environment": {
+      "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+      "machine": "x86_64",
+      "cpu_count": 4,
+      "executable": "/usr/local/bin/python",
+      "wall_seconds": 6.8
+    },
+    "created_utc": "2026-07-26T21:13:22Z",
+    "notes": "Raw image pixels at 50 reps: the companion to data-r250-s0 that makes the 1/sqrt(reps) scaling of the noise floor checkable from committed surfaces."
+  },
+  "repetitions": 50,
+  "size": 224,
+  "mean": 0.5,
+  "contrasts": [
+    0.0078125,
+    0.015625,
+    0.0234375,
+    0.03125,
+    0.046875,
+    0.0625,
+    0.0859375,
+    0.125,
+    0.1796875,
+    0.2578125,
+    0.359375,
+    0.5,
+    0.71875,
+    1.0
+  ],
+  "frequencies": [
+    1.0,
+    1.75,
+    3.5,
+    7.0,
+    14.0,
+    28.0,
+    56.0,
+    75.0
+  ],
+  "layers": [
+    {
+      "layer": "data",
+      "mean_r2": 0.7487374099129583,
+      "lambda": 0.943264518013551,
+      "lambda_ci": [
+        0.7854114656349854,
+        1.0410744802353162
+      ],
+      "lambda_r2": 0.983376963425002,
+      "pooled_r2": 0.7409218239424065,
+      "pooled_slope": 0.015159726773970277,
+      "spacing_cv": 1.3641574058144565,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.7963273683009418,
+          "slope": 0.012356110147477246,
+          "intercept": 0.020197016529486567
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.7094111726091598,
+          "slope": 0.014373159528640673,
+          "intercept": 0.023060480236203305
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7502518212802194,
+          "slope": 0.016392944940811463,
+          "intercept": 0.026252497865898488
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7766493881197157,
+          "slope": 0.015607530702417811,
+          "intercept": 0.025089296713125948
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.7606392435231362,
+          "slope": 0.014715234159520241,
+          "intercept": 0.023606429877961688
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.7335475899955185,
+          "slope": 0.015604371683114413,
+          "intercept": 0.02488075764059083
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7271463663988098,
+          "slope": 0.01582059636438776,
+          "intercept": 0.025171073484819208
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7359263290761655,
+          "slope": 0.0164078666653926,
+          "intercept": 0.026061095267180045
+        }
+      ]
+    }
+  ]
+}

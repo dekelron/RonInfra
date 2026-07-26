@@ -8,7 +8,7 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 |---|---|---|---|---|---|
 | [`vgg19-r250-s0-alllayers-linear`](vgg19-r250-s0-alllayers-linear/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Grid control. Profile survives: mean \|Δλ\| 0.045, **44/44** steps agree in direction. |
 | [`vgg19-scramble-r250-s0-alllayers-linear`](vgg19-scramble-r250-s0-alllayers-linear/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Control for the above. Mean \|Δλ\| 0.024; read against its R² 0.72, which is what makes λ here uninformative. |
-| [`vgg19-r250-s0-alllayers-fixed`](vgg19-r250-s0-alllayers-fixed/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | all 45 taps | Depth profile. λ 0.922 at conv1_1 (agrees with Caffe to 0.001), conv median +0.69, `prob` +0.165. |
+| [`vgg19-r250-s0-alllayers-fixed`](vgg19-r250-s0-alllayers-fixed/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | all 45 taps | Depth profile. conv median +0.69, `prob` +0.165. (Its λ 0.922 at conv1_1 is the noise floor, not a measurement — see `data-r250-s0`.) |
 | [`vgg19-scramble-r250-s0-alllayers-fixed`](vgg19-scramble-r250-s0-alllayers-fixed/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | all 45 taps | Control. λ ≈ +0.17 looks log-like; its R² 0.918 and 41% non-monotone cells are what separate it. |
 | [`vgg19-r250-s0-alllayers-fixed-caffe`](vgg19-r250-s0-alllayers-fixed-caffe/notes.md) | VGG-19, trained | 250 | converted Caffe | all 45 taps | Conv stack flatly **linear** (λ +1.06, R² 0.999); one ReLU takes it to +0.21, `prob` +0.059. |
 | [`vgg19-scramble-r250-s0-alllayers-fixed-caffe`](vgg19-scramble-r250-s0-alllayers-fixed-caffe/notes.md) | VGG-19, scrambled | 250 | converted Caffe | all 45 taps | Control. Runs *away* to λ ≈ **+2.75** (R² 0.972) — supralinear, log-like at 0/45 taps. |
@@ -20,8 +20,10 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`vgg19-scramble-r50-s1-in1k`](vgg19-scramble-r50-s1-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.941 (`features.19`) | Seed 1. `prob` 0.863 — the high end. |
 | [`vgg19-scramble-r50-s2-in1k`](vgg19-scramble-r50-s2-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.920 (`features.19`) | Seed 2. `prob` 0.704. |
 | [`vgg19-scramble-r50-s3-in1k`](vgg19-scramble-r50-s3-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.843 (`features.19`) | Seed 3. `prob` 0.693 — the low end. |
-| [`vgg19-r50-s0`](vgg19-r50-s0/notes.md) | VGG-19, trained | 50 | converted Caffe | 0.976 (`prob`) | The outlier. Its checkpoint, not its reps, is why. |
+| [`vgg19-r50-s0`](vgg19-r50-s0/notes.md) | VGG-19, trained | 50 | converted Caffe | 0.976 (`prob`) | Differs from the `IMAGENET1K_V1` runs because of its checkpoint, not its reps. |
 | [`vgg19-scramble-r50-s0`](vgg19-scramble-r50-s0/notes.md) | VGG-19, scrambled | 50 | converted Caffe | 0.428 (`prob`) | Control. Sits 0.33 below both `IMAGENET1K_V1` controls. |
+| [`data-r250-s0`](data-r250-s0/notes.md) | raw pixels | 250 | none | λ **+0.925**, R² 0.985 | The paper's `data` row, and the metric's **noise floor**. `features.0` reproduces it to 3 decimals on both checkpoints. |
+| [`data-r50-s0`](data-r50-s0/notes.md) | raw pixels | 50 | none | D(50)/D(250) = **2.237** | Companion to the above: makes the 1/√reps scaling checkable (√5 = 2.236). |
 
 > **`logness` was removed on 2026-07-26 and replaced by `λ`.** Prose in any
 > `notes.md` written before that date quotes the retired statistic — a race

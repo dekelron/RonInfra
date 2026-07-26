@@ -3,6 +3,14 @@
 The exact contrast / log-response procedure, so the implementation in this
 directory can be checked against it.
 
+> **Provenance.** The metric, the 250 random-orientation/phase draws, the
+> within-layer scrambling control, the before-ReLU taps and the 224/227 input
+> size are all specified in [the paper](1701.04674-adaptation-as-readout.pdf)
+> (eq. 4 and §§8.1–8.2, 8.5). The **contrast and frequency grids below are
+> not** — the paper's §8.5 says only that images "depicted sine gratings at
+> different contrast, spatial frequency, sine phase, and sine orientation
+> combinations". Treat the specific grids as this repo's choice.
+
 ## Inputs
 
 Full-image sinusoidal gratings, one per `(contrast c, frequency f, orientation
@@ -57,6 +65,13 @@ class representation and gray, not per-image response energy.
 Convolutional "units": flatten channel and spatial dims so every scalar
 activation counts.
 
+**Which representations.** The paper's Figure 3b plots four: `data` (raw image
+pixels), `conv1_1`, `fc8` and `prob`. Here those are `--model data`,
+`features.0`, `logits` (verified bit-identical to `classifier.6`) and `prob`.
+The paper's *primary* §5 analysis is a comparison of DNN iso-output curves
+against human psychophysics; there is no human data in this repo, so only the
+DNN half is implemented.
+
 **Probability layer bound:** with p,q the 1000-class softmax vectors,
 `D_prob = (1/1000) Σ_i |p_i − q_i| = (2/1000)·TV(p,q)`, so `0 ≤ D_prob ≤ 0.002`.
 This bound means no *global* log law is possible — D must →0 near zero contrast
@@ -108,14 +123,43 @@ CI   = { λ : RSS(λ) ≤ RSS_min·(1 + F(1, n−3, 0.95)/(n−3)) }   # profile
 | < 0 | saturating |
 | > 1 | accelerating |
 
-Two properties the R²-of-a-log-fit does not have:
+One property the R²-of-a-log-fit does not have:
 
-- **A forced calibration point.** `features.0` is a convolution, so its response
-  to `gray + c·g` is exactly linear in `c` whatever the weights — λ *must* be 1
-  there. It measures 0.922–0.926 across all four 45-tap runs, trained and
-  scrambled, which is a check on the whole pipeline for free.
 - **An uninformative fit is visible.** Pure noise returns the entire search
   range as its interval rather than a confident number.
+
+And one that looked like a second and is not. `features.0` measures λ =
+0.922–0.926 across all four 45-tap runs, trained and scrambled, which was
+written up here as a forced calibration point checking the whole pipeline for
+free. It is weaker than that: `features.0` sits on the metric's **noise floor**
+(next section), and a model-free run on raw pixels returns the same +0.925 at
+the same fit quality. It checks the grating generator and the fitting code — it
+cannot detect wrong weights, a dead hook, or a broken model, because it does not
+depend on the network.
+
+## The noise floor
+
+Phase is drawn `U[0,2π)`, so `E[grating] = gray` **exactly**. Since D is the
+distance of the class-*mean* representation from gray, any layer that is an
+affine function of the input has population D = **0**, and a finite run measures
+sampling noise of order 1/√reps. It follows from the metric as defined above,
+so it applies to any implementation of it.
+
+Consequences for reading a profile:
+
+- **λ ≈ 1 at high fit quality is also what an empty tap looks like** — the floor
+  is `D = c·mean_i|W·ḡ|_i` with `ḡ` independent of `c`, i.e. exactly linear in
+  contrast whatever the weights.
+- **The test is repetition count, not shape.** A real response holds D when reps
+  change; a floor falls as 1/√reps. Measured on raw pixels: median D(50)/D(250)
+  = 2.237 against √5 = 2.236.
+- In VGG-19 only `features.0` is upstream of every nonlinearity. Deeper
+  convolutions sit after a ReLU, where `E[a(x)] ≠ a(gray)`, and carry real
+  signal — `features.19` holds its D across a 5× rep change.
+
+`--model data` measures the floor directly; see
+[`results/data-r250-s0`](../results/data-r250-s0/notes.md) and
+[Results](Results.md#the-metric-has-a-noise-floor-and-features0-is-sitting-on-it).
 
 **Always quote λ with its R².** λ locates a response only insofar as the family
 describes it, and this is where the scrambled control bites: at `prob` on
@@ -128,19 +172,32 @@ fit against a linear-in-contrast fit and reported which lost less. See
 
 ## Expected results (VGG-19)
 
-| Representation | Mean R² (D vs log c) |
-|---|---|
-| `prob` (1000-way softmax) | **0.98** |
-| early/middle layers through `fc7` | much lower (log-like compression develops late) |
-| `prob`, **weights scrambled within each layer** | **0.60** |
+**Which checkpoint matters.** §8.1 of the paper ran MatConvNet 1.0-beta20 with
+*"the imported pre-trained original version"* of VGG-19 — Simonyan & Zisserman's
+Caffe release, which `convert_weights.py` converts. Torchvision's
+`IMAGENET1K_V1` is a different training run and reproduces a different profile.
+The table below is the paper's, so it is the Caffe number that tests it.
+
+| Representation | Mean R² (D vs log c) | measured, Caffe | measured, IN1K |
+|---|---|---|---|
+| `prob` (1000-way softmax) | **0.98** | **0.980** ✓ | 0.917 |
+| early/middle layers through `fc7` | much lower | 0.750 at fc7 ✓ | 0.869 |
+| `prob` is the peak | — | peak of 45 taps ✓ | peak is `classifier.4` |
+| `prob`, **weights scrambled within each layer** | **0.60** | 0.429 ✗ | 0.768 |
+
+Three of the four reproduce on the paper's checkpoint. The scrambled control
+does not, and is left as a stated disagreement per rule 4 — the paper names no
+permutation seed, and four permutations at fixed settings span 0.169. See
+[Results](Results.md#which-checkpoint-the-paper-used-and-what-reproduces-on-it).
+
+The paper's own headline for this section is not the log law but **contrast
+constancy** — band-pass in spatial frequency at low contrast, converging to
+frequency-invariant at high contrast. That reproduces too: at `prob` on Caffe
+the spread across frequencies goes 85.2× → 1.40× along the contrast axis.
 
 Controls to run: within-layer weight scrambling; comparison of `logits` vs
 `prob`; comparison of distance-of-means vs mean-of-distances. Inputs 224×224 (or
 227×227 for archs that expect it).
-
-For what a run actually produced against this table, see [Results](Results.md) —
-`prob` reproduces at 0.976, but the scrambled control measured 0.428 rather than
-the 0.60 above.
 
 ## Caveats
 
@@ -155,17 +212,29 @@ the 0.60 above.
     R² 0.999) and only `prob` reaches λ = 0.059 — so over most of the network
     the answer to this caveat is that the response is **not** a logarithm. The
     soft-log and Naka-Rushton forms are still not nested and remain untested.
+  - **But λ ≈ 1 is ambiguous**, because it is also what the noise floor reads
+    (above). 26 of the 37 Caffe conv taps sit within 0.15 of the floor's λ. A
+    reps sweep separates the two; it has not been run per-tap.
 * Scrambling dropping R² 0.98→0.60 shows learned organisation *strengthens* the
   effect; the residual 0.60 (architecture + softmax + metric) is substantial, so
-  "learning adds 0.38" is not a clean causal statement.
+  "learning adds 0.38" is not a clean causal statement. Measured on the paper's
+  checkpoint the drop is larger still — 0.980 → 0.429 — which sharpens the
+  direction of the claim without making the causal reading any cleaner.
 * No individual unit computes a logarithm; the log-likeness is a property of the
   pooled response across units, not of any single unit.
 
 ## Stronger tests to add
 
-Fit and **hold out contrasts** to compare candidate laws — log, soft-log
+**A per-tap reps sweep** is the cheapest and is now the most informative: one
+`--reps 1000` run per checkpoint, compared against the committed r250, says
+which of the 45 taps carry signal and which sit on the noise floor. It settles
+how much of Caffe's flat λ ≈ 1 conv stack is a locally-linear response and how
+much is an empty measurement — a question the shape of the curve cannot answer.
+
+Then: fit and **hold out contrasts** to compare candidate laws — log, soft-log
 `α+β log(1+c/σ)`, power `α+β c^γ`, saturating `α+β c^n/(σ^n+c^n)`; bootstrap
 phase/orientation samples for CIs; repeat across init/scramble seeds; compare
-**logits vs softmax**; compare **distance-of-means vs mean-of-distances**;
-analyse individual units vs the pooled response; extend contrast below 1/128 to
-find where the apparent log breaks.
+**logits vs softmax**; compare **distance-of-means vs mean-of-distances** (the
+second has no zero-population floor, so it would measure the shallow layers this
+one cannot); analyse individual units vs the pooled response; extend contrast
+below 1/128 to find where the apparent log breaks.

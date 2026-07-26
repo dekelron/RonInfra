@@ -1,0 +1,41 @@
+{
+  "code": {
+    "available": true,
+    "branch": "claude/free-online-compute-r0p8y2",
+    "commit": "3ecbdfe9cdb96d12e296b9ee6b0eebfa2fc7e5d2",
+    "dirty": true,
+    "dirty_files": [
+      "log_response/features.py",
+      "log_response/run.py",
+      "log_response/test_pipeline.py"
+    ]
+  },
+  "command": "run.py --model data --save-run results/data-r250-s0 --quiet --notes Raw image pixels: the paper's Figure 3b 'data' representation, and the reference noise floor for the distance-of-means metric.",
+  "created_utc": "2026-07-26T21:13:02Z",
+  "device": "cpu",
+  "environment": {
+    "cpu_count": 4,
+    "executable": "/usr/local/bin/python",
+    "machine": "x86_64",
+    "platform": "Linux-6.18.5-x86_64-with-glibc2.39",
+    "wall_seconds": 32.0
+  },
+  "layers": [
+    "data"
+  ],
+  "model": "data",
+  "notes": "Raw image pixels: the paper's Figure 3b 'data' representation, and the reference noise floor for the distance-of-means metric.",
+  "scramble": false,
+  "scramble_seed": 0,
+  "seed": 0,
+  "versions": {
+    "numpy": "2.4.6",
+    "python": "3.11.15",
+    "torch": "2.13.0+cu130",
+    "torchvision": "0.28.0+cu130"
+  },
+  "weights": {
+    "pretrained_verified": null,
+    "source": "none (raw pixels)"
+  }
+}

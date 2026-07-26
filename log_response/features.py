@@ -27,6 +27,9 @@ Three model back-ends are provided:
   linear stage that fails the log fit vs. a compressive stage that passes it,
   and a band-pass gain that makes the response peak at mid spatial frequency. It
   is a check on the *method*, not a model of any real network.
+* ``RawPixelModel`` -- the image itself, i.e. the paper's ``data`` row. It is
+  the reference *noise floor*: see its docstring for why every layer upstream
+  of a nonlinearity measures one.
 """
 
 from __future__ import annotations
@@ -881,6 +884,52 @@ class SAMModel(_TorchBackend):
             acts["mask_logits"] = out.pred_masks.detach().float().cpu().numpy()
             acts["iou_scores"] = out.iou_scores.detach().float().cpu().numpy()
         return acts
+
+
+# --------------------------------------------------------------------------- #
+# Raw pixels: the paper's 'data' representation, and the metric's noise floor
+# --------------------------------------------------------------------------- #
+@dataclass
+class RawPixelModel(FeatureModel):
+    """The image itself as a representation -- the paper's ``data`` row.
+
+    Figure 3b of the paper plots four representations: ``data`` (raw image
+    pixels), ``conv1_1``, ``fc8`` and ``prob``. This is the first of them, and
+    it is worth having for a reason beyond completeness.
+
+    **It is the noise floor of the metric.** Phase is drawn ``U[0, 2*pi)``, so
+    ``E[grating] = gray`` *exactly* -- the sinusoid averages away. D is the
+    distance of the *class-mean* representation from gray (see
+    ``experiment.py``), so at any layer that is an affine function of the input
+    the population value of D is identically **zero**, and what a finite run
+    measures is sampling noise of order ``1/sqrt(reps)``.
+
+    Two consequences worth keeping in view when reading a depth profile:
+
+    * D at such a layer scales as ``1/sqrt(reps)`` rather than staying put, and
+      that is the cheap test for whether a tap carries signal at all;
+    * its shape is ``D = c * mean_i|W . gbar|_i`` with ``gbar`` independent of
+      ``c``, i.e. **exactly linear in contrast** whatever the weights. So
+      ``lambda ~ 1`` at high fit quality is what a *dead* tap looks like, not
+      only what a linear-responding one looks like.
+
+    In VGG-19 only ``features.0`` sits upstream of every nonlinearity, and it
+    duly reproduces this model's numbers to three decimals on both checkpoints,
+    trained and scrambled (``results/data-r250-s0`` vs ``wiki/Results.md``).
+    Deeper taps are downstream of a ReLU and can carry real signal even when
+    they are convolutions.
+
+    Weight-free by construction, so ``weights_ok`` is None -- "are the weights
+    trained?" does not apply, as for ``SyntheticFrontEnd``.
+    """
+
+    def __post_init__(self):
+        self.layers = ["data"]
+        self.weights_ok = None
+        self.weights_source = "none (raw pixels)"
+
+    def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
+        return {"data": np.asarray(image, dtype=np.float64)}
 
 
 # --------------------------------------------------------------------------- #

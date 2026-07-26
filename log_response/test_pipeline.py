@@ -57,6 +57,7 @@ from .fit import (
 from .features import (
     DEFAULT_PROMPTS,
     FeatureModel,
+    RawPixelModel,
     SyntheticFrontEnd,
     l1_distance,
     load_prompts,
@@ -577,6 +578,45 @@ def test_synthetic_reports_weights_not_applicable():
     model = SyntheticFrontEnd()
     assert model.weights_ok is None
     assert "synthetic" in model.weights_source
+
+
+def test_raw_pixels_report_weights_not_applicable():
+    model = RawPixelModel()
+    assert model.weights_ok is None
+    assert model.layers == ["data"]
+
+
+def test_affine_layer_measures_only_sampling_noise():
+    """D at a layer upstream of every nonlinearity is a 1/sqrt(reps) noise floor.
+
+    Phase ~ U[0, 2pi) makes E[grating] = gray exactly, so the distance-of-means
+    metric has population value 0 at any affine layer. This pins the property
+    that ``features.0`` turns out to be measuring (wiki/Results.md): D must fall
+    as 1/sqrt(reps) rather than stay put, which is what separates a dead tap
+    from a linear-responding one.
+    """
+    cfg = GratingConfig(size=64, frequencies_cpi=(7.0,), contrasts=(0.25, 1.0))
+    few = run_experiment(RawPixelModel(), cfg, repetitions=16, seed=0, verbose=False)
+    many = run_experiment(RawPixelModel(), cfg, repetitions=256, seed=0, verbose=False)
+    ratio = few.surfaces["data"] / many.surfaces["data"]
+    # sqrt(16) = 4 exactly for the underlying sd; D is a mean of absolute values
+    # (a biased functional), so allow a generous band that still excludes 1.
+    assert np.all(ratio > 2.0), ratio
+    assert np.all(ratio < 6.0), ratio
+
+
+def test_noise_floor_is_linear_in_contrast_whatever_the_grid():
+    """...and its shape is exactly linear in contrast, so lambda ~ 1.
+
+    D = c * mean|gbar| with gbar independent of c. This is why lambda ~ 1 at a
+    high power-family R^2 cannot on its own be read as "this layer responds
+    linearly to contrast" -- an empty tap looks identical.
+    """
+    cfg = GratingConfig(size=64, frequencies_cpi=(7.0,))
+    result = run_experiment(RawPixelModel(), cfg, repetitions=24, seed=0, verbose=False)
+    res = result.results["data"]
+    assert abs(res.lam - 1.0) < 0.25, res.lam
+    assert res.lam_r2 > 0.9, res.lam_r2
 
 
 def test_save_run_dir_records_provenance():

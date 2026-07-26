@@ -10,7 +10,7 @@
 | `wiki/Method.md` | The exact procedure — grating definition, contrast/frequency grids, the distance-of-means metric, the regression, caveats, and stronger tests to add. The spec the code is checked against. |
 | `wiki/1701.04674-adaptation-as-readout.pdf` | The source paper. Its "mean absolute change in DNN representation between a gray image and sinusoidal gratings" is our `D`, and its "R² = 98% … for prob" is the contested number in `Method.md`'s expected-results table. |
 | `results/` | Committed runs, one directory each: `result.npz` (surfaces), `result.json` (fits), `run.json` (provenance), `notes.md` (prose). `results/README.md` is the index and states the conventions. |
-| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure and the λ depth profile), `provenance.py` (commit/versions/weight digest), `convert_weights.py` (Caffe/Keras VGG-19 → torchvision, with the preprocessing fold), `run.py` (CLI), `test_pipeline.py` (offline tests). |
+| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends, incl. `RawPixelModel` = the noise floor), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure and the λ depth profile), `provenance.py` (commit/versions/weight digest), `convert_weights.py` (Caffe/Keras VGG-19 → torchvision, with the preprocessing fold), `run.py` (CLI), `test_pipeline.py` (offline tests). |
 
 Docs are intentionally few and short. Prefer extending an existing page over
 adding a new one.
@@ -120,8 +120,10 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
    - *Do the two checkpoints genuinely differ, and where?* — the science, in
      item 2 below. The audit result makes this the only live explanation.
 2. ~~**Measure the depth profile on both checkpoints.**~~ **Done.** All 45 taps,
-   both checkpoints, trained and scrambled. They agree at conv1_1 to 0.001,
-   diverge through the conv stack, and re-converge at the classifier. The
+   both checkpoints, trained and scrambled. They diverge through the conv stack
+   and re-converge at the classifier. (They also "agree at conv1_1 to 0.001",
+   which was written up here as a finding and is not one — that tap is the
+   metric's noise floor and agrees for every checkpoint, trained or not.) The
    crossover to log-like is carried by *rectifications*, not by depth. On λ:
    Caffe holds λ ≈ 1.0 (flatly **linear in contrast**, R² 0.999) through the
    whole conv stack, then one ReLU takes it `classifier.3` 1.10 → `classifier.4`
@@ -131,21 +133,50 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
 3. **Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.** The
    done sweep varied both at once (one flag drove both until now), so it bounds
    permutation variance rather than isolating it.
-4. **Reconcile `wiki/Method.md` with the measured grid.** Its "Expected results"
-   table still states 0.98 at `prob` and calls `prob` the peak; two independent
-   `IMAGENET1K_V1` runs say 0.913–0.917 and peak at `classifier.3`. Per rule 4,
-   do not quietly edit one to match the other — decide which is the claim.
+4. ~~**Reconcile `wiki/Method.md` with the measured grid.**~~ **Done — the table
+   was right and the checkpoint was wrong.** The paper (§8.1) ran MatConvNet's
+   *imported pre-trained original* VGG-19, i.e. the Oxford/Caffe weights, not
+   torchvision's `IMAGENET1K_V1`. On the Caffe run `prob` = **0.980** against
+   the documented 0.98, `prob` **is** the peak of all 45 taps, and fc7 sits at
+   0.750 ("much lower", as documented). Nothing was edited to match: the
+   disagreement was an artifact of testing the claim on a checkpoint the paper
+   never used. The scrambled control (0.429 vs 0.60) stays open per rule 4.
+
+5. **Run the per-tap reps sweep.** One `--reps 1000` run per checkpoint against
+   the committed r250. A real response holds `D` when reps change; the noise
+   floor falls as 1/√reps. This is what says which of the 45 taps are measuring
+   anything — in particular how much of Caffe's flat λ ≈ 1 conv stack is a
+   locally-linear response and how much is an empty tap. Cheaper and sharper
+   than the gate-flip count below.
 
 ## Open threads
 
-- **`--reps 250` on `IMAGENET1K_V1` disagrees with `wiki/Method.md` on three
-  counts** — `prob` at 0.917 not 0.98, R² peaking at `classifier.3` rather than
-  `prob`, and the scrambled control *exceeding* the trained net at the early and
-  middle taps. See `wiki/Results.md`.
-- **Weight lineage, not repetition count, drives the disagreement.** At fixed
-  reps, changing the checkpoint moves `prob` 0.063 and the control 0.332; at a
-  fixed checkpoint, changing reps 5× moves them 0.004 and 0.008. The converted
-  Caffe run is the outlier; everything measured on `IMAGENET1K_V1` agrees.
+- **The paper's checkpoint is the converted Caffe one, and on it the paper
+  reproduces.** §8.1 used MatConvNet's imported *original* VGG-19. Measured:
+  `prob` 0.980 vs the documented 98%, `prob` the peak of 45 taps, fc7 0.750
+  ("much lower") — three of four §5 claims, to three decimals. Only the
+  scrambled control disagrees (0.429 vs 0.60). On `IMAGENET1K_V1` none of the
+  three hold. **Do not describe the Caffe run as "the outlier"** — it is the
+  outlier only among the torchvision runs; against the paper it is the
+  reference and `IMAGENET1K_V1` is the deviation.
+- **Weight lineage, not repetition count, drives the difference between the two
+  checkpoints.** At fixed reps, changing the checkpoint moves `prob` 0.063 and
+  the control 0.332; at a fixed checkpoint, changing reps 5× moves them 0.004
+  and 0.008. The `IMAGENET1K_V1` runs are internally consistent across reps and
+  grids — which is not the same as agreeing with the paper.
+- **The metric has a zero-population floor at every affine layer, and
+  `features.0` is on it.** Phase ~ U[0,2π) makes `E[grating] = gray` exactly, so
+  the distance-of-*means* metric has population `D` = 0 wherever the layer is
+  affine in the input; what a finite run measures there is 1/√reps sampling
+  noise. `results/data-r250-s0` (raw pixels, no model) returns λ **+0.925**,
+  power-R² 0.985, log-R² 0.754 — and `features.0` returns 0.922–0.926 /
+  0.985–0.986 / 0.7545–0.7558 in all four 45-tap runs, trained and scrambled,
+  both checkpoints. Consequences: **λ ≈ 1 at high R² is also what a dead tap
+  looks like**; the `features.0` "free calibration point" is only a check on the
+  grating generator and the fitter, not on the model; and R² 0.736 is what a
+  perfectly linear response scores against log c on this grid regardless of
+  anything. Everything from `features.19` outward is rep-invariant and carries
+  real signal, so no headline number moves.
 - **The scrambled control is not a single number — and not a single shape.**
   Four permutations at identical settings give `prob` R² 0.760 / 0.863 / 0.704 /
   0.693 (spread 0.169, sd 0.078). On λ the spread is qualitative, not just
@@ -183,6 +214,11 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   the whole conv stack; `IMAGENET1K_V1` leaves it gradually from mid-stack.
   **Untested.** The direct check is to count ReLU sign flips between gray and
   grating against `c`; that needs a forward pass, so it is an Actions job.
+  - **A competing explanation has to be excluded first**, because it predicts
+    the identical λ: an empty tap also reads λ ≈ 1 at high fit quality. 26 of
+    the 37 Caffe conv taps sit within 0.15 of the noise-floor λ at mean R²
+    0.9988. The reps sweep (item 5 in "Needs doing") separates the two and is
+    far cheaper than gate counting — do that one first.
 - ~~The **linear-vs-log contrast grid** is the main untested caveat.~~ **Closed —
   tested, and the profile survives.** The whole depth profile was re-measured on
   `--contrasts linear` (same endpoints, even spacing, nothing else changed).

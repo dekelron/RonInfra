@@ -35,8 +35,10 @@ Every 45-tap run, re-fitted from its committed surfaces. λ = 0 is the log law,
 
 Four things to read off it before the prose:
 
-- **`features.0` is +0.92–0.93 in all six.** A convolution must be linear in the
-  grating's amplitude, so that column is a check on the pipeline, not a result.
+- **`features.0` is +0.92–0.93 in all six — because it is measuring nothing.**
+  A model-free run on raw pixels returns the same +0.925 at the same 0.985 fit
+  quality. That column is the metric's noise floor, not a property of VGG.
+  [Why](#the-metric-has-a-noise-floor-and-features0-is-sitting-on-it).
 - **The conv median separates the checkpoints** (+1.06 Caffe, +0.69 IN1K) far
   more than `prob` does.
 - **λ at `prob` does not separate trained from scrambled on IN1K** — +0.165
@@ -52,15 +54,19 @@ All 45 leaf modules, `--reps 250`, both checkpoints, trained and scrambled —
 four runs measured on identical code. **Always read λ against `lambda_r2`**: the
 exponent locates a response only insofar as the family describes it.
 
-**The checkpoints agree at the input — and hit the value physics demands.**
-`features.0` (conv1_1) is **λ = 0.922** on `IMAGENET1K_V1` and **0.923** on the
-converted Caffe weights; the two scrambled runs give 0.926 and 0.926. All four
-agree to **0.01**. A convolution's output must be linear in the grating's
-amplitude whatever its weights, so λ ≈ 1 here is forced, and measuring it is the
-free calibration the old scale could not express (it reported −0.86, on a scale
-with no physical reading). This was also the pre-registered test for a
-conversion artifact — a preprocessing gain error would have shown up at the only
-layer touching the input, and it does not.
+**The checkpoints agree at the input because neither one is being measured
+there.** `features.0` (conv1_1) is **λ = 0.922** on `IMAGENET1K_V1` and **0.923**
+on the converted Caffe weights; the two scrambled runs give 0.926 and 0.926. All
+four agree to **0.01** — and so does a run with no network in it at all. This
+used to be written up here as a free calibration point. It is weaker than that:
+see [below](#the-metric-has-a-noise-floor-and-features0-is-sitting-on-it).
+
+It does still rule out one thing, which is what it was originally introduced
+for. A preprocessing **gain** error in the Caffe conversion would rescale a
+grating's effective contrast and slide the response along its own axis; the
+noise floor's magnitude is `c · mean|W·ḡ|`, so a gain error would move it. It
+does not move. That, plus `convert_weights.py --verify` (relative error 2.9e-8),
+closes the conversion-artifact question.
 
 **Divergence grows with depth and mostly closes again.** It reaches **0.622** at
 `features.35` (Caffe +0.96, canonical +0.33), then falls to **0.041** at
@@ -108,6 +114,13 @@ for its whole conv stack; `IMAGENET1K_V1` leaves it from mid-stack. This is a
 **hypothesis, not a measurement** — the direct test is to count ReLU sign flips
 between gray and grating against `c`, which needs a forward pass.
 
+There is now a **second reading of the same evidence** that has to be excluded
+first, because it predicts the identical λ: a tap with no signal at all also
+reports λ ≈ 1 at high fit quality. 26 of the 37 Caffe conv taps sit within 0.15
+of the noise-floor value at a mean power-family R² of 0.9988. The two readings
+are separated not by shape but by **magnitude against repetition count**, and
+that is a much cheaper job than counting gates — see the next section.
+
 **The two controls differ in kind, not degree.** Scrambled Caffe runs *away*
 from the log law with depth, to a classifier median of **λ = +2.75** at R² 0.972
 — strongly supralinear, `c^2.75`, and log-like at **0 of 45** taps. Scrambled
@@ -125,6 +138,67 @@ scrambled run the two surfaces correlate at **r = 1.000000** with ratio exactly
 real work. This is a structural reason the control cannot reproduce the trained
 net's final-layer behaviour, and it was invisible until λ returned identical
 values at both taps.
+
+### The metric has a noise floor, and `features.0` is sitting on it
+
+Phase is drawn `U[0, 2π)`, so **`E[grating] = gray` exactly** — the sinusoid
+averages away. The metric is the distance of the class-**mean** representation
+from gray, so at any layer that is an affine function of the input the
+population value of D is identically **zero**, and a finite run measures
+sampling noise of order 1/√reps. This is a property of the metric as the paper
+defines it (eq. 4), not of this implementation.
+
+[`data-r250-s0`](../results/data-r250-s0/notes.md) measures that floor directly,
+on raw pixels, with no network:
+
+| | raw pixels | trained Caffe `features.0` | trained IN1K `features.0` | scrambled Caffe | scrambled IN1K |
+|---|---|---|---|---|---|
+| λ | **+0.925** | +0.922 | +0.923 | +0.926 | +0.926 |
+| power R² | **0.985** | 0.985 | 0.986 | 0.985 | 0.985 |
+| mean R² vs log c | **0.754** | 0.756 | 0.756 | 0.754 | 0.754 |
+
+Two checkpoints, trained and scrambled, and a model-free control agree to three
+decimals — because none of them is measuring a network. `features.0` is the only
+VGG-19 tap upstream of every nonlinearity.
+
+**The floor is exactly linear in contrast by construction.** `D = c · mean_i|W·ḡ|_i`
+with `ḡ` independent of `c`. So **λ ≈ 1 at high fit quality is also what a dead
+tap looks like**, and the reading "this layer responds linearly to contrast"
+needs separate evidence. For scale, R² of a perfectly linear response against
+log c on this 14-point grid is **0.736** — a property of the grid alone, which is
+most of what the 0.754/0.756 column above is reporting.
+
+**The separating test is repetition count, not shape.** A real response holds D
+when reps change; a floor falls as 1/√reps. Against
+[`data-r50-s0`](../results/data-r50-s0/notes.md) the raw-pixel surfaces give a
+median ratio of **2.237** against √5 = **2.236**. Applied to the r50/r250 pair on
+`IMAGENET1K_V1`, `D(50)/D(250)` per contrast:
+
+| contrast | `features.0` | `features.19` | `classifier.3` | `logits` | `prob` |
+|---|---|---|---|---|---|
+| 0.0078 | **2.19** | 1.04 | 1.03 | 1.00 | 1.03 |
+| 0.0625 | **1.77** | 1.00 | 1.00 | 1.01 | 1.01 |
+| 0.258 | **1.12** | 1.00 | 1.00 | 1.01 | 1.00 |
+| 1.0 | 1.01 | 1.00 | 1.01 | 1.01 | 1.01 |
+
+Everything except `features.0` is flat at 1.00 — real signal, at every contrast.
+`features.0` decays from the noise-floor value to 1.0 as contrast rises, which is
+the crossover from noise-dominated to signal-dominated. Note that this pair
+predates the tap fix, so its `features.0` holds the *post*-ReLU value: a
+rectified tap has a non-zero population D, but only through the Jensen gap,
+which requires the perturbation to actually flip gates. At low contrast it does
+not, the ReLU is locally affine, and the floor argument applies unchanged.
+
+**What this does and does not touch.** `prob`, `logits`, `classifier.*` and the
+deeper `features.*` taps are rep-invariant and carry real signal — every headline
+number stands. What changes is the reading of the shallow end: `features.0` is
+not a measurement of conv1_1, and the four-way agreement there is forced. Deeper
+convolutions are **not** covered by the argument, because they sit downstream of
+a ReLU where `E[a(x)] ≠ a(gray)`.
+
+**Not yet done:** the same test at each of the 45 taps, which needs one
+`--reps 1000` run per checkpoint and would settle how much of Caffe's flat λ ≈ 1
+conv stack is locally-linear response and how much is floor.
 
 ### Is the log response at `prob` just the softmax?
 
@@ -220,7 +294,15 @@ rather than two rulers.
 > statistic that is comparable across grids by construction rather than by
 > argument.
 
-## VGG-19, full grid on the canonical checkpoint
+## VGG-19, full grid on `IMAGENET1K_V1`
+
+> **This is not the paper's checkpoint.** §8.1 of the paper used MatConvNet's
+> *"imported pre-trained original version"* of VGG-19 — the Oxford/Caffe
+> weights, which is what `convert_weights.py` produces. On those weights the
+> paper's numbers reproduce; on this one they do not. See
+> [below](#which-checkpoint-the-paper-used-and-what-reproduces-on-it). This
+> section is kept as the measured behaviour of the torchvision checkpoint, which
+> is a different model, not as the reference run.
 
 The documented grid — 14 contrasts × 8 frequencies, **`--reps 250`** — on
 torchvision's **`IMAGENET1K_V1`** (`vgg19-dcbb9e9d.pth`, downloaded on the
@@ -247,8 +329,7 @@ the latter.
 | `logits` | 0.878 | 0.768 |
 | `prob` (softmax) | 0.917 | 0.768 |
 
-This is the run [Method](Method.md) asks for, and it disagrees with it on three
-counts:
+On this checkpoint the run disagrees with [Method](Method.md) on three counts:
 
 1. **`prob` reaches 0.917, not 0.98.**
 2. **R² does not peak at `prob`.** It peaks one layer earlier, at `classifier.3`
@@ -258,6 +339,11 @@ counts:
    (0.604 vs 0.548, 0.924 vs 0.869; italicised above). The learned contribution
    is confined to the classifier end, where the ordering does hold — and even
    there the gap is 0.149, far short of the documented 0.98 − 0.60 = 0.38.
+
+All three are **specific to this checkpoint** — the next section runs the same
+comparison on the paper's, where 1 and 2 do not arise. Note also that the
+`features.0` row is on the noise floor (see above), so its trained-vs-scrambled
+ordering in point 3 is not a fact about learned weights.
 
 Read the scrambled column with its spacing CV: 4.07 / 3.54 / 3.54 at the three
 late taps, against 0.59–0.89 for the trained net. A high R² there coexists with
@@ -322,9 +408,62 @@ that touches the input, so no input-gain or channel-scaling error survives
 anywhere in the converted net. `test_preprocessing_fold_is_exact` pins the
 arithmetic offline.
 
-They do genuinely differ, and the depth profile above says where: identical at
-conv1_1, diverging through the conv stack, re-converging at the classifier. A
-real difference between two legitimately different checkpoints.
+They do genuinely differ, and the depth profile above says where: diverging
+through the conv stack and re-converging at the classifier. (They also "agree at
+conv1_1", but that agreement is forced by the noise floor and is not evidence
+about the checkpoints either way.) A real difference between two legitimately
+different checkpoints.
+
+### Which checkpoint the paper used, and what reproduces on it
+
+§8.1 of [the paper](1701.04674-adaptation-as-readout.pdf) says the models were
+run in **MatConvNet 1.0-beta20**, and that *"for VGG-19 and ResNet-152, we used
+the imported pre-trained original versions"*. The original VGG-19 is
+Simonyan & Zisserman's Caffe release — the weights `convert_weights.py`
+converts. **Torchvision's `IMAGENET1K_V1` is a different training run**, and the
+paper never used it.
+
+Checked against the paper's four §5 claims, on the 45-tap runs at `--reps 250`:
+
+| paper §5 | converted Caffe | `IMAGENET1K_V1` |
+|---|---|---|
+| `prob` R² = **98%** | **0.980** ✓ | 0.917 ✗ |
+| *"much lower … up to layer fc7"* | fc7 0.750, conv1_1 0.756 ✓ | fc7 0.869 ✗ |
+| `prob` is the top | peak of all 45 taps ✓ | peak is `classifier.4`, 0.928 ✗ |
+| scrambled = **60%** | 0.429 ✗ | 0.768 ✗ |
+
+**Three of the four reproduce on the paper's own weights, to three decimals.**
+The [Method](Method.md) "expected results" table was not wrong; it was being
+checked against a checkpoint the paper never used. This closes what had been
+recorded there as a contested number.
+
+The scrambled control remains a genuine disagreement — 0.429 against 0.60, with
+the paper naming no permutation seed and the four-seed sweep above spanning
+0.169. Per rule 4 that one stays stated, not reconciled.
+
+This also reverses the framing of the section above it. "The converted Caffe run
+is the outlier" is true only among the torchvision runs; measured against the
+paper, `IMAGENET1K_V1` is the outlier and Caffe is the reference.
+
+### Contrast constancy — the paper's actual §5 headline
+
+The log-linearity result is introduced in the paper as *"an interesting,
+unexpected observation"*. Its stated headline for that section is contrast
+constancy: *"Contrast constancy: bandpass transduction in first layers is later
+corrected"* — a response strongly modulated by spatial frequency at low
+contrast, converging to frequency-invariant at high contrast.
+
+It reproduces. Ratio of the largest to the smallest D across the 8 frequencies,
+at the extremes of the contrast axis:
+
+| tap | at lowest contrast | at c = 1 |
+|---|---|---|
+| Caffe `classifier.4` | 51.1× | **1.48×** |
+| Caffe `prob` | 85.2× | **1.40×** |
+| IN1K `prob` | 375× | 2.33× |
+
+Both checkpoints show the collapse; Caffe gets closer to true invariance. This
+is measured, not new — it was sitting in the committed surfaces unreported.
 
 ## VGG-19, verified run
 

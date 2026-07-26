@@ -44,8 +44,17 @@ overlays its fitted power law against the same two references. **On a log
 contrast axis the shapes are inverted from the intuition**: the *log* law is the
 straight line and linear-in-contrast bends upward. The axis label says so.
 
-Back-ends: `synthetic` (offline), any `torchvision.models` arch, `clip:ViT-B-32`,
-`hf:<model-id>` (generative VLM), `sam[:<model-id>]`.
+Back-ends: `synthetic` (offline), `data` (raw pixels — the paper's `data` row and
+the metric's noise floor, also offline), any `torchvision.models` arch,
+`clip:ViT-B-32`, `hf:<model-id>` (generative VLM), `sam[:<model-id>]`.
+
+Both offline back-ends run anywhere in seconds to minutes and need no weights,
+so they are the two things worth running first in a new environment:
+
+```bash
+python -m log_response.run --model synthetic --reps 12   # pipeline check
+python -m log_response.run --model data --reps 50        # noise floor
+```
 
 ### Flags
 
