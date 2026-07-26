@@ -41,11 +41,11 @@ class ExperimentResult:
     def _chi2_per_dof(self, layer: str) -> float:
         """Best law's chi-squared per degree of freedom, needs ``noise``.
 
-        This is the question ``logness`` cannot answer. ``logness`` says which of
-        two laws fits better; only an absolute scale says whether *either* fits.
-        ~1 means the law is consistent with the data given measurement error;
-        much greater than 1 means both candidate laws are wrong and the
-        linear-vs-log framing is the wrong question for that layer.
+        The absolute-scale companion to ``lam``: ``lam`` says *where* between
+        the two laws a response sits, and ``lam_r2`` how well the family
+        describes it, but only measured error says whether the residual left
+        over is consistent with noise. ~1 means the law fits within measurement
+        error; much greater than 1 means real structure is unaccounted for.
         """
         res = self.results[layer]
         sigma = self.noise[layer]
@@ -94,7 +94,7 @@ class ExperimentResult:
         name_w = max(14, max(len(layer) for layer in self.layers) + 2)
         header = (
             f"{'layer':<{name_w}}{'mean R^2':>10}{'pooled R^2':>12}{'spacing CV':>12}"
-            f"{'logness':>10}{'quality':>9}{'c%lin':>8}{'c%log':>8}"
+            f"{'lambda':>9}{'95% CI':>16}{'lam R^2':>9}{'c%lin':>8}{'c%log':>8}"
             + (f"{'chi2/dof':>12}" if self.noise else "")
         )
         lines.append(header)
@@ -108,17 +108,22 @@ class ExperimentResult:
             ]
             cv = float(np.nanmean(cvs))
             cerr = res.contrast_error
+            lo, hi = res.lam_ci
             lines.append(
                 f"{layer:<{name_w}}{res.mean_r2:>10.3f}{res.pooled.r2:>12.3f}{cv:>12.3f}"
-                f"{res.logness:>+10.3f}{res.fit_quality:>9.3f}"
+                f"{res.lam:>+9.2f}{f'[{lo:+.2f}, {hi:+.2f}]':>16}{res.lam_r2:>9.3f}"
                 f"{cerr[0]:>8.2f}{cerr[1]:>8.2f}"
                 + (f"{self._chi2_per_dof(layer):>12.3g}" if self.noise else "")
             )
         lines.append("")
         lines.append(
-            "logness: (RSS_lin-RSS_log)/(RSS_lin+RSS_log) -- -1 response linear in "
-            "contrast, +1 linear in log contrast, 0 tie or noise. Endpoints are "
-            "exact and grid-independent; calibrated in test_metric_calibration."
+            "lambda: exponent of D = a + b*(c^lam - 1)/lam -- 0 is the log law, "
+            "1 linear in contrast, 0.5 square root, <0 saturating. Measured, not "
+            "a choice between two laws; calibrated in test_lambda_calibration."
+        )
+        lines.append(
+            "95% CI: profile-F interval on lambda. Spanning the search range "
+            "means the data pin nothing down -- that layer has no exponent."
         )
         lines.append(
             "c%lin / c%log: median relative error when each law is inverted to "
@@ -130,8 +135,9 @@ class ExperimentResult:
                 "D. ~1 means it fits within noise; >>1 means neither law is right."
             )
         lines.append(
-            "quality: best R^2 of either law -- read logness 0 as 'tie' when "
-            "high, 'noise' when low."
+            "lam R^2: fit of the power family. Read lambda against it -- where "
+            "this sags the exponent locates a response the family does not "
+            "describe, and means correspondingly less."
         )
         return "\n".join(lines)
 
@@ -267,12 +273,9 @@ def result_summary(result: ExperimentResult, metadata: dict | None = None) -> di
                 # The headline statistic. Recorded here as well as recomputed on
                 # load, so a committed directory states its own result rather
                 # than depending on whatever fit.py does at read time.
-                "logness": _finite(res.logness),
-                "fit_quality": _finite(res.fit_quality),
-                # The pre-2026-07-26 definition, kept so runs committed under it
-                # stay checkable against what they reported. Superseded: its
-                # endpoints are unreachable and its scale moves with the grid.
-                "logness_r2diff": _finite(res.logness_r2diff),
+                "lambda": _finite(res.lam),
+                "lambda_ci": [_finite(v) for v in res.lam_ci],
+                "lambda_r2": _finite(res.lam_r2),
                 "pooled_r2": _finite(res.pooled.r2),
                 "pooled_slope": _finite(res.pooled.slope),
                 "spacing_cv": _finite(np.nanmean(cvs)),

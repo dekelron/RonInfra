@@ -1,5 +1,12 @@
 # vgg19-r250-s0-alllayers-fixed-caffe
 
+> **Metric change (2026-07-26).** `logness` was removed; the headline
+> statistic is now `λ`, the exponent of `D = a + b·(c^λ − 1)/λ` — **0 is the
+> log law, 1 linear in contrast**. Any `logness` value in the prose below is
+> on the retired scale. This run's `result.json` carries `lambda`,
+> `lambda_ci` and `lambda_r2`, re-fitted from the committed surfaces, and is
+> the authority where the two disagree. See `wiki/Results.md`.
+
 `vgg19`, 250 reps/cell, best mean R² 0.980 at `prob`.
 
 ## What this run was for

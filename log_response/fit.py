@@ -1,19 +1,38 @@
-"""Fitting the log-contrast response law.
+"""Fitting the contrast response law.
 
 Stated operationally: the mean absolute change in an end-computation DNN
 representation (L1 distance from the gray reference) is a *linear* function of
 the *log* of input contrast. Equivalently, log-spaced contrasts land at (near)
-equal spacing in representation space. The quality of that linear fit reaches
-R^2 ~= 0.98 at the final ("prob") layer, averaged across spatial frequencies.
+equal spacing in representation space.
 
-This module fits ``L1 = a * log10(contrast) + b`` and reports R^2, both per
-spatial frequency and pooled across frequencies.
+Two things are fitted here, and only one of them is a claim.
+
+``fit_log_linear`` fits ``L1 = a * log10(contrast) + b`` and reports R^2, per
+spatial frequency and pooled -- the law as stated, taken at face value.
+
+``fit_power_lambda`` asks the prior question: *what shape is the response?* It
+fits the one-parameter family ``L1 = a + b * (c**lam - 1) / lam``, in which
+``lam = 0`` is the log law and ``lam = 1`` is linear in raw contrast, and
+returns the exponent with a confidence interval. This supersedes the
+``logness`` statistic the module used to report (a race between the two
+straight lines, scored by residual ratio), which was removed on 2026-07-26
+because neither straight line describes the data: the trained net is convex in
+``log c`` at 95 % of layer-frequency cells and the scrambled control is not
+monotone at 41 % of them. The power family fits 0.92-0.998 everywhere the
+straight lines did not. See ``wiki/Results.md``.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cached_property
 import numpy as np
+
+# Search bounds for the Box-Tidwell exponent. Wide enough to contain everything
+# measured so far (a scrambled Caffe net reaches +2.75) with room either side;
+# a fit that pins to a bound is reported through its confidence interval, which
+# then spans the whole range and says so.
+LAMBDA_LO, LAMBDA_HI = -3.0, 4.0
 
 
 @dataclass
@@ -51,9 +70,10 @@ def fit_log_linear(contrast: np.ndarray, response: np.ndarray) -> LinearLogFit:
 def fit_linear_in_contrast(contrast: np.ndarray, response: np.ndarray) -> LinearLogFit:
     """Least-squares fit of ``response = slope * contrast + intercept``.
 
-    The null the log law is judged against: same data, same parameter count,
-    raw contrast instead of its logarithm. ``slope``/``intercept`` are in
-    contrast units here, so only ``r2`` is comparable with ``fit_log_linear``.
+    The ``lam = 1`` corner of ``fit_power_lambda``, kept as a direct fit because
+    "linear in raw contrast" is worth being able to ask for by name.
+    ``slope``/``intercept`` are in contrast units here, so only ``r2`` is
+    comparable with ``fit_log_linear``.
     """
     contrast = np.asarray(contrast, dtype=np.float64)
     response = np.asarray(response, dtype=np.float64)
@@ -68,6 +88,176 @@ def fit_linear_in_contrast(contrast: np.ndarray, response: np.ndarray) -> Linear
         slope=float(slope), intercept=float(intercept), r2=r2, n=int(contrast.size)
     )
 
+
+@dataclass
+class PowerFit:
+    """One layer-frequency fitted to ``D = a + b * (c**lam - 1) / lam``.
+
+    ``lam`` is the whole answer: **0** the log law, **1** linear in raw
+    contrast, **0.5** a square root, negative a saturating response. ``lo``/
+    ``hi`` bracket it at 95 %; a fit that determines nothing returns the full
+    search range, which is the honest report rather than a fabricated zero.
+    """
+
+    lam: float
+    a: float
+    b: float
+    r2: float
+    lo: float
+    hi: float
+    n: int
+
+    def predict(self, contrast: np.ndarray) -> np.ndarray:
+        return self.a + self.b * power_basis(np.asarray(contrast, dtype=np.float64), self.lam)
+
+
+def power_basis(contrast: np.ndarray, lam: float) -> np.ndarray:
+    """``(c**lam - 1) / lam``, continuous at ``lam = 0`` where it is ``ln c``.
+
+    The Box-Cox/Box-Tidwell form rather than the bare ``c**lam``, and the
+    difference matters: ``c**lam`` collapses to the constant 1 as ``lam -> 0``,
+    so the log law would be unreachable. Subtracting 1 and dividing by ``lam``
+    makes the limit ``ln c`` by L'Hopital, so a single parameter moves
+    continuously from log through square root to linear and beyond.
+    """
+    log_c = np.log(contrast)
+    if abs(lam) < 1e-9:
+        return log_c
+    return np.expm1(lam * log_c) / lam
+
+
+def _profile_rss(basis: np.ndarray, response: np.ndarray) -> float:
+    """Residual sum of squares after fitting ``a + b * basis`` by OLS.
+
+    ``a`` and ``b`` enter linearly at any fixed ``lam``, so they are profiled
+    out in closed form and the search over ``lam`` stays one-dimensional.
+    """
+    xm, ym = basis.mean(), response.mean()
+    sxx = float(((basis - xm) ** 2).sum())
+    if sxx <= 0.0:  # degenerate basis (lam pinned where c**lam is constant)
+        return float(((response - ym) ** 2).sum())
+    b = float(((basis - xm) * (response - ym)).sum()) / sxx
+    resid = response - (ym + b * (basis - xm))
+    return float((resid * resid).sum())
+
+
+def _f_quantile_95(dof: int) -> float:
+    """``F(1, dof, 0.95)`` = ``t(dof, 0.975)**2``, via Cornish-Fisher.
+
+    scipy is not a dependency here. The expansion is within 0.02 % of the exact
+    quantile by dof = 11 (the 14-point contrast grid), which is far finer than
+    the interval it feeds.
+    """
+    if dof < 1:
+        return float("inf")
+    z = 1.959963984540054  # normal 0.975
+    z3, z5, z7 = z ** 3, z ** 5, z ** 7
+    t = (
+        z
+        + (z3 + z) / (4 * dof)
+        + (5 * z5 + 16 * z3 + 3 * z) / (96 * dof ** 2)
+        + (3 * z7 + 19 * z5 + 17 * z3 - 15 * z) / (384 * dof ** 3)
+    )
+    return float(t * t)
+
+
+def fit_power_lambda(contrast: np.ndarray, response: np.ndarray) -> PowerFit:
+    """Fit the exponent that says *where between log and linear* a response sits.
+
+    This replaces the two-model comparison the module used to run. Racing
+    ``D = a + b*log c`` against ``D = a + b*c`` and reporting which loses less
+    only makes sense if one of them is right, and on this data neither is: the
+    trained net is convex in ``log c`` at 95 % of layer-frequency cells and the
+    scrambled control is not even monotone at 41 % of them. Both straight lines
+    are wrong, so the comparison was deciding between two wrong answers -- and
+    because it summed *squared* residuals, a single contrast point carried
+    20-55 % of the verdict.
+
+    Nesting both laws in one family removes the race. ``lam`` is measured, with
+    an interval, on a scale that means something physically:
+
+    ======  ==============================================
+    ``lam``  response
+    ======  ==============================================
+    0        ``a + b*ln c``           -- the log law
+    0.5      ``propto sqrt(c)``
+    1        ``a + b*c``              -- linear in contrast
+    < 0      saturating
+    > 1      accelerating
+    ======  ==============================================
+
+    ``a`` and ``b`` are profiled out by OLS at each ``lam``, leaving a smooth
+    1-D objective solved by a grid scan for the basin and golden section inside
+    it -- no gradients, no scipy, float64 throughout.
+
+    The interval is the profile-F set ``{lam : RSS(lam) <= RSS_min * (1 +
+    F(1, n-3, 0.95)/(n-3))}``. It is what makes the fit self-reporting: pure
+    noise returns the entire search range rather than a confident number, so an
+    uninformative fit is visible instead of being averaged in.
+
+    Read ``lam`` against ``r2``. The exponent locates a response only to the
+    extent the family describes it at all; where R^2 sags, ``lam`` means less.
+    """
+    contrast = np.asarray(contrast, dtype=np.float64)
+    response = np.asarray(response, dtype=np.float64)
+    mask = contrast > 0  # c**lam undefined at zero contrast for lam <= 0
+    c, y = contrast[mask], response[mask]
+    if c.size < 3:
+        raise ValueError("need at least three positive-contrast points to fit lambda")
+
+    grid = np.linspace(LAMBDA_LO, LAMBDA_HI, 141)
+    rss_grid = np.array([_profile_rss(power_basis(c, L), y) for L in grid])
+
+    i = int(np.argmin(rss_grid))
+    lo_b = grid[max(i - 1, 0)]
+    hi_b = grid[min(i + 1, grid.size - 1)]
+    inv_phi = (np.sqrt(5.0) - 1.0) / 2.0
+    x1 = hi_b - inv_phi * (hi_b - lo_b)
+    x2 = lo_b + inv_phi * (hi_b - lo_b)
+    f1 = _profile_rss(power_basis(c, x1), y)
+    f2 = _profile_rss(power_basis(c, x2), y)
+    for _ in range(60):  # 0.618**60 * 0.1 is far below float64 resolution
+        if f1 < f2:
+            hi_b, x2, f2 = x2, x1, f1
+            x1 = hi_b - inv_phi * (hi_b - lo_b)
+            f1 = _profile_rss(power_basis(c, x1), y)
+        else:
+            lo_b, x1, f1 = x1, x2, f2
+            x2 = lo_b + inv_phi * (hi_b - lo_b)
+            f2 = _profile_rss(power_basis(c, x2), y)
+    lam = 0.5 * (lo_b + hi_b)
+
+    basis = power_basis(c, lam)
+    rss = _profile_rss(basis, y)
+    xm, ym = basis.mean(), y.mean()
+    sxx = float(((basis - xm) ** 2).sum())
+    b = float(((basis - xm) * (y - ym)).sum()) / sxx if sxx > 0 else 0.0
+    a = float(ym - b * xm)
+    tss = float(((y - ym) ** 2).sum())
+    r2 = 1.0 - rss / tss if tss > 0 else float("nan")
+
+    dof = c.size - 3  # a, b, lam
+    threshold = rss * (1.0 + _f_quantile_95(dof) / max(dof, 1))
+    # Bisect for each endpoint rather than reading them off ``grid``. Off the
+    # grid, the interval can exclude its own point estimate: a minimum at 1.18
+    # with 0.05 spacing reported [1.20, 1.20].
+    ends = []
+    for outer in (LAMBDA_LO, LAMBDA_HI):
+        if _profile_rss(power_basis(c, outer), y) <= threshold:
+            ends.append(outer)  # still inside at the bound: unbounded this side
+            continue
+        inside, outside = lam, outer
+        for _ in range(60):
+            mid = 0.5 * (inside + outside)
+            if _profile_rss(power_basis(c, mid), y) <= threshold:
+                inside = mid
+            else:
+                outside = mid
+        ends.append(0.5 * (inside + outside))
+    return PowerFit(
+        lam=float(lam), a=a, b=b, r2=r2,
+        lo=float(ends[0]), hi=float(ends[1]), n=int(c.size),
+    )
 
 
 def inverse_contrast_error(contrast: np.ndarray, response: np.ndarray) -> tuple[float, float]:
@@ -97,8 +287,8 @@ def inverse_contrast_error(contrast: np.ndarray, response: np.ndarray) -> tuple[
     versus relative error in contrast is the same arbitrary choice as ``c``
     versus ``log c`` as the regressor -- inverting relocates the choice rather
     than removing it. Use it because "recovers contrast to within 16%" is
-    readable in a way R^2 is not; decide with ``logness``, which measures better
-    against seed noise.
+    readable in a way R^2 is not; decide with ``fit_power_lambda``, which
+    measures the shape instead of choosing between two guesses at it.
     """
     contrast = np.asarray(contrast, dtype=np.float64)
     response = np.asarray(response, dtype=np.float64)
@@ -138,98 +328,53 @@ class LayerLogResult:
         """
         return float(np.nanmean([f.r2 for f in self.per_frequency]))
 
-    @property
-    def logness(self) -> float:
-        """Does the response follow log contrast or raw contrast? In [-1, +1].
-
-        ``(RSS_lin - RSS_log) / (RSS_lin + RSS_log)``, averaged over
-        frequencies: **-1** a perfectly linear-in-contrast response, **+1**
-        perfectly linear in log contrast, **0** a tie -- which for an
-        unstructured response means noise, since neither law explains it.
-
-        R^2 alone cannot answer this. Any monotone rising response scores high
-        against *both* regressors -- conv1_1 reaches 0.94 against raw contrast
-        while scoring 0.55 against log contrast, so its low log-R^2 reads as a
-        weak response when the layer is in fact near-perfectly linear, which is
-        what a linear filter must do. Differencing cancels the shared "it rises"
-        variance and leaves only the shape.
-
-        Both fits run on the same data, so their total sum of squares cancels
-        and this is computable from the two R^2 directly::
-
-            (r2_log - r2_lin) / (2 - r2_log - r2_lin)
-
-        **The denominator is the whole point.** Normalising that same numerator
-        by *total* variance instead -- plain ``r2_log - r2_lin``, which this
-        property used to return -- cannot reach either endpoint: ``c`` and
-        ``log c`` are monotone transforms of one another and stay strongly
-        correlated, so when ``r2_log`` hits 1.0 the linear fit still holds
-        ``r2_lin = 0.736``. A perfect log response scored only **+0.264** on
-        this grid, and that ceiling moved with the contrast grid (**0.294**
-        linearly spaced), so values were not comparable across grids. It was
-        also unbounded in practice, since curvature reads as "anti-log":
-        ``D = c^2`` scored -1.589 and a scrambled net reached -0.381, both past
-        a perfect straight line's -0.264. Dividing by the residual budget fixes
-        all three -- endpoints exact, grid-free, and inside [-1, +1] by
-        construction.
-
-        Verified against ground truth in ``test_metric_calibration``: perfect
-        log +1.000, perfect linear -1.000, pure noise 0.000 +/- 0.05, on both
-        the log-spaced and the linear grid.
-
-        The cost is variance -- the denominator shrinks as both fits improve, so
-        this is noisier than the difference form on a clean response. That is
-        the right trade: a calibrated statistic with an honest error bar beats a
-        quiet one whose scale is wrong by 3.8x.
-
-        Residuals are taken in the **response** axis, not the contrast axis.
-        Inverting each law to predict contrast and differencing *there* is the
-        more natural-sounding comparison, but the two inversions are not
-        symmetric -- the log law's inverse exponentiates response noise while
-        the linear law's divides it -- so their errors differ by orders of
-        magnitude, the ratio pins to +/-1, and the zero stops meaning anything
-        (pure noise scores -0.985). Same axis, same noise, symmetric comparison.
-        ``inverse_contrast_error`` reports the contrast-axis view separately,
-        where its units are the point.
-
-        Both models carry two parameters on identical data, so AIC and BIC
-        differences reduce to the plain likelihood ratio -- no complexity
-        penalty enters the comparison.
-        """
-        out = []
-        for f, lin in zip(self.per_frequency, self._linear_fits):
-            denom = 2.0 - f.r2 - lin.r2
-            out.append((f.r2 - lin.r2) / denom if denom > 0 else float("nan"))
-        if not out or np.all(np.isnan(out)):
-            return float("nan")
-        return float(np.nanmean(out))
+    @cached_property
+    def power_fits(self) -> list[PowerFit]:
+        """The per-frequency Box-Tidwell fits behind ``lam``/``lam_r2``/``lam_ci``."""
+        return [
+            fit_power_lambda(self.contrasts, self.response[fi])
+            for fi in range(self.response.shape[0])
+        ]
 
     @property
-    def logness_r2diff(self) -> float:
-        """The pre-2026-07-26 ``logness``: plain ``R2_log - R2_linear``.
+    def lam(self) -> float:
+        """Where this layer sits between the log law and linear in contrast.
 
-        Kept because every run committed before that date quotes it, and the
-        surfaces in ``result.npz`` re-fit into either statistic. Do not use it
-        for new claims -- its endpoints are unreachable and its scale depends on
-        the contrast grid. See ``logness`` for the measured numbers.
+        The **median** per-frequency exponent -- 0 log, 1 linear, 0.5 square
+        root, negative saturating. Median rather than mean on purpose: a
+        frequency whose response is non-monotone yields an arbitrary exponent,
+        and no run should be swung by one of them. Nothing is dropped, so the
+        count of such frequencies stays visible in ``lam_ci`` and ``lam_r2``.
+
+        Free sanity check: ``features.0`` is a convolution, whose output must be
+        linear in the grating's amplitude whatever the weights, so ``lam`` there
+        must be ~1 regardless of checkpoint or scrambling. It measures 0.92-0.93
+        across all four committed 45-tap runs, agreeing to 0.01.
         """
-        return float(np.nanmean([
-            f.r2 - lin.r2 for f, lin in zip(self.per_frequency, self._linear_fits)
-        ]))
+        return float(np.nanmedian([f.lam for f in self.power_fits]))
 
     @property
-    def fit_quality(self) -> float:
-        """Best R^2 of either law, in [0, 1] -- the companion to ``logness``.
+    def lam_r2(self) -> float:
+        """Mean R^2 of the power fits -- how much ``lam`` is worth believing.
 
-        ``logness`` is 0 both when the two laws fit equally well and when
-        neither fits at all; one scalar cannot separate those. This says which:
-        near 1 the response is well described and the laws are simply hard to
-        tell apart, near 0 nothing describes it.
+        Always read alongside ``lam``. The exponent locates a response only
+        insofar as the family describes it: the scrambled ``IMAGENET1K_V1``
+        control returns a log-like ``lam`` ~= 0.17 while fitting at 0.918
+        against the trained net's 0.978, and that gap is what separates them.
         """
-        return float(np.nanmean([
-            max(f.r2, lin.r2)
-            for f, lin in zip(self.per_frequency, self._linear_fits)
-        ]))
+        return float(np.nanmean([f.r2 for f in self.power_fits]))
+
+    @property
+    def lam_ci(self) -> tuple[float, float]:
+        """Median 95 % profile-F interval on ``lam``, as ``(lo, hi)``.
+
+        Widens to the full search range where the data determine nothing, which
+        is how an uninformative layer announces itself.
+        """
+        return (
+            float(np.nanmedian([f.lo for f in self.power_fits])),
+            float(np.nanmedian([f.hi for f in self.power_fits])),
+        )
 
     @property
     def contrast_error(self) -> tuple[float, float]:
@@ -246,14 +391,6 @@ class LayerLogResult:
             float(np.nanmean([p[0] for p in pairs])),
             float(np.nanmean([p[1] for p in pairs])),
         )
-
-    @property
-    def _linear_fits(self) -> list[LinearLogFit]:
-        """The same OLS against raw contrast, for the ``logness`` comparison."""
-        return [
-            fit_linear_in_contrast(self.contrasts, self.response[fi])
-            for fi in range(self.response.shape[0])
-        ]
 
 
 def summarise_layer(

@@ -47,7 +47,13 @@ from .gratings import (
     to_rgb,
     CONTRASTS,
 )
-from .fit import fit_log_linear, linear_spacing_uniformity, summarise_layer
+from .fit import (
+    fit_log_linear,
+    fit_power_lambda,
+    linear_spacing_uniformity,
+    power_basis,
+    summarise_layer,
+)
 from .features import (
     DEFAULT_PROMPTS,
     FeatureModel,
@@ -113,13 +119,14 @@ def test_log_spaced_becomes_evenly_spaced():
     assert linear_spacing_uniformity(y) > 0.1
 
 
-def test_metric_calibration():
-    """logness must hit its stated endpoints, and mean zero on noise.
+def test_lambda_calibration():
+    """lambda must recover the exponent of a response built to have one.
 
-    This is the test the old definition (plain R2_log - R2_linear) failed: it
-    topped out at +0.264 on this grid while claiming +1, and that ceiling moved
-    with the contrast grid, so values were not comparable across grids. Pin all
-    three properties on BOTH grids.
+    Every case here has a known answer by construction, on BOTH contrast grids:
+    the exponent is a property of the response, not of how the contrast axis
+    was sampled. This is what the retired ``logness`` could not do -- its scale
+    moved with the grid (ceiling 0.264 log-spaced, 0.294 linear), so a run on
+    one grid was not comparable with a run on the other.
     """
     grids = {
         "log": np.asarray(CONTRASTS, dtype=np.float64),
@@ -127,52 +134,96 @@ def test_metric_calibration():
     }
     freqs = np.asarray([4.0])
     for name, c in grids.items():
-        def logness_of(response):
+        def lam_of(response):
             surface = np.asarray(response, dtype=np.float64)[None, :]
-            return summarise_layer("x", c, freqs, surface).logness
+            return summarise_layer("x", c, freqs, surface).lam
 
-        # A response that is exactly one law scores exactly that endpoint.
-        assert abs(logness_of(np.log10(c)) - 1.0) < 1e-9, name
-        assert abs(logness_of(c.copy()) + 1.0) < 1e-9, name
-
-        # ...and cannot leave [-1, +1], however curved the response is.
-        for shape in (c ** 2, c ** 4, np.exp(8.0 * c), 1.0 / c):
-            assert -1.0 <= logness_of(shape) <= 1.0, (name, shape[:2])
-
-        # Unstructured response: neither law explains it, so the two fit
-        # equally badly and the statistic reports the tie as 0.
-        rng = np.random.default_rng(0)
-        draws = [logness_of(rng.normal(size=c.size)) for _ in range(200)]
-        assert abs(float(np.mean(draws))) < 0.02, (name, np.mean(draws))
+        # ln and log10 differ by a constant factor, which b absorbs: both are
+        # the log law, both must give exactly 0.
+        assert abs(lam_of(np.log10(c))) < 1e-6, name
+        assert abs(lam_of(np.log(c))) < 1e-6, name
+        # An affine response in c is lam = 1 whatever a and b are.
+        assert abs(lam_of(c.copy()) - 1.0) < 1e-6, name
+        assert abs(lam_of(5.0 * c - 2.0) - 1.0) < 1e-6, name
+        # ...and the family reaches everything between and outside.
+        for expected, shape in ((0.5, np.sqrt(c)), (2.0, c ** 2),
+                                (3.0, c ** 3), (-0.5, c ** -0.5)):
+            assert abs(lam_of(shape) - expected) < 1e-5, (name, expected)
 
 
-def test_metric_endpoints_are_grid_independent():
-    """The same response shape scores the same on either contrast grid.
+def test_lambda_reports_its_own_ignorance_on_noise():
+    """An unstructured response must widen the interval, not fake an exponent.
 
-    The old definition normalised by total variance, whose ceiling depends on
-    how the contrast axis is sampled (0.264 log-spaced vs 0.294 linear), so a
-    run on one grid could not be compared with a run on the other.
-    """
-    freqs = np.asarray([4.0])
-    scores = []
-    for c in (np.asarray(CONTRASTS, dtype=np.float64),
-              np.linspace(min(CONTRASTS), max(CONTRASTS), len(CONTRASTS))):
-        surface = np.log10(c)[None, :]
-        scores.append(summarise_layer("x", c, freqs, surface).logness)
-    assert abs(scores[0] - scores[1]) < 1e-9
-
-
-def test_legacy_logness_is_preserved_for_committed_runs():
-    """The superseded statistic stays available, and stays superseded.
-
-    Committed runs quote the old number; it must remain recomputable from the
-    surfaces. It must also still show the flaw that retired it -- a perfect log
-    response scoring 0.264 rather than 1.
+    The retired statistic answered 0 for "the two laws tie" and 0 for "neither
+    law fits", and one scalar could not separate them. lambda separates them by
+    construction: the point estimate is meaningless on noise, so the test pins
+    the *interval*, which must span essentially the whole search range, and the
+    R2, which must be low.
     """
     c = np.asarray(CONTRASTS, dtype=np.float64)
-    layer = summarise_layer("x", c, np.asarray([4.0]), np.log10(c)[None, :])
-    assert abs(layer.logness - 1.0) < 1e-9
-    assert abs(layer.logness_r2diff - 0.264) < 0.002
+    freqs = np.asarray([4.0])
+    rng = np.random.default_rng(0)
+    widths, r2s = [], []
+    for _ in range(200):
+        layer = summarise_layer("x", c, freqs, rng.normal(size=c.size)[None, :])
+        lo, hi = layer.lam_ci
+        widths.append(hi - lo)
+        r2s.append(layer.lam_r2)
+    # A clean log response pins lambda to well under 0.2 of range; noise must
+    # not come anywhere near that.
+    assert float(np.median(widths)) > 3.0, float(np.median(widths))
+    assert float(np.mean(r2s)) < 0.5, float(np.mean(r2s))
+
+    tight = summarise_layer("x", c, freqs, np.log10(c)[None, :])
+    assert (tight.lam_ci[1] - tight.lam_ci[0]) < 0.2
+    assert tight.lam_r2 > 0.999
+
+
+def test_lambda_interval_contains_its_own_estimate():
+    """The interval is bisected, not read off the search grid.
+
+    Read off a 0.05-spaced grid, a minimum at 1.18 reported [1.20, 1.20] -- an
+    interval excluding the estimate it brackets, and a zero width where the fit
+    was merely very good. Both were real: features.2 of the Caffe 45-tap run.
+    """
+    c = np.asarray(CONTRASTS, dtype=np.float64)
+    rng = np.random.default_rng(3)
+    for target in (0.0, 0.18, 0.5, 1.18, 1.53, 2.0, -0.4):
+        y = power_basis(c, target) + 1e-4 * rng.normal(size=c.size)
+        fit = fit_power_lambda(c, y)
+        assert fit.lo <= fit.lam <= fit.hi, (target, fit.lo, fit.lam, fit.hi)
+        assert fit.hi > fit.lo, (target, fit.lo, fit.hi)
+
+
+def test_lambda_survives_the_grid_it_is_measured_on():
+    """The same response shape returns the same exponent on either grid."""
+    freqs = np.asarray([4.0])
+    for shape, expected in ((np.log10, 0.0), (np.sqrt, 0.5)):
+        got = []
+        for c in (np.asarray(CONTRASTS, dtype=np.float64),
+                  np.linspace(min(CONTRASTS), max(CONTRASTS), len(CONTRASTS))):
+            got.append(summarise_layer("x", c, freqs, shape(c)[None, :]).lam)
+        assert abs(got[0] - got[1]) < 1e-5, (expected, got)
+        assert abs(got[0] - expected) < 1e-5, (expected, got)
+
+
+def test_power_basis_is_continuous_through_the_log_law():
+    """(c^lam - 1)/lam must approach ln c as lam -> 0, not blow up or flatten.
+
+    The reason for the Box-Cox form over a bare ``c**lam``: the latter tends to
+    the constant 1, which would put the log law outside the family altogether.
+    """
+    c = np.asarray(CONTRASTS, dtype=np.float64)
+    exact = np.log(c)
+    # The expansion is ln c + lam*(ln c)^2/2 + O(lam^2), so the error is
+    # first-order in lam and the bound has to be too -- a fixed tolerance would
+    # be testing the contrast range rather than the continuity.
+    bound = np.max(np.log(c) ** 2)
+    for lam in (1e-3, 1e-5, 1e-7, 0.0, -1e-7, -1e-5, -1e-3):
+        got = power_basis(c, lam)
+        assert np.max(np.abs(got - exact)) <= abs(lam) * bound, lam
+    # ...and it is genuinely different from the naive basis nearby.
+    assert np.max(np.abs(power_basis(c, 1e-3) - c ** 1e-3)) > 1.0
 
 
 def test_synthetic_frontend_shows_log_response():

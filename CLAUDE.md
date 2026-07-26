@@ -17,7 +17,7 @@ adding a new one.
 ## Working on this repo
 
 - Run from the repo root: `python -m log_response.run`, never as a script.
-- `python -m log_response.test_pipeline` is the fast check — 24 tests, no
+- `python -m log_response.test_pipeline` is the fast check — 29 tests, no
   downloaded weights, runs anywhere.
 - Long runs: background them and wait on the output file rather than watching
   (see the cost table in `wiki/Running.md`). Always `--save-run`; the `D(freq,
@@ -120,9 +120,12 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
 2. ~~**Measure the depth profile on both checkpoints.**~~ **Done.** All 45 taps,
    both checkpoints, trained and scrambled. They agree at conv1_1 to 0.001,
    diverge through the conv stack, and re-converge at the classifier. The
-   crossover to log-like is carried by *rectifications*, not by depth: each conv
-   pushes `logness` down, each ReLU pushes it up, and on Caffe the whole network
-   crosses at one ReLU (`classifier.4`, -0.241 -> +0.133). See `wiki/Results.md`.
+   crossover to log-like is carried by *rectifications*, not by depth. On λ:
+   Caffe holds λ ≈ 1.0 (flatly **linear in contrast**, R² 0.999) through the
+   whole conv stack, then one ReLU takes it `classifier.3` 1.10 → `classifier.4`
+   0.21, and `prob` lands at **λ = 0.06 [−0.05, +0.13]** — the log law, measured.
+   `IMAGENET1K_V1` starts lower (conv median 0.69) and drifts to 0.16. See
+   `wiki/Results.md`.
 3. **Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.** The
    done sweep varied both at once (one flag drove both until now), so it bounds
    permutation variance rather than isolating it.
@@ -141,54 +144,60 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   reps, changing the checkpoint moves `prob` 0.063 and the control 0.332; at a
   fixed checkpoint, changing reps 5× moves them 0.004 and 0.008. The converted
   Caffe run is the outlier; everything measured on `IMAGENET1K_V1` agrees.
-- **The scrambled control is not a single number.** Four permutations at
-  identical settings give `prob` 0.760 / 0.863 / 0.704 / 0.693 — spread 0.169,
-  sd 0.078. The trained net is 0.913 there, so the learned contribution reads
-  anywhere from 0.050 to 0.220 depending on the draw. Treat every single-seed
-  control value (0.428, 0.768, and the documented 0.60) as one sample, and do
-  not quote a trained-minus-scrambled gap from one seed.
+- **The scrambled control is not a single number — and not a single shape.**
+  Four permutations at identical settings give `prob` R² 0.760 / 0.863 / 0.704 /
+  0.693 (spread 0.169, sd 0.078). On λ the spread is qualitative, not just
+  numeric: seeds 0–2 give λ 0.19 / 0.19 / 0.16 with R² 0.77–0.91 (nothing fits),
+  while **seed 3 gives λ = 1.04 [0.96, 1.13] at R² 0.992** — cleanly *linear in
+  contrast*, because its response is flat until c ≈ 0.25 and then rises sharply.
+  Per-frequency λ within seed 3 runs 1.77 → 0.80. Treat every single-seed
+  control value as one sample, and do not quote a trained-minus-scrambled gap
+  from one seed.
 - Runner wall time varies **2.0×** for identical work (58.6 / 69.7 / 116.5 /
   118.4 min over four jobs, byte-identical code). Size any new grid against the
   slow end or it can miss the 6 h cap.
 - The log-like behaviour is produced by **rectifications**, not accumulated
-  depth: convolutions push `logness` toward linear-in-contrast and ReLUs push it
-  back, a sawtooth the three-tap view could not show.
+  depth: convolutions hold λ near 1 and ReLUs push it down toward 0, a sawtooth
+  the three-tap view could not show.
 - ~~The **linear-vs-log contrast grid** is the main untested caveat.~~ **Closed —
   tested, and the profile survives.** The whole depth profile was re-measured on
-  `--contrasts linear` (same endpoints, even spacing, nothing else changed). On
-  the current metric: mean |Δ `logness`| 0.090 trained / 0.103 scrambled against
-  a profile spanning ~1.4; **0/45** sign flips trained; 43/44 consecutive steps
-  agree in direction. The scrambled column's 23 sign flips and 40/44 steps carry
-  no information — it sits on top of zero (+0.091 mean after `features.16`), so
-  its sign is a coin flip. See `wiki/Results.md` and the two `-alllayers-linear`
-  runs.
-  - **Retracted from the first write-up of this:** the claim that the shift was
-    negative at *every one* of the 37 conv taps. It came from comparing raw
-    pre-2026-07-26 `logness` across two grids whose ceilings differed (0.264 vs
-    0.294) — a comparison that statistic did not support. Now −0.092 mean,
-    range −0.178 to +0.107. Not uniform.
-- R² is a poor summary for the scrambled column: its spacing CV runs 3.5–4.1
-  (against 0.6–0.9 trained), i.e. a spike at the top contrast that a line fits.
-  Quote the CV alongside it, or prefer a different statistic.
-- **`logness` was redefined on 2026-07-26 — read every older number with care.**
-  It is now `(RSS_lin − RSS_log)/(RSS_lin + RSS_log)`; it was plain
-  `R²_log − R²_lin`. The old form could not reach its stated endpoints (a
-  *perfect* log response scored +0.264, not +1), its ceiling moved with the
-  contrast grid (0.294 linearly spaced), and curvature pushed it past its own
-  bounds (`D = c²` → −1.589). So every pre-2026-07-26 figure was ~3.8× smaller
-  than its stated scale implied, and cross-grid comparisons were invalid.
-  `logness_r2diff` still computes the old value, and each `result.json` now
-  records both. Nothing needed re-running — `result.npz` holds the surfaces.
-  - The **biggest** substantive change: the scrambled control no longer looks
-    nearly as log-like as the trained net. At `prob`, old +0.120 vs +0.151 (a
-    near-tie, and the control exceeded the trained net at 32/45 taps); new
-    +0.076 vs +0.466. The old form normalised by *total* variance and so could
-    not tell "fits log better" from "fits nothing well"; the new one divides by
-    the residual budget, which pushes a badly-fit response toward 0.
-  - Residuals are taken in the **response** axis on purpose. Inverting to the
-    contrast axis and differencing there — the more natural-sounding version —
-    is not symmetric: the log law's inverse exponentiates response noise while
-    the linear law's divides it, so the errors differ by orders of magnitude,
-    the ratio pins to ±1, and pure noise scores −0.985 instead of 0. Measured,
-    not assumed. `inverse_contrast_error` reports the contrast-axis view
-    separately, where its physical units are the point.
+  `--contrasts linear` (same endpoints, even spacing, nothing else changed).
+  On λ: mean |Δλ| **0.045** trained / 0.024 scrambled against a profile spanning
+  ~2.7, and **44/44** consecutive steps agree in direction. `prob` moves +0.165
+  → +0.180. See `wiki/Results.md` and the two `-alllayers-linear` runs.
+- **`logness` was removed on 2026-07-26 and replaced by `λ`.** Not redefined —
+  removed. It had already been redefined once that day, from `R²_log − R²_lin`
+  to a residual ratio, and the second look showed the whole framing was wrong:
+  it raced two straight lines against each other, and **neither line describes
+  the data**. The trained net is convex in `log c` at **95%** of
+  layer-frequency cells; the scrambled control is not even monotone at **41%**
+  of them. Because the race summed *squared* residuals, one contrast point out
+  of 14 carried **20–55%** of the verdict.
+  - What replaced it: `D = a + b·(c^λ − 1)/λ`, the Box-Tidwell/Box-Cox nested
+    family, fitted by profiling out `a, b` and searching λ. **λ = 0 is the log
+    law, λ = 1 linear in contrast, 0.5 a square root, negative saturating.** One
+    measured parameter with a profile-F interval, not a choice between two
+    guesses. It fits **0.92–0.998** everywhere the straight lines did not.
+  - It is **grid-free by construction**, so the cross-grid comparisons the old
+    statistic could not support are now valid.
+  - Pure noise returns the **entire search range** as its interval instead of a
+    confident number. That is the property the ±1 form never had: it answered 0
+    both for "the two laws tie" and for "neither law fits".
+  - Nothing was re-run — `result.npz` holds the surfaces, so every committed
+    directory re-fits. `result.json` now carries `lambda`, `lambda_ci`,
+    `lambda_r2` where it carried `logness`, `fit_quality`, `logness_r2diff`.
+    **`logness` is gone from the code entirely**; notes written before this date
+    quote it, and `result.json` is the authority where they disagree.
+- **Always quote λ with its R².** λ locates a response only insofar as the
+  family describes it, and this is exactly where the scrambled control bites:
+  scrambled `IMAGENET1K_V1` returns a log-*looking* λ ≈ 0.17 while fitting at
+  0.918 against the trained net's 0.978. λ alone does not separate them; λ with
+  R² does. (Gating out the non-monotone cells would separate them too — that
+  was considered and **deliberately rejected**: do not silently drop data.)
+- **`prob` carries no information beyond `logits` in a scrambled net.** Their
+  surfaces correlate at r = 1.000000 with ratio exactly 1/1000 in every
+  scrambled run — with 1000 classes the softmax is in its affine regime, so
+  `Δprob = Δlogits/1000`. In the trained net r = 0.961 and the softmax is doing
+  real work. This is why the control cannot reproduce the trained net's
+  final-layer behaviour, and it was invisible until λ returned identical values
+  at the two taps.

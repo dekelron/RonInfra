@@ -1,5 +1,12 @@
 # vgg19-r250-s0-alllayers-linear
 
+> **Metric change (2026-07-26).** `logness` was removed; the headline
+> statistic is now `λ`, the exponent of `D = a + b·(c^λ − 1)/λ` — **0 is the
+> log law, 1 linear in contrast**. Any `logness` value in the prose below is
+> on the retired scale. This run's `result.json` carries `lambda`,
+> `lambda_ci` and `lambda_r2`, re-fitted from the committed surfaces, and is
+> the authority where the two disagree. See `wiki/Results.md`.
+
 `vgg19`, 250 reps/cell, best mean R² 0.950 at `classifier.4`.
 
 ## What this run was for
@@ -14,31 +21,28 @@ in nothing but where the contrast axis is sampled.
 
 ## What it showed
 
-> Numbers below are on the `logness` definition adopted 2026-07-26. This run's
-> `result.json` carries both it and the superseded `logness_r2diff`.
+**The picture holds.** Mean **|Δλ|** across the 45 layers is **0.045**, against
+a profile spanning ~2.7 from conv stack to output. `prob` moves +0.165 → +0.180;
+the crossing ReLU is still `classifier.4` (+0.010 → +0.086). Individual shifts
+range −0.049 to +0.142.
 
-**The picture holds.** Mean |Δ logness| across the 45 layers is **0.090**,
-against a profile spanning ~1.4 from conv stack to output, with **zero** sign
-flips in 45. `prob` moves +0.466 → +0.540; the crossing ReLU is still
-`classifier.4` (+0.477 → +0.594).
+The sawtooth is reproduced layer for layer, not just in aggregate: **44 of 44**
+consecutive steps move in the same direction on both grids. That is the
+strongest form this control can take, and it is now unanimous — the shape, not
+only its summary, is a property of the network rather than of the sampling.
 
-The sawtooth is reproduced very nearly layer for layer, not just in aggregate:
-**43 of 44** consecutive steps move in the same direction on both grids. That is
-the strongest form this control can take — the shape, not only its summary, is a
-property of the network rather than of the sampling.
+λ is grid-free by construction, so this is a comparison of two measurements
+rather than of two rulers. That was not true of either `logness` definition, and
+it is why this control had to be restated twice.
 
-The residual shift averages −0.092 across the conv stack but ranges −0.178 to
-+0.107, so it has no consistent direction, and it is well below the effects being
-claimed.
-
-> **Retracted.** The first write-up of this run claimed the shift was negative at
-> *every one* of the 37 conv-stack taps (mean −0.041, range −0.056 to −0.010) and
-> read that as a real bias toward "linear" from even sampling. It was an
-> artifact: those were raw pre-2026-07-26 `logness` values compared across two
-> grids whose ceilings differed (0.264 log-spaced vs 0.294 linear), so the
-> comparison was between two different rulers. That statistic did not support a
-> cross-grid comparison at all — the current one does, and under it the shift is
-> not uniform. The headline (the profile survives the grid change) stands.
+> **Retracted, left as a record.** The first write-up claimed the shift was
+> negative at *every one* of the 37 conv-stack taps (mean −0.041, range −0.056
+> to −0.010), read as a real bias toward "linear" from even sampling. It was an
+> artifact of comparing raw `R²_log − R²_lin` across two grids whose ceilings
+> differed (0.264 log-spaced vs 0.294 linear) — two different rulers. Restated
+> on the residual-ratio form it became −0.092 mean, range −0.178 to +0.107, not
+> uniform; on λ it is −0.049 to +0.142. The headline (the profile survives the
+> grid change) has stood throughout.
 
 ## Reproduce
 
