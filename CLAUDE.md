@@ -156,9 +156,31 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
 - Runner wall time varies **2.0×** for identical work (58.6 / 69.7 / 116.5 /
   118.4 min over four jobs, byte-identical code). Size any new grid against the
   slow end or it can miss the 6 h cap.
-- The log-like behaviour is produced by **rectifications**, not accumulated
-  depth: convolutions hold λ near 1 and ReLUs push it down toward 0, a sawtooth
-  the three-tap view could not show.
+- **The ReLU sawtooth is real on `IMAGENET1K_V1` and absent on Caffe.** Measured
+  per transition type on λ, trained runs, `features.*`:
+
+  | | conv → ReLU | ReLU → conv |
+  |---|---|---|
+  | `IMAGENET1K_V1` | mean **−0.155**, 14/16 negative | mean **+0.166**, 10/11 positive |
+  | converted Caffe | mean +0.023, 5/16 negative | mean −0.015, 7/11 negative |
+
+  So "convolutions hold λ near 1 and ReLUs push it down" describes one
+  checkpoint, not the mechanism. Caffe's conv stack is flat at λ ≈ 1 with no
+  sawtooth at all; it leaves the linear regime only at `classifier.4`. Per rule
+  4 this is stated as a disagreement between the runs — do not quote the
+  `IMAGENET1K_V1` sawtooth as a property of VGG-19.
+  - **Corrected 2026-07-26.** The general form of this claim was committed
+    earlier the same day, carried over from the retired metric's write-up
+    without re-checking it per checkpoint. It was wrong for Caffe.
+- **Why λ ≈ 1 survives 33 layers — the live hypothesis.** The grating is a
+  *perturbation* `gray + c·g` about a fixed operating point, and a ReLU net is
+  piecewise linear, so while the perturbation does not flip ReLU gates,
+  `D = |J·(c·g)| = c·|J·g|` exactly — linear in contrast at any depth. On this
+  reading λ < 1 is the signature of gates actually switching with contrast, and
+  the log response is what emerges once they do. Caffe stays in that regime for
+  the whole conv stack; `IMAGENET1K_V1` leaves it gradually from mid-stack.
+  **Untested.** The direct check is to count ReLU sign flips between gray and
+  grating against `c`; that needs a forward pass, so it is an Actions job.
 - ~~The **linear-vs-log contrast grid** is the main untested caveat.~~ **Closed —
   tested, and the profile survives.** The whole depth profile was re-measured on
   `--contrasts linear` (same endpoints, even spacing, nothing else changed).

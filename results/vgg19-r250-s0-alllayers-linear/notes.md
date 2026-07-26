@@ -27,7 +27,9 @@ the crossing ReLU is still `classifier.4` (+0.010 → +0.086). Individual shifts
 range −0.049 to +0.142.
 
 The sawtooth is reproduced layer for layer, not just in aggregate: **44 of 44**
-consecutive steps move in the same direction on both grids. That is the
+consecutive steps move in the same direction on both grids. (The sawtooth is
+this checkpoint's — `IMAGENET1K_V1` alternates conv/ReLU by −0.155/+0.166, the
+converted Caffe run does not alternate at all. See `wiki/Results.md`.) That is the
 strongest form this control can take, and it is now unanimous — the shape, not
 only its summary, is a property of the network rather than of the sampling.
 

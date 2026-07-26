@@ -50,8 +50,36 @@ arbitrary scale.
 takes `classifier.3` **+1.104 → classifier.4 +0.211**, and `prob` lands at
 **λ = 0.059, CI [−0.05, +0.13], R² 0.992** — the log law, measured, with an
 interval that contains 0. `IMAGENET1K_V1` does the same more gradually (+0.623 →
-+0.010 at that ReLU, `prob` +0.165). The three-tap view looked like a smooth
-trend with depth; it is a sawtooth, and the rectifications carry it.
++0.010 at that ReLU, `prob` +0.165).
+
+**But the per-layer sawtooth is one checkpoint's, not VGG-19's.** Averaged over
+the `features.*` stack of the trained runs:
+
+| | conv → ReLU | ReLU → conv |
+|---|---|---|
+| `IMAGENET1K_V1` | mean **−0.155**, 14/16 negative | mean **+0.166**, 10/11 positive |
+| converted Caffe | mean +0.023, 5/16 negative | mean −0.015, 7/11 negative |
+
+`IMAGENET1K_V1` shows the alternation cleanly; Caffe's steps are noise about
+zero and its conv stack is simply flat at λ ≈ 1. Per rule 4 both are stated
+rather than averaged together.
+
+> **Corrected 2026-07-26.** An earlier version of this section asserted the
+> sawtooth as a general mechanism — "convolutions push λ toward linear and ReLUs
+> push it back". That was carried over from the retired metric's write-up
+> without re-checking it per checkpoint, and it is false for Caffe. The
+> `classifier.4` crossing, which is what the surrounding claims rest on, is
+> unaffected: it is large on both checkpoints.
+
+**Why λ ≈ 1 can survive 33 layers.** The grating is a *perturbation*
+`gray + c·g` about a fixed operating point, and a ReLU network is piecewise
+linear — so as long as the perturbation does not flip ReLU gates,
+`D = |J·(c·g)| = c·|J·g|`, exactly linear in contrast at any depth. Read that
+way, λ < 1 is the signature of gates switching with contrast, and the log
+response is what appears once they do. Caffe stays in the locally-linear regime
+for its whole conv stack; `IMAGENET1K_V1` leaves it from mid-stack. This is a
+**hypothesis, not a measurement** — the direct test is to count ReLU sign flips
+between gray and grating against `c`, which needs a forward pass.
 
 **The two controls differ in kind, not degree.** Scrambled Caffe runs *away*
 from the log law with depth, to a classifier median of **λ = +2.75** at R² 0.972
@@ -75,9 +103,10 @@ values at both taps.
 control was *nearly as log-like* as the trained net (+0.120 vs +0.151 at `prob`,
 exceeding it at 32 of 45 taps). That was normalisation by total variance failing
 to distinguish "fits log better" from "fits nothing". The qualitative findings —
-input agreement, the crossing at `classifier.4`, the sawtooth, the two controls
-behaving differently — survived both metric changes. What did not survive is any
-reading of the scrambled column as log-like.
+input agreement, the crossing at `classifier.4`, the two controls behaving
+differently — survived both metric changes. What did not survive is any reading
+of the scrambled column as log-like, and the sawtooth as a *general* mechanism
+(see the correction above).
 
 Regenerate the profile from the committed surfaces:
 
