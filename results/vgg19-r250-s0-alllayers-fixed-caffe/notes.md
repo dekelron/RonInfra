@@ -4,11 +4,21 @@
 
 ## What this run was for
 
-Caffe half of the checkpoint comparison: all 43 taps, fixed hook, same settings as the IMAGENET1K_V1 pair so the two are measured identically
+Every leaf module tapped (43 + `logits`/`prob`), converted Caffe weights, trained. One quarter of the 2x2 that locates *where* along depth the response changes shape, and whether the two checkpoints differ there.
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+`logness` at the ends: -0.224 at `features.0` (conv1_1) and +0.227 at `prob`.
+The full profile is the point, not any single layer -- see
+[Results](../../wiki/Results.md#where-the-log-response-appears-along-depth).
+
+Stays linear-in-contrast for the whole network and crosses only at
+`classifier.4`, the ReLU after fc7: -0.241 -> +0.133, a jump of 0.374
+at one rectification.
+
+Its `weights_sha256` is `2c7887c87148`, matching the sandbox
+conversion behind [`vgg19-r50-s0`](../vgg19-r50-s0/notes.md) while the
+file hash differs -- the conversion reproduces across machines.
 
 ## Reproduce
 

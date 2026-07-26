@@ -4,11 +4,18 @@
 
 ## What this run was for
 
-Caffe half of the checkpoint comparison: all 43 taps, fixed hook, same settings as the IMAGENET1K_V1 pair so the two are measured identically
+Every leaf module tapped (43 + `logits`/`prob`), converted Caffe weights, scrambled. One quarter of the 2x2 that locates *where* along depth the response changes shape, and whether the two checkpoints differ there.
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+`logness` at the ends: -0.225 at `features.0` (conv1_1) and -0.381 at `prob`.
+The full profile is the point, not any single layer -- see
+[Results](../../wiki/Results.md#where-the-log-response-appears-along-depth).
+
+Flat at about -0.38 throughout and **never crosses zero**: this control
+does not become log-like anywhere. That is why the trained-minus-
+scrambled gap is large on Caffe and near zero on `IMAGENET1K_V1`,
+where the control does reach the same place as the trained net.
 
 ## Reproduce
 

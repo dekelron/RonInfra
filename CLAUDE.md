@@ -17,7 +17,7 @@ adding a new one.
 ## Working on this repo
 
 - Run from the repo root: `python -m log_response.run`, never as a script.
-- `python -m log_response.test_pipeline` is the fast check — 21 tests, no
+- `python -m log_response.test_pipeline` is the fast check — 24 tests, no
   downloaded weights, runs anywhere.
 - Long runs: background them and wait on the output file rather than watching
   (see the cost table in `wiki/Running.md`). Always `--save-run`; the `D(freq,
@@ -117,13 +117,12 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
      `test_preprocessing_fold_is_exact` pins the arithmetic offline.
    - *Do the two checkpoints genuinely differ, and where?* — the science, in
      item 2 below. The audit result makes this the only live explanation.
-2. **Measure the depth profile on both checkpoints.** Where along depth do Caffe
-   and `IMAGENET1K_V1` diverge? Both halves are now runnable on a runner with
-   the same code: `weights: caffe` on the workflow fetches and converts (the
-   HDF5 is cached, `--verify` re-establishes exactness per run) and auto-suffixes
-   the slug `-caffe` so it cannot collide with an `-in1k` run. Divergence
-   confined to the late layers is a real lineage difference — the conversion
-   explanation is gone.
+2. ~~**Measure the depth profile on both checkpoints.**~~ **Done.** All 45 taps,
+   both checkpoints, trained and scrambled. They agree at conv1_1 to 0.001,
+   diverge through the conv stack, and re-converge at the classifier. The
+   crossover to log-like is carried by *rectifications*, not by depth: each conv
+   pushes `logness` down, each ReLU pushes it up, and on Caffe the whole network
+   crosses at one ReLU (`classifier.4`, -0.241 -> +0.133). See `wiki/Results.md`.
 3. **Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.** The
    done sweep varied both at once (one flag drove both until now), so it bounds
    permutation variance rather than isolating it.
@@ -151,9 +150,12 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
 - Runner wall time varies **2.0×** for identical work (58.6 / 69.7 / 116.5 /
   118.4 min over four jobs, byte-identical code). Size any new grid against the
   slow end or it can miss the 6 h cap.
-- The Caffe conversion was validated by classification accuracy only (89.9 %
-  "Samoyed"), which cannot detect a gain or channel-scaling error that leaves
-  argmax intact while shifting `D`. It is the prime suspect for the outlier.
+- The log-like behaviour is produced by **rectifications**, not accumulated
+  depth: convolutions push `logness` toward linear-in-contrast and ReLUs push it
+  back, a sawtooth the three-tap view could not show.
+- The **linear-vs-log contrast grid** experiment is the main untested caveat:
+  the default grid is log-spaced, which is not neutral between the two laws
+  `logness` compares. `--contrasts linear` exists; the run has not been done.
 - R² is a poor summary for the scrambled column: its spacing CV runs 3.5–4.1
   (against 0.6–0.9 trained), i.e. a spike at the top contrast that a line fits.
   Quote the CV alongside it, or prefer a different statistic.

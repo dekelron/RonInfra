@@ -1,5 +1,45 @@
 # Results
 
+## Where the log response appears along depth
+
+All 45 leaf modules, `--reps 250`, both checkpoints, trained and scrambled —
+four runs measured on identical code. Read with `logness` (−1 linear in
+contrast, +1 linear in log contrast), not R²: R² is floored high by any rising
+response and cannot tell the two laws apart.
+
+**The checkpoints agree exactly at the input.** `features.0` (conv1_1) is
+−0.224 on `IMAGENET1K_V1` and −0.224 on the converted Caffe weights, a
+difference of 0.001. This was the pre-registered test for a conversion
+artifact — a preprocessing gain error would have shown up here, at the only
+layer touching the input — and it is negative. Divergence then grows with depth
+to ~0.27 by `features.33`, and **collapses again at the output** (0.006 at
+`logits`). Same input, different middle, same output.
+
+**One operation does the work, and it is a rectification.** On Caffe the
+response stays linear-in-contrast for the entire network and crosses only at
+`classifier.4`, the ReLU after fc7: −0.241 → **+0.133**, a jump of 0.374 at a
+single ReLU. The pattern is systematic in the late layers — each convolution
+pushes `logness` down, each ReLU pushes it up by 0.08–0.23 (`features.34`
+−0.171 → `features.35` +0.054). The three-tap view looked like a smooth trend
+with depth; it is a sawtooth, and the rectifications carry it.
+
+**The two controls differ in kind, not degree.** Scrambled Caffe sits near
+−0.38 for the whole network and never crosses zero — it does not become
+log-like anywhere. Scrambled `IMAGENET1K_V1` crosses at `features.16` and holds
+≈ +0.12, reaching the same place as its trained counterpart. That is what makes
+the trained-minus-scrambled gap large on Caffe and ≈ 0.03 on `IMAGENET1K_V1`:
+not a smaller effect, a control that behaves differently.
+
+Regenerate the profile from the committed surfaces:
+
+```bash
+python -m log_response.run --load results/vgg19-r250-s0-alllayers-fixed --panels out/p.png
+```
+
+Caveat carried from the metric: the contrast grid is log-spaced, which is not
+neutral between the two laws being compared. `--contrasts linear` exists to test
+whether this picture survives a different sampling; that run has not been done.
+
 ## VGG-19, full grid on the canonical checkpoint
 
 The documented grid — 14 contrasts × 8 frequencies, **`--reps 250`** — on
@@ -102,9 +142,9 @@ that touches the input, so no input-gain or channel-scaling error survives
 anywhere in the converted net. `test_preprocessing_fold_is_exact` pins the
 arithmetic offline.
 
-What remains open is the narrower question: do the two checkpoints genuinely
-differ in this property? That needs their activations compared layer by layer,
-on a runner — `IMAGENET1K_V1` is unreachable from the sandbox.
+They do genuinely differ, and the depth profile above says where: identical at
+conv1_1, diverging through the conv stack, re-converging at the classifier. A
+real difference between two legitimately different checkpoints.
 
 ## VGG-19, verified run
 

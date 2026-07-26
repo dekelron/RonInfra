@@ -4,11 +4,17 @@
 
 ## What this run was for
 
-All 43 taps on the fixed hook (pre-activation taps no longer overwritten by in-place ReLU). IMAGENET1K_V1 half of the checkpoint comparison.
+Every leaf module tapped (43 + `logits`/`prob`), IMAGENET1K_V1 weights, scrambled. One quarter of the 2x2 that locates *where* along depth the response changes shape, and whether the two checkpoints differ there.
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+`logness` at the ends: -0.225 at `features.0` (conv1_1) and +0.120 at `prob`.
+The full profile is the point, not any single layer -- see
+[Results](../../wiki/Results.md#where-the-log-response-appears-along-depth).
+
+Crosses zero at `features.16` and sits near +0.12 for the rest of the
+network -- the scrambled net reaches the same log-side value as the
+trained one, which is what collapses the learned contribution here.
 
 ## Reproduce
 
