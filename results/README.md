@@ -6,10 +6,10 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 
 | Run | Model | Reps | Weights | Headline | Notes |
 |---|---|---|---|---|---|
-| [`vgg19-r250-s0-alllayers-linear`](vgg19-r250-s0-alllayers-linear/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Grid control. Profile survives: mean shift 0.037, 1/45 sign flips, 44/44 steps agree. |
-| [`vgg19-scramble-r250-s0-alllayers-linear`](vgg19-scramble-r250-s0-alllayers-linear/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Control for the above. Mean shift 0.024, 0/45 sign flips. |
+| [`vgg19-r250-s0-alllayers-linear`](vgg19-r250-s0-alllayers-linear/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Grid control. Profile survives: mean shift 0.090, 0/45 sign flips, 43/44 steps agree. |
+| [`vgg19-scramble-r250-s0-alllayers-linear`](vgg19-scramble-r250-s0-alllayers-linear/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Control for the above. Mean shift 0.103; sits on zero, so per-layer stats carry no signal. |
 | [`vgg19-r250-s0-alllayers-fixed`](vgg19-r250-s0-alllayers-fixed/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | all 45 taps | Depth profile. Agrees with Caffe at conv1_1, diverges mid-stack. |
-| [`vgg19-scramble-r250-s0-alllayers-fixed`](vgg19-scramble-r250-s0-alllayers-fixed/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | all 45 taps | Control. Crosses zero at `features.16` and matches the trained net. |
+| [`vgg19-scramble-r250-s0-alllayers-fixed`](vgg19-scramble-r250-s0-alllayers-fixed/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | all 45 taps | Control. Crosses at `features.16`, then sits on zero (+0.09) — neither law fits it. |
 | [`vgg19-r250-s0-alllayers-fixed-caffe`](vgg19-r250-s0-alllayers-fixed-caffe/notes.md) | VGG-19, trained | 250 | converted Caffe | all 45 taps | Crosses only at `classifier.4`, the ReLU after fc7. |
 | [`vgg19-scramble-r250-s0-alllayers-fixed-caffe`](vgg19-scramble-r250-s0-alllayers-fixed-caffe/notes.md) | VGG-19, scrambled | 250 | converted Caffe | all 45 taps | Control. Never crosses zero anywhere. |
 | [`vgg19-scramble-r250-s0-alllayers`](vgg19-scramble-r250-s0-alllayers/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | all 45 taps | **Superseded** — ran before the tap fix; conv taps hold ReLU output. |
@@ -22,6 +22,15 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`vgg19-scramble-r50-s3-in1k`](vgg19-scramble-r50-s3-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.843 (`features.19`) | Seed 3. `prob` 0.693 — the low end. |
 | [`vgg19-r50-s0`](vgg19-r50-s0/notes.md) | VGG-19, trained | 50 | converted Caffe | 0.976 (`prob`) | The outlier. Its checkpoint, not its reps, is why. |
 | [`vgg19-scramble-r50-s0`](vgg19-scramble-r50-s0/notes.md) | VGG-19, scrambled | 50 | converted Caffe | 0.428 (`prob`) | Control. Sits 0.33 below both `IMAGENET1K_V1` controls. |
+
+> **`logness` was redefined on 2026-07-26.** Prose in a `notes.md` written before
+> that date quotes the old statistic (plain `R²_log − R²_lin`), whose endpoints
+> were unreachable — a *perfect* log response scored +0.264, not +1 — and whose
+> scale moved with the contrast grid. Nothing was re-run: `result.npz` holds the
+> surfaces, so every directory here re-fits into the current statistic, and each
+> `result.json` now records `logness`, `fit_quality` and the superseded
+> `logness_r2diff` side by side. When a note and its `result.json` disagree,
+> `result.json` is right. See `wiki/Results.md` for what changed substantively.
 
 Note that "best mean R²" is not `prob` for either r250 run — that is the finding,
 not a slip. Read the r250 rows with the spacing CV in their notes: the scrambled

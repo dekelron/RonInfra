@@ -154,15 +154,41 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   depth: convolutions push `logness` toward linear-in-contrast and ReLUs push it
   back, a sawtooth the three-tap view could not show.
 - ~~The **linear-vs-log contrast grid** is the main untested caveat.~~ **Closed —
-  tested, and the profile survives.** The default grid is log-spaced, which is
-  not neutral between the two laws `logness` compares, so the whole depth profile
-  was re-measured on `--contrasts linear` (same endpoints, even spacing, nothing
-  else changed). Mean |Δ `logness`| 0.037 trained / 0.024 scrambled against
-  effects of 0.2–0.4; 1/45 sign flips trained, 0/45 scrambled; 44/44 consecutive
-  steps agree in direction, so the sawtooth is reproduced layer for layer. The
-  residual shift is small but *systematic* — slightly toward "linear" through the
-  conv stack, the direction even sampling predicts. See `wiki/Results.md` and the
-  two `-alllayers-linear` runs.
+  tested, and the profile survives.** The whole depth profile was re-measured on
+  `--contrasts linear` (same endpoints, even spacing, nothing else changed). On
+  the current metric: mean |Δ `logness`| 0.090 trained / 0.103 scrambled against
+  a profile spanning ~1.4; **0/45** sign flips trained; 43/44 consecutive steps
+  agree in direction. The scrambled column's 23 sign flips and 40/44 steps carry
+  no information — it sits on top of zero (+0.091 mean after `features.16`), so
+  its sign is a coin flip. See `wiki/Results.md` and the two `-alllayers-linear`
+  runs.
+  - **Retracted from the first write-up of this:** the claim that the shift was
+    negative at *every one* of the 37 conv taps. It came from comparing raw
+    pre-2026-07-26 `logness` across two grids whose ceilings differed (0.264 vs
+    0.294) — a comparison that statistic did not support. Now −0.092 mean,
+    range −0.178 to +0.107. Not uniform.
 - R² is a poor summary for the scrambled column: its spacing CV runs 3.5–4.1
   (against 0.6–0.9 trained), i.e. a spike at the top contrast that a line fits.
   Quote the CV alongside it, or prefer a different statistic.
+- **`logness` was redefined on 2026-07-26 — read every older number with care.**
+  It is now `(RSS_lin − RSS_log)/(RSS_lin + RSS_log)`; it was plain
+  `R²_log − R²_lin`. The old form could not reach its stated endpoints (a
+  *perfect* log response scored +0.264, not +1), its ceiling moved with the
+  contrast grid (0.294 linearly spaced), and curvature pushed it past its own
+  bounds (`D = c²` → −1.589). So every pre-2026-07-26 figure was ~3.8× smaller
+  than its stated scale implied, and cross-grid comparisons were invalid.
+  `logness_r2diff` still computes the old value, and each `result.json` now
+  records both. Nothing needed re-running — `result.npz` holds the surfaces.
+  - The **biggest** substantive change: the scrambled control no longer looks
+    nearly as log-like as the trained net. At `prob`, old +0.120 vs +0.151 (a
+    near-tie, and the control exceeded the trained net at 32/45 taps); new
+    +0.076 vs +0.466. The old form normalised by *total* variance and so could
+    not tell "fits log better" from "fits nothing well"; the new one divides by
+    the residual budget, which pushes a badly-fit response toward 0.
+  - Residuals are taken in the **response** axis on purpose. Inverting to the
+    contrast axis and differencing there — the more natural-sounding version —
+    is not symmetric: the log law's inverse exponentiates response noise while
+    the linear law's divides it, so the errors differ by orders of magnitude,
+    the ratio pins to ±1, and pure noise scores −0.985 instead of 0. Measured,
+    not assumed. `inverse_contrast_error` reports the contrast-axis view
+    separately, where its physical units are the point.

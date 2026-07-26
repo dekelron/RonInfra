@@ -116,8 +116,9 @@ class ExperimentResult:
             )
         lines.append("")
         lines.append(
-            "logness: -1 response linear in contrast, +1 linear in log contrast, "
-            "0 tie or noise."
+            "logness: (RSS_lin-RSS_log)/(RSS_lin+RSS_log) -- -1 response linear in "
+            "contrast, +1 linear in log contrast, 0 tie or noise. Endpoints are "
+            "exact and grid-independent; calibrated in test_metric_calibration."
         )
         lines.append(
             "c%lin / c%log: median relative error when each law is inverted to "
@@ -263,6 +264,15 @@ def result_summary(result: ExperimentResult, metadata: dict | None = None) -> di
             {
                 "layer": name,
                 "mean_r2": _finite(res.mean_r2),
+                # The headline statistic. Recorded here as well as recomputed on
+                # load, so a committed directory states its own result rather
+                # than depending on whatever fit.py does at read time.
+                "logness": _finite(res.logness),
+                "fit_quality": _finite(res.fit_quality),
+                # The pre-2026-07-26 definition, kept so runs committed under it
+                # stay checkable against what they reported. Superseded: its
+                # endpoints are unreachable and its scale moves with the grid.
+                "logness_r2diff": _finite(res.logness_r2diff),
                 "pooled_r2": _finite(res.pooled.r2),
                 "pooled_slope": _finite(res.pooled.slope),
                 "spacing_cv": _finite(np.nanmean(cvs)),

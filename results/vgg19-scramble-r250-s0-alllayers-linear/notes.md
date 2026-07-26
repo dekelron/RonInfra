@@ -14,21 +14,28 @@ in nothing but where the contrast axis is sampled.
 
 ## What it showed
 
-**The picture holds.** Mean |Δ logness| across the 45 layers is **0.024**, with
-**no** sign flips anywhere, and `prob` moves +0.120 → +0.102. The finding this
-run exists to protect — that scrambled `IMAGENET1K_V1` crosses zero at
-`features.16` and then holds ≈ +0.1, unlike scrambled Caffe which never crosses
-— is unchanged: the crossing is still at `features.16` (+0.081 → +0.115).
+> Numbers below are on the `logness` definition adopted 2026-07-26. This run's
+> `result.json` carries both it and the superseded `logness_r2diff`.
 
-The shift is negative on average in both halves (conv stack mean −0.021, range
-−0.044 to +0.034; classifier mean −0.017, every tap negative), i.e. marginally
-toward "linear", the direction even sampling predicts.
+**The picture holds where it can.** Mean |Δ logness| across the 45 layers is
+**0.103**, and `prob` moves +0.076 → +0.066. The finding this run exists to
+protect — that scrambled `IMAGENET1K_V1` crosses zero at `features.16` and then
+stays weakly positive, unlike scrambled Caffe which never crosses — is
+unchanged: the crossing is still at `features.16` (+0.216 → +0.307).
 
-Unlike the trained net, step directions agree only 34/44 across the two grids —
-**this is not a failure to reproduce.** After `features.16` this profile is flat
-near +0.12, so its layer-to-layer steps are noise about a constant rather than a
-shape; there is no sawtooth here to reproduce. The trained run's 44/44 is where
-that comparison carries information.
+**Most per-layer statistics on this run carry no information, by construction.**
+After `features.16` the profile averages **+0.091**, i.e. it sits on top of zero.
+So its 23 sign flips and its 40/44 step agreement are what a coin flip about zero
+looks like, not a failure to reproduce — there is no shape here to reproduce.
+That +0.091 is itself the finding: on the current metric, zero means *neither*
+law describes the response, and a scrambled net lands there. The trained run's
+43/44 with zero sign flips is where the grid comparison carries information.
+
+> Under the retired `logness_r2diff` this profile read ≈ +0.12 and was described
+> as "flat near +0.12, reaching the same place as its trained counterpart". That
+> reading was an artifact of normalising by total variance, which could not
+> distinguish "follows the log law" from "follows neither law". See the
+> retraction note in `wiki/Results.md`.
 
 ## Reproduce
 

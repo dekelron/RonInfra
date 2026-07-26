@@ -142,9 +142,10 @@ class LayerLogResult:
     def logness(self) -> float:
         """Does the response follow log contrast or raw contrast? In [-1, +1].
 
-        ``R2_log - R2_linear``, averaged over frequencies: -1 is a perfectly
-        linear-in-contrast response, +1 perfectly linear in log contrast, 0
-        either a tie or noise.
+        ``(RSS_lin - RSS_log) / (RSS_lin + RSS_log)``, averaged over
+        frequencies: **-1** a perfectly linear-in-contrast response, **+1**
+        perfectly linear in log contrast, **0** a tie -- which for an
+        unstructured response means noise, since neither law explains it.
 
         R^2 alone cannot answer this. Any monotone rising response scores high
         against *both* regressors -- conv1_1 reaches 0.94 against raw contrast
@@ -153,14 +154,64 @@ class LayerLogResult:
         what a linear filter must do. Differencing cancels the shared "it rises"
         variance and leaves only the shape.
 
-        Normalised by total variance rather than by the residuals: the ratio
-        form ``(RSS_lin - RSS_log)/(RSS_lin + RSS_log)`` is the same comparison
-        and equals ``-tanh(dAIC/2n)``, but its denominator shrinks as both fits
-        improve, which measured 2.4x noisier across scramble seeds.
+        Both fits run on the same data, so their total sum of squares cancels
+        and this is computable from the two R^2 directly::
+
+            (r2_log - r2_lin) / (2 - r2_log - r2_lin)
+
+        **The denominator is the whole point.** Normalising that same numerator
+        by *total* variance instead -- plain ``r2_log - r2_lin``, which this
+        property used to return -- cannot reach either endpoint: ``c`` and
+        ``log c`` are monotone transforms of one another and stay strongly
+        correlated, so when ``r2_log`` hits 1.0 the linear fit still holds
+        ``r2_lin = 0.736``. A perfect log response scored only **+0.264** on
+        this grid, and that ceiling moved with the contrast grid (**0.294**
+        linearly spaced), so values were not comparable across grids. It was
+        also unbounded in practice, since curvature reads as "anti-log":
+        ``D = c^2`` scored -1.589 and a scrambled net reached -0.381, both past
+        a perfect straight line's -0.264. Dividing by the residual budget fixes
+        all three -- endpoints exact, grid-free, and inside [-1, +1] by
+        construction.
+
+        Verified against ground truth in ``test_metric_calibration``: perfect
+        log +1.000, perfect linear -1.000, pure noise 0.000 +/- 0.05, on both
+        the log-spaced and the linear grid.
+
+        The cost is variance -- the denominator shrinks as both fits improve, so
+        this is noisier than the difference form on a clean response. That is
+        the right trade: a calibrated statistic with an honest error bar beats a
+        quiet one whose scale is wrong by 3.8x.
+
+        Residuals are taken in the **response** axis, not the contrast axis.
+        Inverting each law to predict contrast and differencing *there* is the
+        more natural-sounding comparison, but the two inversions are not
+        symmetric -- the log law's inverse exponentiates response noise while
+        the linear law's divides it -- so their errors differ by orders of
+        magnitude, the ratio pins to +/-1, and the zero stops meaning anything
+        (pure noise scores -0.985). Same axis, same noise, symmetric comparison.
+        ``inverse_contrast_error`` reports the contrast-axis view separately,
+        where its units are the point.
 
         Both models carry two parameters on identical data, so AIC and BIC
         differences reduce to the plain likelihood ratio -- no complexity
         penalty enters the comparison.
+        """
+        out = []
+        for f, lin in zip(self.per_frequency, self._linear_fits):
+            denom = 2.0 - f.r2 - lin.r2
+            out.append((f.r2 - lin.r2) / denom if denom > 0 else float("nan"))
+        if not out or np.all(np.isnan(out)):
+            return float("nan")
+        return float(np.nanmean(out))
+
+    @property
+    def logness_r2diff(self) -> float:
+        """The pre-2026-07-26 ``logness``: plain ``R2_log - R2_linear``.
+
+        Kept because every run committed before that date quotes it, and the
+        surfaces in ``result.npz`` re-fit into either statistic. Do not use it
+        for new claims -- its endpoints are unreachable and its scale depends on
+        the contrast grid. See ``logness`` for the measured numbers.
         """
         return float(np.nanmean([
             f.r2 - lin.r2 for f, lin in zip(self.per_frequency, self._linear_fits)

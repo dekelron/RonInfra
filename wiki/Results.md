@@ -1,34 +1,64 @@
 # Results
 
+> **`logness` was redefined on 2026-07-26 and every number below is on the new
+> scale.** It is now
+> `(RSS_lin − RSS_log)/(RSS_lin + RSS_log)`, which reaches −1 and +1 exactly and
+> reads the same on any contrast grid. The old definition — plain
+> `R²_log − R²_lin` — could not: a *perfect* log response scored only **+0.264**
+> on the default grid while the docstring claimed +1, and that ceiling moved
+> with the grid (0.294 when linearly spaced). Every pre-2026-07-26 figure quoted
+> here was therefore ~3.8× smaller than its own stated scale implied. Nothing
+> was re-run: `result.npz` holds the surfaces, so all 16 committed runs re-fit
+> into the new statistic, and each `result.json` now carries both (`logness` and
+> the superseded `logness_r2diff`). Which findings changed is stated below.
+
 ## Where the log response appears along depth
 
 All 45 leaf modules, `--reps 250`, both checkpoints, trained and scrambled —
 four runs measured on identical code. Read with `logness` (−1 linear in
-contrast, +1 linear in log contrast), not R²: R² is floored high by any rising
-response and cannot tell the two laws apart.
+contrast, +1 linear in log contrast, 0 neither law), not R²: R² is floored high
+by any rising response and cannot tell the two laws apart.
 
-**The checkpoints agree exactly at the input.** `features.0` (conv1_1) is
-−0.224 on `IMAGENET1K_V1` and −0.224 on the converted Caffe weights, a
-difference of 0.001. This was the pre-registered test for a conversion
-artifact — a preprocessing gain error would have shown up here, at the only
-layer touching the input — and it is negative. Divergence then grows with depth
-to ~0.27 by `features.33`, and **collapses again at the output** (0.006 at
-`logits`). Same input, different middle, same output.
+**The checkpoints agree at the input.** `features.0` (conv1_1) is −0.863 on
+`IMAGENET1K_V1` and −0.860 on the converted Caffe weights, a difference of
+**0.003** on a scale where ±1 is saturation. This was the pre-registered test
+for a conversion artifact — a preprocessing gain error would have shown up
+here, at the only layer touching the input — and it is negative. Both sit hard
+against the linear-in-contrast end, which is what a linear filter must do.
+
+**Divergence grows with depth and mostly closes again.** It reaches **1.110** at
+`features.35` — the two checkpoints at opposite ends of the scale — then falls
+to **0.049** at `logits`. It does not close completely: `prob` still differs by
+**0.364** (+0.466 canonical, +0.830 Caffe). Same input, different middle, nearly
+the same output.
 
 **One operation does the work, and it is a rectification.** On Caffe the
-response stays linear-in-contrast for the entire network and crosses only at
-`classifier.4`, the ReLU after fc7: −0.241 → **+0.133**, a jump of 0.374 at a
-single ReLU. The pattern is systematic in the late layers — each convolution
-pushes `logness` down, each ReLU pushes it up by 0.08–0.23 (`features.34`
-−0.171 → `features.35` +0.054). The three-tap view looked like a smooth trend
-with depth; it is a sawtooth, and the rectifications carry it.
+response stays pinned near −1 for the entire conv stack and crosses only at
+`classifier.4`, the ReLU after fc7: −0.927 → **+0.702**, a jump of **1.629** at
+a single ReLU — most of the available range, in one operation. `IMAGENET1K_V1`
+does the same thing earlier and more gradually (`features.34` −0.679 →
+`features.35` +0.148, and −0.211 → +0.477 at that same `classifier.4`). The
+three-tap view looked like a smooth trend with depth; it is a sawtooth, and the
+rectifications carry it.
 
-**The two controls differ in kind, not degree.** Scrambled Caffe sits near
-−0.38 for the whole network and never crosses zero — it does not become
-log-like anywhere. Scrambled `IMAGENET1K_V1` crosses at `features.16` and holds
-≈ +0.12, reaching the same place as its trained counterpart. That is what makes
-the trained-minus-scrambled gap large on Caffe and ≈ 0.03 on `IMAGENET1K_V1`:
-not a smaller effect, a control that behaves differently.
+**The two controls differ in kind, not degree.** Scrambled Caffe spans −0.987 to
+−0.502 across all 45 taps and never crosses zero — it does not become log-like
+anywhere. Scrambled `IMAGENET1K_V1` crosses at `features.16` (+0.216) and then
+averages **+0.091** — positive, but close enough to zero to mean *neither law
+describes it*, which is exactly what the new scale's zero is for. The
+trained-minus-scrambled gap at `prob` is **+0.390** on `IMAGENET1K_V1` and
+**+1.333** on Caffe.
+
+**This is where the metric change mattered most.** Under the old definition the
+scrambled control read +0.120 at `prob` against the trained net's +0.151 — a
+near-tie that made the control look almost as log-like as the trained network,
+and it exceeded the trained net at 32 of 45 taps. That was an artifact of
+normalising by total variance: the scrambled response is poorly fit by *either*
+law, and the old form did not notice. Dividing by the residual budget does, so
+a badly-fit response is now pushed toward 0 rather than scoring high. The
+qualitative findings — the input agreement, the crossing at `classifier.4`, the
+sawtooth, the two controls behaving differently — all survived the change; the
+apparent "the control is as log-like as the trained net" did not.
 
 Regenerate the profile from the committed surfaces:
 
@@ -52,23 +82,33 @@ and
 [`vgg19-scramble-r250-s0-alllayers-linear`](../results/vgg19-scramble-r250-s0-alllayers-linear/notes.md).
 
 **Every claim above survives.** Across the 45 layers, mean |Δ `logness`| is
-**0.037** trained and **0.024** scrambled, against effects of 0.2–0.4. One sign
-flip in 45 (`features.33`, +0.002 → −0.027, a layer already sitting on zero) and
-none in the scrambled control. `prob` +0.151 → +0.164; `classifier.4`, the
-crossing ReLU, +0.153 → +0.162; the scrambled control still crosses at
-`features.16`. The sawtooth is reproduced layer for layer: **44 of 44**
-consecutive steps move in the same direction on both grids.
+**0.090** trained and **0.103** scrambled, against a profile that spans ~1.4
+from conv stack to output. **Zero** sign flips in 45 on the trained net. `prob`
++0.466 → +0.540; `classifier.4`, the crossing ReLU, +0.477 → +0.594; the
+scrambled control still crosses at `features.16` (+0.216 → +0.307). The sawtooth
+is reproduced very nearly layer for layer: **43 of 44** consecutive steps move in
+the same direction on both grids.
 
-The shift is small but it is **not noise** — it runs systematically negative
-through the conv stack (−0.03 to −0.05) and slightly positive at the classifier.
-The linear grid does nudge verdicts marginally toward "linear", which is the
-direction expected from giving the linear fit even leverage. An order of
-magnitude below what is being claimed, so no conclusion moves; recorded rather
-than rounded to zero.
+The shift is small, and it leans slightly toward "log" on the linear grid rather
+than away from it. Note that the metric no longer *has* a grid-dependent
+ceiling — that was the old definition's problem, and it is the reason this
+comparison is now meaningful at all rather than a comparison of two rulers.
 
-The scrambled control's step directions agree only 34/44 — but its profile is
-flat near +0.12 after `features.16`, so those steps are noise about a constant,
-not a shape to reproduce. The trained net's 44/44 is the meaningful figure.
+The scrambled control's step directions agree 40/44 and it shows 23 sign flips —
+neither figure carries information. Its profile sits at +0.091 on average after
+`features.16`, i.e. on top of zero, so its steps are noise about a constant and
+its sign is a coin flip. The trained net's 43/44 with zero sign flips is the
+meaningful figure.
+
+> **Retraction (2026-07-26).** An earlier version of this section claimed the
+> grid shift was "systematically negative through the conv stack", negative at
+> *every one* of the 37 conv taps. That was an artifact of comparing raw
+> pre-2026-07-26 `logness` across two grids with different ceilings — a
+> comparison the old statistic did not support. On the current metric the
+> conv-stack shift averages −0.092 but ranges −0.178 to **+0.107**, so it is
+> **not** uniformly negative. The headline — that the depth profile survives the
+> change of contrast grid — is unaffected and now rests on a statistic that is
+> actually comparable across grids.
 
 ## VGG-19, full grid on the canonical checkpoint
 

@@ -8,7 +8,10 @@ Every leaf module tapped (43 + `logits`/`prob`), IMAGENET1K_V1 weights, scramble
 
 ## What it showed
 
-`logness` at the ends: -0.225 at `features.0` (conv1_1) and +0.120 at `prob`.
+`logness` at the ends: -0.860 at `features.0` (conv1_1) and +0.076 at `prob`.
+(On the definition adopted 2026-07-26; was -0.225 / +0.120 under the
+superseded `logness_r2diff`. The change matters most here: the old form read
+this control as nearly as log-like as the trained net, which it is not.)
 The full profile is the point, not any single layer -- see
 [Results](../../wiki/Results.md#where-the-log-response-appears-along-depth).
 

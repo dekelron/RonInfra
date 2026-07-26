@@ -47,7 +47,7 @@ from .gratings import (
     to_rgb,
     CONTRASTS,
 )
-from .fit import fit_log_linear, linear_spacing_uniformity
+from .fit import fit_log_linear, linear_spacing_uniformity, summarise_layer
 from .features import (
     DEFAULT_PROMPTS,
     FeatureModel,
@@ -111,6 +111,68 @@ def test_log_spaced_becomes_evenly_spaced():
     assert linear_spacing_uniformity(y, logc) < 1e-9
     # Without normalisation, the non-uniform grid looks uneven.
     assert linear_spacing_uniformity(y) > 0.1
+
+
+def test_metric_calibration():
+    """logness must hit its stated endpoints, and mean zero on noise.
+
+    This is the test the old definition (plain R2_log - R2_linear) failed: it
+    topped out at +0.264 on this grid while claiming +1, and that ceiling moved
+    with the contrast grid, so values were not comparable across grids. Pin all
+    three properties on BOTH grids.
+    """
+    grids = {
+        "log": np.asarray(CONTRASTS, dtype=np.float64),
+        "linear": np.linspace(min(CONTRASTS), max(CONTRASTS), len(CONTRASTS)),
+    }
+    freqs = np.asarray([4.0])
+    for name, c in grids.items():
+        def logness_of(response):
+            surface = np.asarray(response, dtype=np.float64)[None, :]
+            return summarise_layer("x", c, freqs, surface).logness
+
+        # A response that is exactly one law scores exactly that endpoint.
+        assert abs(logness_of(np.log10(c)) - 1.0) < 1e-9, name
+        assert abs(logness_of(c.copy()) + 1.0) < 1e-9, name
+
+        # ...and cannot leave [-1, +1], however curved the response is.
+        for shape in (c ** 2, c ** 4, np.exp(8.0 * c), 1.0 / c):
+            assert -1.0 <= logness_of(shape) <= 1.0, (name, shape[:2])
+
+        # Unstructured response: neither law explains it, so the two fit
+        # equally badly and the statistic reports the tie as 0.
+        rng = np.random.default_rng(0)
+        draws = [logness_of(rng.normal(size=c.size)) for _ in range(200)]
+        assert abs(float(np.mean(draws))) < 0.02, (name, np.mean(draws))
+
+
+def test_metric_endpoints_are_grid_independent():
+    """The same response shape scores the same on either contrast grid.
+
+    The old definition normalised by total variance, whose ceiling depends on
+    how the contrast axis is sampled (0.264 log-spaced vs 0.294 linear), so a
+    run on one grid could not be compared with a run on the other.
+    """
+    freqs = np.asarray([4.0])
+    scores = []
+    for c in (np.asarray(CONTRASTS, dtype=np.float64),
+              np.linspace(min(CONTRASTS), max(CONTRASTS), len(CONTRASTS))):
+        surface = np.log10(c)[None, :]
+        scores.append(summarise_layer("x", c, freqs, surface).logness)
+    assert abs(scores[0] - scores[1]) < 1e-9
+
+
+def test_legacy_logness_is_preserved_for_committed_runs():
+    """The superseded statistic stays available, and stays superseded.
+
+    Committed runs quote the old number; it must remain recomputable from the
+    surfaces. It must also still show the flaw that retired it -- a perfect log
+    response scoring 0.264 rather than 1.
+    """
+    c = np.asarray(CONTRASTS, dtype=np.float64)
+    layer = summarise_layer("x", c, np.asarray([4.0]), np.log10(c)[None, :])
+    assert abs(layer.logness - 1.0) < 1e-9
+    assert abs(layer.logness_r2diff - 0.264) < 0.002
 
 
 def test_synthetic_frontend_shows_log_response():
