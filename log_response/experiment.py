@@ -35,6 +35,34 @@ class ExperimentResult:
     # layer -> (n_freq, n_contrast) L1 surface
     surfaces: dict[str, np.ndarray]
     results: dict[str, LayerLogResult]
+    # layer -> (n_freq, n_contrast) standard error of D, or None if not measured.
+    noise: dict[str, np.ndarray] | None = None
+
+    def _chi2_per_dof(self, layer: str) -> float:
+        """Best law's chi-squared per degree of freedom, needs ``noise``.
+
+        This is the question ``logness`` cannot answer. ``logness`` says which of
+        two laws fits better; only an absolute scale says whether *either* fits.
+        ~1 means the law is consistent with the data given measurement error;
+        much greater than 1 means both candidate laws are wrong and the
+        linear-vs-log framing is the wrong question for that layer.
+        """
+        res = self.results[layer]
+        sigma = self.noise[layer]
+        best = []
+        for fi in range(res.response.shape[0]):
+            y, s = res.response[fi], sigma[fi]
+            if not np.all(np.isfinite(s)) or np.any(s <= 0):
+                continue
+            c = res.contrasts
+            chis = []
+            for pred in (
+                np.polyval(np.polyfit(np.log10(c), y, 1), np.log10(c)),
+                np.polyval(np.polyfit(c, y, 1), c),
+            ):
+                chis.append(float(np.sum(((y - pred) / s) ** 2) / max(1, len(y) - 2)))
+            best.append(min(chis))
+        return float(np.mean(best)) if best else float("nan")
 
     def report(self) -> str:
         lines = []
@@ -66,7 +94,8 @@ class ExperimentResult:
         name_w = max(14, max(len(layer) for layer in self.layers) + 2)
         header = (
             f"{'layer':<{name_w}}{'mean R^2':>10}{'pooled R^2':>12}{'spacing CV':>12}"
-            f"{'logness':>10}{'quality':>9}"
+            f"{'logness':>10}{'quality':>9}{'c%lin':>8}{'c%log':>8}"
+            + (f"{'chi2/dof':>12}" if self.noise else "")
         )
         lines.append(header)
         lines.append("-" * len(header))
@@ -78,15 +107,27 @@ class ExperimentResult:
                 for fi in range(res.response.shape[0])
             ]
             cv = float(np.nanmean(cvs))
+            cerr = res.contrast_error
             lines.append(
                 f"{layer:<{name_w}}{res.mean_r2:>10.3f}{res.pooled.r2:>12.3f}{cv:>12.3f}"
                 f"{res.logness:>+10.3f}{res.fit_quality:>9.3f}"
+                f"{cerr[0]:>8.2f}{cerr[1]:>8.2f}"
+                + (f"{self._chi2_per_dof(layer):>12.3g}" if self.noise else "")
             )
         lines.append("")
         lines.append(
             "logness: -1 response linear in contrast, +1 linear in log contrast, "
             "0 tie or noise."
         )
+        lines.append(
+            "c%lin / c%log: median relative error when each law is inverted to "
+            "predict contrast -- 0.16 = recovers it to within 16%."
+        )
+        if self.noise:
+            lines.append(
+                "chi2/dof: the better law, against the measured standard error of "
+                "D. ~1 means it fits within noise; >>1 means neither law is right."
+            )
         lines.append(
             "quality: best R^2 of either law -- read logness 0 as 'tie' when "
             "high, 'noise' when low."
@@ -100,7 +141,25 @@ def run_experiment(
     repetitions: int | None = None,
     seed: int = 0,
     verbose: bool = True,
+    noise_blocks: int = 0,
 ) -> ExperimentResult:
+    """Measure D(freq, contrast) per layer.
+
+    ``noise_blocks`` > 1 additionally splits the repetitions round-robin into
+    that many blocks and reports the standard error of D from their spread. It
+    costs no extra forward passes -- only ``noise_blocks`` extra accumulators --
+    and it is what turns "which law fits better" into "does either law fit
+    within measurement error". Off by default: it multiplies accumulator memory,
+    which matters at ``--layers all``.
+
+    The full-precision accumulator is kept separate and untouched, so D is
+    bit-identical whether or not blocks are requested and stays comparable with
+    every run already committed.
+
+    Caveat: D is a mean of absolute values, a biased nonlinear functional, so a
+    block of reps/K draws is more biased than the full estimate. The spread is a
+    usable variance estimate; the block means are not unbiased replicates.
+    """
     cfg = config or GratingConfig()
     reps = cfg.repetitions if repetitions is None else repetitions
     rng = np.random.default_rng(seed)
@@ -113,6 +172,11 @@ def run_experiment(
     freqs = cfg.frequency_array
     contrasts = cfg.contrast_array
     surfaces = {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
+    nblocks = int(noise_blocks) if noise_blocks and noise_blocks > 1 else 0
+    noise = (
+        {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
+        if nblocks else None
+    )
 
     total = len(freqs) * len(contrasts)
     done = 0
@@ -120,14 +184,40 @@ def run_experiment(
         for ci, c in enumerate(contrasts):
             # Accumulate activations across the random images (mean first).
             sums = {layer: np.zeros_like(ref_rep[layer]) for layer in layers}
-            for img in sample_gratings(c, f, reps, rng, size=cfg.size, mean=cfg.mean):
+            blocks = (
+                [{layer: np.zeros_like(ref_rep[layer]) for layer in layers}
+                 for _ in range(nblocks)]
+                if nblocks else None
+            )
+            counts = [0] * nblocks
+            for idx, img in enumerate(
+                sample_gratings(c, f, reps, rng, size=cfg.size, mean=cfg.mean)
+            ):
                 rep = model.represent(img)
                 for layer in layers:
-                    sums[layer] += rep[layer].astype(np.float64)
+                    value = rep[layer].astype(np.float64)
+                    sums[layer] += value
+                    if blocks is not None:
+                        blocks[idx % nblocks][layer] += value
+                if blocks is not None:
+                    counts[idx % nblocks] += 1
             for layer in layers:
                 mu = sums[layer] / reps
                 # D = mean_i | mu_i - gray_i |  (distance of the class-mean rep)
                 surfaces[layer][fi, ci] = l1_distance(mu, ref_rep[layer])
+                if blocks is not None:
+                    per_block = [
+                        l1_distance(blocks[b][layer] / counts[b], ref_rep[layer])
+                        for b in range(nblocks)
+                        if counts[b] > 0
+                    ]
+                    # sd of the block estimates / sqrt(K): the standard error of
+                    # the full-sample D, which is what the fits should be judged
+                    # against.
+                    noise[layer][fi, ci] = (
+                        float(np.std(per_block, ddof=1) / np.sqrt(len(per_block)))
+                        if len(per_block) > 1 else np.nan
+                    )
             done += 1
             if verbose and done % max(1, total // 10) == 0:
                 print(f"  ... {done}/{total} cells", flush=True)
@@ -142,7 +232,8 @@ def run_experiment(
         for layer in layers
     }
     return ExperimentResult(
-        config=cfg, repetitions=reps, layers=layers, surfaces=surfaces, results=results
+        config=cfg, repetitions=reps, layers=layers, surfaces=surfaces,
+        results=results, noise=noise,
     )
 
 

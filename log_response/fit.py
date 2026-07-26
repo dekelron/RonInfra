@@ -69,6 +69,52 @@ def fit_linear_in_contrast(contrast: np.ndarray, response: np.ndarray) -> Linear
     )
 
 
+
+def inverse_contrast_error(contrast: np.ndarray, response: np.ndarray) -> tuple[float, float]:
+    """Median relative error when each law is inverted to predict contrast.
+
+    Returns ``(linear, log)``. Both laws are fitted **forward** -- least squares
+    in the response axis -- and only then inverted:
+
+        linear  D = a + b*c        ->  c_hat = (D - a) / b
+        log     D = a + b*log10 c  ->  c_hat = 10**((D - a) / b)
+
+    Forward matters. Contrast is set exactly by the experiment and only ``D``
+    carries noise, so regressing contrast on ``D`` would put the noise in the
+    regressor and attenuate the slope. Fitting forward and inverting the fitted
+    curve is calibration, not reverse regression.
+
+    Reported as a *median relative* error for a measured reason: the two
+    inversions have structurally different noise scaling in contrast units. The
+    log law's inverse is exponential in ``D``, so its absolute contrast error
+    grows in proportion to ``c`` -- across this grid, by a factor of ~550 (0.0009
+    at the lowest contrast, 0.50 at the highest). A sum of squared contrast
+    residuals would therefore be decided almost entirely by the single largest
+    contrast, and would favour the linear law for that reason alone. The median
+    is robust to it.
+
+    This is a *reporting* quantity, not an arbiter. Absolute error in contrast
+    versus relative error in contrast is the same arbitrary choice as ``c``
+    versus ``log c`` as the regressor -- inverting relocates the choice rather
+    than removing it. Use it because "recovers contrast to within 16%" is
+    readable in a way R^2 is not; decide with ``logness``, which measures better
+    against seed noise.
+    """
+    contrast = np.asarray(contrast, dtype=np.float64)
+    response = np.asarray(response, dtype=np.float64)
+    out = []
+    for x in (contrast, np.log10(contrast)):
+        slope, intercept = np.polyfit(x, response, 1)
+        if not np.isfinite(slope) or slope == 0:
+            out.append(float("nan"))
+            continue
+        predicted = (response - intercept) / slope
+        if x is not contrast:  # fitted against log10 c, so invert the log too
+            predicted = np.power(10.0, np.clip(predicted, -30.0, 30.0))
+        out.append(float(np.median(np.abs(contrast - predicted) / contrast)))
+    return out[0], out[1]
+
+
 @dataclass
 class LayerLogResult:
     """Log-response summary for one layer.
@@ -133,6 +179,22 @@ class LayerLogResult:
             max(f.r2, lin.r2)
             for f, lin in zip(self.per_frequency, self._linear_fits)
         ]))
+
+    @property
+    def contrast_error(self) -> tuple[float, float]:
+        """``(linear, log)`` median relative error of inverse contrast prediction.
+
+        Averaged over frequencies. Physical units: 0.16 means the law recovers
+        the stimulus contrast to within 16 %.
+        """
+        pairs = [
+            inverse_contrast_error(self.contrasts, self.response[fi])
+            for fi in range(self.response.shape[0])
+        ]
+        return (
+            float(np.nanmean([p[0] for p in pairs])),
+            float(np.nanmean([p[1] for p in pairs])),
+        )
 
     @property
     def _linear_fits(self) -> list[LinearLogFit]:

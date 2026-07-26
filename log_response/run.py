@@ -310,6 +310,16 @@ def main(argv=None):
         "--seed", type=int, default=0, help="RNG seed for the orient/phase draws"
     )
     p.add_argument(
+        "--noise-blocks",
+        type=int,
+        default=0,
+        help="split the repetitions into K blocks and report the standard error "
+        "of D from their spread (K>=2; 0 = off). No extra forward passes, only K "
+        "extra accumulators. Without it there is no error bar on D at all, so "
+        "'which law fits better' cannot become 'does either law fit within "
+        "measurement error'",
+    )
+    p.add_argument(
         "--scramble-seed",
         type=int,
         default=None,
@@ -436,7 +446,8 @@ def main(argv=None):
         )
     started = time.time()
     result = run_experiment(
-        model, cfg, repetitions=args.reps, seed=args.seed, verbose=not args.quiet
+        model, cfg, repetitions=args.reps, seed=args.seed, verbose=not args.quiet,
+        noise_blocks=args.noise_blocks,
     )
     wall_seconds = time.time() - started
     print()
