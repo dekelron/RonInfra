@@ -23,6 +23,12 @@ on:
       frequencies:
         description: "Comma-separated cycles/image (blank = the full 8-frequency grid)"
         default: ""
+      contrasts:
+        description: "Contrast grid: blank = the 14 log-spaced defaults, or
+          'linear[:N]' for evenly spaced over the same range. The default grid is
+          not neutral between the two laws logness compares, so a verdict is only
+          trustworthy if it survives both."
+        default: ""
       layers:
         description: "Comma-separated module names to tap (blank = per-arch default)"
         default: ""
@@ -75,6 +81,7 @@ jobs:
       REPS: ${{ inputs.reps || '250' }}
       SEED: ${{ inputs.seed || '0' }}
       FREQUENCIES: ${{ inputs.frequencies }}
+      CONTRASTS: ${{ inputs.contrasts }}
       LAYERS: ${{ inputs.layers }}
       NOTES: ${{ inputs.notes }}
       SLUG_SUFFIX: ${{ inputs.slug_suffix }}
@@ -195,6 +202,7 @@ jobs:
           # run is recoverable from the committed directory alone.
           if [ "$WEIGHTS" = "caffe" ]; then args+=(--weights "$CAFFE_PTH"); fi
           if [ -n "$FREQUENCIES" ]; then args+=(--frequencies "$FREQUENCIES"); fi
+          if [ -n "$CONTRASTS" ]; then args+=(--contrasts "$CONTRASTS"); fi
           if [ -n "$LAYERS" ]; then args+=(--layers "$LAYERS"); fi
           if [ "$SCRAMBLE" = "true" ]; then args+=(--scramble); fi
 
