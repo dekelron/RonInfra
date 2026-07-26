@@ -394,15 +394,15 @@ def main(argv=None):
             written = save_result(result, args.save, metadata=meta)
             print()
             print(f"saved: {written['npz']}, {written['json']}")
+        # The loaded directory name is the run's identity; put it on the figures.
+        meta = {**meta, "slug": os.path.basename(args.load.rstrip("/"))}
         if args.figures:
-            paths = save_figures(result, args.figures)
+            paths = save_figures(result, args.figures, meta)
             print()
             print("figures:")
             for path in paths:
                 print(f"  {path}")
         if args.panels:
-            # The loaded directory name is the run's identity; put it on the figure.
-            meta = {**meta, "slug": os.path.basename(args.load.rstrip("/"))}
             print()
             print(f"panels: {save_panels(result, args.panels, meta)}")
         return
@@ -474,21 +474,22 @@ def main(argv=None):
             for key in ("npz", "json", "run", "notes"):
                 print(f"  {os.path.basename(written[key])}")
 
+    # Reuse the saved metadata when there is one, so a figure's weight-state
+    # stamp matches what was persisted.
+    meta = metadata if (args.save or args.save_run) else build_metadata(
+        args, model, result, wall_seconds
+    )
+    if args.save_run:
+        meta = {**meta, "slug": os.path.basename(args.save_run.rstrip("/"))}
+
     if args.figures:
-        paths = save_figures(result, args.figures)
+        paths = save_figures(result, args.figures, meta)
         print()
         print("figures:")
         for path in paths:
             print(f"  {path}")
 
     if args.panels:
-        # Reuse the saved metadata when there is one, so the figure's weight-state
-        # stamp matches what was persisted.
-        meta = metadata if (args.save or args.save_run) else build_metadata(
-            args, model, result, wall_seconds
-        )
-        if args.save_run:
-            meta = {**meta, "slug": os.path.basename(args.save_run.rstrip("/"))}
         print()
         print(f"panels: {save_panels(result, args.panels, meta)}")
 

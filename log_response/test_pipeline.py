@@ -64,7 +64,13 @@ from .features import (
     parse_hf_spec,
     parse_sam_spec,
 )
-from .experiment import run_experiment, save_result, save_run_dir, load_result
+from .experiment import (
+    run_experiment,
+    save_result,
+    save_run_dir,
+    load_result,
+    save_figures,
+)
 from .provenance import git_provenance, package_versions
 
 
@@ -657,6 +663,34 @@ def test_save_panels_writes_a_figure():
             {"model": "synthetic", "weights": {"pretrained_verified": None}},
         )
         assert os.path.exists(out) and os.path.getsize(out) > 5000
+
+
+def test_lambda_profile_and_figures_are_written():
+    """--figures emits the depth profile, not just the per-layer panels.
+
+    The profile is how the depth result is read, so it has to come out of the
+    CLI rather than being rebuilt by hand each time. Needs >= 4 contrasts:
+    lambda costs three parameters, so the interval has a degree of freedom.
+    """
+    import os
+    import tempfile
+
+    model = SyntheticFrontEnd()
+    cfg = GratingConfig(size=64, contrasts=(0.05, 0.1, 0.3, 1.0), frequencies_cpi=(7.0, 14.0))
+    result = run_experiment(model, cfg, repetitions=2, verbose=False)
+    from .panels import save_lambda_profile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        out = save_lambda_profile(
+            result,
+            os.path.join(tmp, "nested", "lambda.png"),  # nested dir is created
+            {"model": "synthetic", "weights": {"pretrained_verified": None}},
+        )
+        assert os.path.exists(out) and os.path.getsize(out) > 5000
+
+        paths = save_figures(result, os.path.join(tmp, "figs"))
+        assert any(p.endswith("lambda_profile.png") for p in paths), paths
+        assert all(os.path.exists(p) and os.path.getsize(p) > 2000 for p in paths)
 
 
 def test_git_provenance_records_dirty_paths_verbatim():

@@ -92,6 +92,99 @@ def _stamp(metadata: dict | None) -> str:
     return text
 
 
+def save_lambda_profile(
+    result,
+    path: str,
+    metadata: dict | None = None,
+    title: str | None = None,
+) -> str:
+    """Write the λ-versus-depth profile for ``result``. Returns the path written.
+
+    The figure the depth story is actually read off: λ per tap against the two
+    reference lines that give it meaning (λ = 1 linear in contrast, λ = 0 the
+    log law), with the fit's R² in a row underneath.
+
+    That second row is not decoration. λ locates a response only insofar as the
+    power family describes it, and at the output layer of ``IMAGENET1K_V1`` the
+    trained and scrambled runs return λ 0.165 and 0.169 -- indistinguishable.
+    Only R² (0.952 against 0.823) separates them, so the two are always drawn
+    together and never apart.
+    """
+    import os
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+
+    layers = list(result.layers)
+    lam = np.array([result.results[n].lam for n in layers], dtype=np.float64)
+    r2 = np.array([result.results[n].lam_r2 for n in layers], dtype=np.float64)
+    x = np.arange(len(layers))
+    series = ORDINAL_STEPS[2]
+
+    fig, (ax, ax2) = plt.subplots(
+        2, 1, figsize=(max(7.0, 0.29 * len(layers) + 3.0), 6.6), sharex=True,
+        gridspec_kw={"height_ratios": [2.4, 1], "hspace": 0.14},
+    )
+    fig.patch.set_facecolor(SURFACE)
+
+    # The reference lines are the scale, not a series, so they stay in ink.
+    for yv, lab in ((1.0, "λ = 1   linear in contrast"), (0.0, "λ = 0   log law")):
+        ax.axhline(yv, color=INK_MUTED, lw=1.0, zorder=1)
+        ax.annotate(
+            lab, xy=(1.004, yv), xycoords=("axes fraction", "data"),
+            color=INK_MUTED, fontsize=8, va="center", ha="left",
+        )
+    ax.axhline(0.5, color=GRID, lw=0.9, ls=":", zorder=1)
+
+    ax.plot(x, lam, "-", color=series, lw=1.9, marker="o", ms=3.0, zorder=3)
+    lo = np.array([result.results[n].lam_ci[0] for n in layers], dtype=np.float64)
+    hi = np.array([result.results[n].lam_ci[1] for n in layers], dtype=np.float64)
+    ax.fill_between(x, lo, hi, color=series, alpha=0.16, lw=0, zorder=2)
+
+    span = float(np.nanmax(hi) - np.nanmin(lo)) if len(layers) else 1.0
+    ax.set_ylim(float(np.nanmin(lo)) - 0.06 * span, float(np.nanmax(hi)) + 0.06 * span)
+    ax.set_ylabel("λ   of   D = a + b·(c^λ − 1)/λ", color=INK_MUTED, fontsize=9)
+
+    ax2.plot(x, r2, "-", color=series, lw=1.7, marker="o", ms=2.8, zorder=3)
+    ax2.set_ylim(min(0.55, float(np.nanmin(r2)) - 0.04), 1.02)
+    ax2.set_ylabel("R² of that fit", color=INK_MUTED, fontsize=9)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(layers, rotation=90, fontsize=6.6 if len(layers) > 12 else 8.5)
+    ax2.set_xlim(-0.8, len(layers) - 0.2)
+
+    for a in (ax, ax2):
+        a.set_facecolor(SURFACE)
+        a.grid(axis="y", color=GRID, lw=0.6)
+        a.set_axisbelow(True)
+        for side in ("top", "right"):
+            a.spines[side].set_visible(False)
+        for side in ("left", "bottom"):
+            a.spines[side].set_color(GRID)
+        a.tick_params(colors=INK_MUTED, labelsize=7.5, length=3, width=0.6)
+
+    fig.suptitle(
+        title or _identity(result, metadata),
+        color=INK, fontsize=13.5, x=0.045, ha="left", y=1.010, fontweight="bold",
+    )
+    fig.text(0.045, 0.973, _provenance_line(result, metadata), color=INK,
+             fontsize=9, ha="left")
+    fig.text(
+        0.045, 0.945,
+        "Where each tap sits between the log law and linear in contrast. "
+        "Band is the 95% profile-F interval; read λ against the R² row.",
+        color=INK_MUTED, fontsize=8.5, ha="left",
+    )
+
+    fig.savefig(path, dpi=170, facecolor=SURFACE, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
 def save_panels(
     result,
     path: str,

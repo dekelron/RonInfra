@@ -24,7 +24,12 @@ import numpy as np
 
 from .gratings import GratingConfig, sample_gratings, reference_rgb
 from .features import FeatureModel, l1_distance
-from .fit import LayerLogResult, summarise_layer, linear_spacing_uniformity
+from .fit import (
+    LayerLogResult,
+    summarise_layer,
+    linear_spacing_uniformity,
+    power_basis,
+)
 
 
 @dataclass
@@ -467,8 +472,14 @@ def load_result(path: str) -> tuple[ExperimentResult, dict]:
     return result, meta
 
 
-def save_figures(result: ExperimentResult, out_dir: str) -> list[str]:
-    """Write per-layer response-surface and log-linearity figures. Returns paths."""
+def save_figures(
+    result: ExperimentResult, out_dir: str, metadata: dict | None = None
+) -> list[str]:
+    """Write per-layer response figures and the lambda profile. Returns paths.
+
+    ``metadata`` is forwarded to the profile so a figure that travels alone
+    still names its run and its weight state.
+    """
     import os
     import matplotlib
 
@@ -493,21 +504,49 @@ def save_figures(result: ExperimentResult, out_dir: str) -> list[str]:
         ax1.set_title(f"{layer}: contrast response")
         ax1.legend(fontsize=6, title="cyc/img", ncol=2)
 
-        # (2) log-linearity: D vs log10(contrast), per-freq fit lines
-        logc = np.log10(contrasts)
+        # (2) where the response sits between the two laws. Each frequency is
+        # scaled to its own range so eight gains do not hide eight shapes, and
+        # the two grey references are what lambda is measured against: on this
+        # log axis the LOG law is the straight one and linear-in-contrast bends
+        # up, which is the opposite of what the eye expects.
+        fine = np.geomspace(contrasts.min(), contrasts.max(), 200)
+        for lam_ref, style in ((0.0, "--"), (1.0, ":")):
+            b = power_basis(fine, lam_ref)
+            ax2.plot(fine, (b - b.min()) / (b.max() - b.min()), style,
+                     color="#9a9a9a", lw=1.3, zorder=1)
         for fi, f in enumerate(freqs):
-            ax2.plot(logc, res.response[fi], "o", ms=3)
-            fit = res.per_frequency[fi]
-            ax2.plot(logc, fit.predict(contrasts), "-", lw=1, alpha=0.7)
-        ax2.set_xlabel("log10(contrast)")
-        ax2.set_ylabel("D")
-        ax2.set_title(f"{layer}: mean R^2 = {res.mean_r2:.3f}")
+            y = res.response[fi]
+            lo, hi = float(y.min()), float(y.max())
+            if hi <= lo:
+                continue
+            unit = lambda v: (v - lo) / (hi - lo)
+            ax2.plot(contrasts, unit(y), "o", ms=3, zorder=3)
+            ax2.plot(fine, unit(res.power_fits[fi].predict(fine)), "-", lw=1,
+                     alpha=0.8, zorder=2)
+        ax2.set_xscale("log")
+        ax2.set_xlabel("Michelson contrast (log axis; dashed = log law, dotted = linear)")
+        ax2.set_ylabel("D, scaled to its own range")
+        ci_lo, ci_hi = res.lam_ci
+        ax2.set_title(
+            f"{layer}: lambda = {res.lam:+.3f} [{ci_lo:+.2f}, {ci_hi:+.2f}]"
+            f"   R^2 = {res.lam_r2:.3f}"
+        )
 
         fig.tight_layout()
         path = os.path.join(out_dir, f"logresponse_{_safe(layer)}.png")
         fig.savefig(path, dpi=120)
         plt.close(fig)
         paths.append(path)
+
+    # The depth profile is the figure the result is actually read off, so it
+    # comes out of --figures rather than having to be rebuilt by hand.
+    from .panels import save_lambda_profile
+
+    paths.append(
+        save_lambda_profile(
+            result, os.path.join(out_dir, "lambda_profile.png"), metadata
+        )
+    )
     return paths
 
 
