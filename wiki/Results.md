@@ -99,6 +99,47 @@ real work. This is a structural reason the control cannot reproduce the trained
 net's final-layer behaviour, and it was invisible until λ returned identical
 values at both taps.
 
+### Is the log response at `prob` just the softmax?
+
+The obvious objection: a softmax is a squashing nonlinearity, so a compressive
+response at `prob` might be the output layer rather than anything learned.
+Decomposing the last four taps says no — but with two real caveats.
+
+| | `classifier.3` | `classifier.4` (ReLU) | `logits` | `prob` | ReLU's share | softmax's share |
+|---|---|---|---|---|---|---|
+| Caffe | +1.104 | +0.211 | +0.271 | +0.059 | **85.5%** | 20.3% |
+| `IMAGENET1K_V1` | +0.623 | +0.010 | +0.230 | +0.165 | **134%** | 14.3% |
+
+The largest single step toward the log law is a **ReLU, one layer before the
+softmax**, on both checkpoints. On `IMAGENET1K_V1` it is starker: `classifier.4`
+reaches λ = 0.010 — the log law almost exactly — and then the final linear layer
+and the softmax push it back *away* to 0.165.
+
+**The control settles the structural version of the objection.** In both
+scrambled runs the softmax changes λ by less than 0.01 (2.748 → 2.743;
+0.162 → 0.169) because it never leaves its affine regime. A softmax does not
+compress by construction; it compresses only once the logits are large and
+structured enough, which takes training. Were the squashing an artifact of the
+output nonlinearity, it would appear in the scrambled net too.
+
+What survives of the objection:
+
+- **The softmax does contribute**, 14–20% of the move to log, and measurably so
+  — the trained ratio is 1.235/1000 (Caffe) and 1.094/1000 against exactly
+  1.000/1000 scrambled.
+- **`prob` is measured against its own ceiling.** The bound derived in
+  [Method](Method.md) is `D_prob ≤ 0.002`; the measurement reaches **0.001929,
+  96.5% of it** (87.6% on `IMAGENET1K_V1`). It has not flattened — the top
+  increment is still 1.75× the mean of the others, so the response is
+  accelerating rather than saturating — but there is no headroom left to verify
+  that, and `c = 1` is maximum contrast by definition, so the experiment cannot
+  be extended to find out.
+
+**Therefore `prob` is a poor headline tap.** `classifier.4` is more log-like on
+`IMAGENET1K_V1`, contains no softmax, and has no ceiling. This bears directly on
+the open disagreement in [Method](Method.md), whose "Expected results" table
+names `prob` as the peak.
+
 **What the metric change overturned.** The old statistic said the scrambled
 control was *nearly as log-like* as the trained net (+0.120 vs +0.151 at `prob`,
 exceeding it at 32 of 45 taps). That was normalisation by total variance failing

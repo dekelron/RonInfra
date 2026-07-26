@@ -224,3 +224,17 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   real work. This is why the control cannot reproduce the trained net's
   final-layer behaviour, and it was invisible until λ returned identical values
   at the two taps.
+- **The log response at `prob` is not just the softmax — but `prob` is still the
+  wrong tap to headline.** Decomposed on λ, the ReLU at `classifier.4` carries
+  **85.5%** (Caffe) / **134%** (`IMAGENET1K_V1`) of the move to log and the
+  softmax 20.3% / 14.3%. On `IMAGENET1K_V1` `classifier.4` reaches λ = 0.010 and
+  the softmax pushes it back *away* to 0.165. The structural objection is
+  answered by the control: the softmax shifts λ by < 0.01 in both scrambled runs
+  because it never leaves its affine regime, so squashing is not automatic — it
+  requires trained, confident logits.
+  - **What survives:** the softmax does contribute 14–20%, and `prob` is
+    measured at **96.5% of its own ceiling** (`D_prob ≤ 0.002`, measured
+    0.001929). It has not flattened — the top increment is 1.75× the mean of the
+    others — but `c = 1` is maximum contrast, so there is no way to check
+    further. Prefer `classifier.4`: more log-like, no softmax, no ceiling. This
+    is more evidence for item 4 below.
