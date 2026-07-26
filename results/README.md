@@ -6,6 +6,8 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 
 | Run | Model | Reps | Weights | Headline | Notes |
 |---|---|---|---|---|---|
+| [`vgg19-r250-s0-alllayers-linear`](vgg19-r250-s0-alllayers-linear/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Grid control. Profile survives: mean shift 0.037, 1/45 sign flips, 44/44 steps agree. |
+| [`vgg19-scramble-r250-s0-alllayers-linear`](vgg19-scramble-r250-s0-alllayers-linear/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Control for the above. Mean shift 0.024, 0/45 sign flips. |
 | [`vgg19-r250-s0-alllayers-fixed`](vgg19-r250-s0-alllayers-fixed/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | all 45 taps | Depth profile. Agrees with Caffe at conv1_1, diverges mid-stack. |
 | [`vgg19-scramble-r250-s0-alllayers-fixed`](vgg19-scramble-r250-s0-alllayers-fixed/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | all 45 taps | Control. Crosses zero at `features.16` and matches the trained net. |
 | [`vgg19-r250-s0-alllayers-fixed-caffe`](vgg19-r250-s0-alllayers-fixed-caffe/notes.md) | VGG-19, trained | 250 | converted Caffe | all 45 taps | Crosses only at `classifier.4`, the ReLU after fc7. |

@@ -153,9 +153,16 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
 - The log-like behaviour is produced by **rectifications**, not accumulated
   depth: convolutions push `logness` toward linear-in-contrast and ReLUs push it
   back, a sawtooth the three-tap view could not show.
-- The **linear-vs-log contrast grid** experiment is the main untested caveat:
-  the default grid is log-spaced, which is not neutral between the two laws
-  `logness` compares. `--contrasts linear` exists; the run has not been done.
+- ~~The **linear-vs-log contrast grid** is the main untested caveat.~~ **Closed —
+  tested, and the profile survives.** The default grid is log-spaced, which is
+  not neutral between the two laws `logness` compares, so the whole depth profile
+  was re-measured on `--contrasts linear` (same endpoints, even spacing, nothing
+  else changed). Mean |Δ `logness`| 0.037 trained / 0.024 scrambled against
+  effects of 0.2–0.4; 1/45 sign flips trained, 0/45 scrambled; 44/44 consecutive
+  steps agree in direction, so the sawtooth is reproduced layer for layer. The
+  residual shift is small but *systematic* — slightly toward "linear" through the
+  conv stack, the direction even sampling predicts. See `wiki/Results.md` and the
+  two `-alllayers-linear` runs.
 - R² is a poor summary for the scrambled column: its spacing CV runs 3.5–4.1
   (against 0.6–0.9 trained), i.e. a spike at the top contrast that a line fits.
   Quote the CV alongside it, or prefer a different statistic.

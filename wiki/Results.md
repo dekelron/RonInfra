@@ -36,9 +36,39 @@ Regenerate the profile from the committed surfaces:
 python -m log_response.run --load results/vgg19-r250-s0-alllayers-fixed --panels out/p.png
 ```
 
-Caveat carried from the metric: the contrast grid is log-spaced, which is not
-neutral between the two laws being compared. `--contrasts linear` exists to test
-whether this picture survives a different sampling; that run has not been done.
+### The log-spaced grid is not what produces this — measured, not argued
+
+The one methodological caveat under every `logness` number above: the default
+contrast grid is log-spaced, which is **not neutral** between the two laws being
+compared. It hands the log fit evenly spread leverage while bunching the linear
+fit's points near zero, so a log-shaped verdict could in principle be an artifact
+of where the axis was sampled.
+
+The control is the same 45 taps at `--reps 250` with `--contrasts linear` —
+identical endpoints, sampled evenly instead of geometrically, nothing else
+changed. Committed as
+[`vgg19-r250-s0-alllayers-linear`](../results/vgg19-r250-s0-alllayers-linear/notes.md)
+and
+[`vgg19-scramble-r250-s0-alllayers-linear`](../results/vgg19-scramble-r250-s0-alllayers-linear/notes.md).
+
+**Every claim above survives.** Across the 45 layers, mean |Δ `logness`| is
+**0.037** trained and **0.024** scrambled, against effects of 0.2–0.4. One sign
+flip in 45 (`features.33`, +0.002 → −0.027, a layer already sitting on zero) and
+none in the scrambled control. `prob` +0.151 → +0.164; `classifier.4`, the
+crossing ReLU, +0.153 → +0.162; the scrambled control still crosses at
+`features.16`. The sawtooth is reproduced layer for layer: **44 of 44**
+consecutive steps move in the same direction on both grids.
+
+The shift is small but it is **not noise** — it runs systematically negative
+through the conv stack (−0.03 to −0.05) and slightly positive at the classifier.
+The linear grid does nudge verdicts marginally toward "linear", which is the
+direction expected from giving the linear fit even leverage. An order of
+magnitude below what is being claimed, so no conclusion moves; recorded rather
+than rounded to zero.
+
+The scrambled control's step directions agree only 34/44 — but its profile is
+flat near +0.12 after `features.16`, so those steps are noise about a constant,
+not a shape to reproduce. The trained net's 44/44 is the meaningful figure.
 
 ## VGG-19, full grid on the canonical checkpoint
 
