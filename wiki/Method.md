@@ -281,8 +281,12 @@ The table below is the paper's, so it is the Caffe number that tests it.
 | `prob`, **weights scrambled within each layer** | **0.60** | 0.429 ✗ | 0.768 |
 
 Three of the four reproduce on the paper's checkpoint. The scrambled control
-does not, and is left as a stated disagreement per rule 4 — the paper names no
-permutation seed, and four permutations at fixed settings span 0.169. See
+does not, and that is now **measured rather than suspected**: four permutations
+on the Caffe weights at fixed `--seed` give 0.422–0.516, and `IMAGENET1K_V1`
+gives 0.693–0.863. Both bracket 0.60 without reaching it, from opposite sides,
+so it is a real disagreement and stays stated per rule 4. The *direction* of the
+claim survives and strengthens — trained 0.976 against 0.42–0.52 is a gap of
+0.46–0.55, wider than the documented 0.38. See
 [Results](Results.md#which-checkpoint-the-paper-used-and-what-reproduces-on-it).
 
 Stronger than the table: digitising Figure 3b and comparing curve for curve puts

@@ -8,7 +8,19 @@ Caffe scrambled control, permutation seed 1 with the orientation/phase draws hel
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Member of the four-permutation Caffe control sweep — `--scramble-seed 1` with
+`--seed 0`, so the orientation/phase draws are **identical** to
+[`vgg19-scramble-r50-s0-alllayers-caffe`](../vgg19-scramble-r50-s0-alllayers-caffe/notes.md)
+and the permutation is the only thing that changed. This is the isolation the
+earlier `IMAGENET1K_V1` sweep could not do, since one flag drove both seeds.
+
+`prob` mean R² **0.516**, λ **+1.76** [+1.60, +1.96] at R² 0.995.
+Peak over the 45 taps: `features.0` — i.e. **no real tap beats the noise floor's own 0.748**.
+
+The sweep as a whole (p0–p3): `prob` mean R² **0.422 – 0.516**, spread 0.095,
+sd 0.044. The paper's documented 0.60 is **outside** that range, so the
+disagreement is not a one-permutation accident. See
+[Results](../../wiki/Results.md#the-scrambled-control-is-not-a-single-number).
 
 ## Reproduce
 

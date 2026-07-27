@@ -130,14 +130,19 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
    0.21, and `prob` lands at **λ = 0.06 [−0.05, +0.13]** — the log law, measured.
    `IMAGENET1K_V1` starts lower (conv median 0.69) and drifts to 0.16. See
    `wiki/Results.md`.
-3. **Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.** The
-   done sweep varied both at once (one flag drove both until now), so it bounds
-   permutation variance rather than isolating it. The workflow now takes a
-   `scramble_seed` input separate from `seed`, and puts it in the slug as
-   `-p<n>` so a sweep does not collide — dispatch with `variants: scrambled`,
-   holding `seed` fixed. Wanted most on the **Caffe** checkpoint, where the
-   control is a single sample (0.429) and is the last of the paper's four §5
-   claims that does not reproduce.
+3. ~~**Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.**~~
+   **Done, on the Caffe checkpoint — and 0.60 is out of reach.** Four
+   permutations at `--seed 0` (identical images, permutation the only variable)
+   give `prob` mean R² **0.428 / 0.516 / 0.443 / 0.422** — spread 0.095, sd
+   0.044. The paper's 0.60 is **outside** that range, and outside the
+   `IMAGENET1K_V1` range (0.693–0.863) too: the two checkpoints miss it in
+   opposite directions and 0.60 sits in the gap between them. So the
+   disagreement is real rather than a one-permutation accident, which is
+   precisely what a single value could not establish. It stays stated per rule 4.
+   The paper's *direction* survives and strengthens: trained 0.976 against
+   0.42–0.52 is a gap of 0.46–0.55, against the 0.38 the documented pair implies.
+   The workflow gained a `scramble_seed` input (slug `-p<n>`) to make this
+   possible.
 4. ~~**Reconcile `wiki/Method.md` with the measured grid.**~~ **Done — the table
    was right and the checkpoint was wrong.** The paper (§8.1) ran MatConvNet's
    *imported pre-trained original* VGG-19, i.e. the Oxford/Caffe weights, not
@@ -240,6 +245,14 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     that axis and is unaffected.
     - **Corrected 2026-07-27**, having been committed earlier the same day as
       "`features.0` is not a measurement of conv1_1".
+- **On the paper's checkpoint the control is bounded away from 0.60.** Four
+  Caffe permutations at fixed `--seed` give 0.428 / 0.516 / 0.443 / 0.422
+  (spread 0.095). `IMAGENET1K_V1` gives 0.693–0.863. **Both miss the documented
+  0.60, in opposite directions**, so it is a genuine disagreement, not sampling.
+  λ at `prob` is +1.76 to +3.00 in all four, so scrambled Caffe's supralinear
+  classifier is robust and not a seed-0 artifact. Caveat that repeats: permutation
+  p1 peaks at `features.0`, i.e. no tap beats the noise floor — single-seed
+  control *shapes* have now misled twice.
 - **The scrambled control is not a single number — and not a single shape.**
   Four permutations at identical settings give `prob` R² 0.760 / 0.863 / 0.704 /
   0.693 (spread 0.169, sd 0.078). On λ the spread is qualitative, not just

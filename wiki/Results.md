@@ -448,10 +448,51 @@ The spacing CV moves 1.24–4.15 and not in step with R²: seed 1 has the highes
 R² *and* a low CV (genuinely straighter), seed 3 the lowest R² and also a low
 CV. Different permutations differ in kind, not just in estimate.
 
-Caveat: at the code version these ran on, `--seed` drove both the permutation
-and the orientation/phase draws. Sampling is unlikely to explain much — at a
-fixed seed, 50 → 250 reps moved this value 0.760 → 0.768 — but the sweep did
-vary both. `--scramble-seed` now separates them for the next one.
+Caveat on that sweep: at the code version it ran on, `--seed` drove both the
+permutation and the orientation/phase draws, so it bounds their combined
+variance rather than isolating either.
+
+#### Isolated on the paper's checkpoint — and 0.60 is out of reach
+
+Four permutations on the converted Caffe weights, 45 taps, `--reps 50`, with
+**`--seed 0` held fixed** so the images are identical and only the permutation
+moves. This is the isolation the sweep above could not do:
+
+| permutation | `prob` mean R² | `prob` λ | λ CI | peak of 45 taps |
+|---|---|---|---|---|
+| [p0](../results/vgg19-scramble-r50-s0-alllayers-caffe/notes.md) | 0.428 | +2.76 | [+2.19, +3.51] | `features.22` 0.771 |
+| [p1](../results/vgg19-scramble-r50-s0-p1-alllayers-caffe/notes.md) | **0.516** | +1.76 | [+1.60, +1.96] | `features.0` 0.748 |
+| [p2](../results/vgg19-scramble-r50-s0-p2-alllayers-caffe/notes.md) | 0.443 | +3.00 | [+2.09, +3.99] | `features.22` 0.776 |
+| [p3](../results/vgg19-scramble-r50-s0-p3-alllayers-caffe/notes.md) | **0.422** | +2.70 | [+2.13, +3.38] | `features.22` 0.767 |
+
+Permutation variance alone is **spread 0.095, sd 0.044** — smaller than the
+0.169 above, which is consistent with that one carrying sampling variance too.
+
+**The paper's 0.60 is outside this range**, and outside the `IMAGENET1K_V1`
+range as well. The two checkpoints' controls miss it in *opposite directions*
+and 0.60 falls in the gap between them:
+
+```
+Caffe    0.422 ─────── 0.516                          (4 permutations)
+                              [ 0.60 ]                 the paper
+IN1K                                0.693 ─── 0.863    (4 seeds)
+```
+
+So this is a real disagreement, not a one-permutation accident — which is what
+a single value could never establish. Per rule 4 it stays stated. Note the
+direction of the paper's claim survives it and gets *stronger* on the paper's
+own checkpoint: trained 0.976 against a control of 0.42–0.52 is a gap of
+**0.46–0.55**, against the 0.98 − 0.60 = 0.38 the documented pair implies.
+
+Two things the sweep settles that the single run could not:
+
+- **The supralinear classifier is a property of scrambled Caffe, not of seed 0.**
+  λ at `prob` is +1.76 to +3.00 across all four — strongly accelerating in
+  contrast in every case, the opposite corner of the family from the log law.
+- **p1 is qualitatively different**, as seed 3 was on `IMAGENET1K_V1`: its peak
+  over all 45 taps is `features.0`, meaning **no tap in the network beats the
+  metric's own noise floor**. Single-seed control *shapes* have now misled twice;
+  read them as draws.
 
 ### Which variable moved it: the checkpoint
 

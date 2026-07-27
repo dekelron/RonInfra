@@ -35,6 +35,9 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`vgg19-scramble-r50-s0-alllayers-caffe`](vgg19-scramble-r50-s0-alllayers-caffe/notes.md) | VGG-19, scrambled | 50 | converted Caffe | 1/45 on the floor | Control. Its supralinear λ ≈ +2.76 is a real measurement too. |
 | [`vgg19-r50-s0-alllayers-in1k`](vgg19-r50-s0-alllayers-in1k/notes.md) | VGG-19, trained | 50 | `IMAGENET1K_V1` | 1/45 on the floor | `features.1`/`.2` are the only partial cases (31%, 36%) — and where λ +1.67 vs λ_mod +1.01 exposes it. |
 | [`vgg19-scramble-r50-s0-alllayers-in1k`](vgg19-scramble-r50-s0-alllayers-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 1/45 on the floor | Control. Max noise fraction outside `features.0/1/2` is 1.8%. |
+| [`vgg19-scramble-r50-s0-p1-alllayers-caffe`](vgg19-scramble-r50-s0-p1-alllayers-caffe/notes.md) | VGG-19, scrambled | 50 | converted Caffe | `prob` **0.516** | Permutation sweep, `--seed 0` fixed. The high end — and peaks at `features.0`, so no tap beats the noise floor. |
+| [`vgg19-scramble-r50-s0-p2-alllayers-caffe`](vgg19-scramble-r50-s0-p2-alllayers-caffe/notes.md) | VGG-19, scrambled | 50 | converted Caffe | `prob` 0.443 | Permutation 2. λ +3.00. |
+| [`vgg19-scramble-r50-s0-p3-alllayers-caffe`](vgg19-scramble-r50-s0-p3-alllayers-caffe/notes.md) | VGG-19, scrambled | 50 | converted Caffe | `prob` **0.422** | Permutation 3, the low end. Sweep spans 0.422–0.516; the paper's 0.60 is outside it. |
 | [`data-r250-s0`](data-r250-s0/notes.md) | raw pixels | 250 | none | λ **+0.925**, R² 0.985 | The paper's `data` row, and the metric's **noise floor**. `features.0` reproduces it to 3 decimals on both checkpoints. |
 | [`data-r50-s0`](data-r50-s0/notes.md) | raw pixels | 50 | none | D(50)/D(250) = **2.237** | Companion to the above: makes the 1/√reps scaling checkable (√5 = 2.236). |
 
