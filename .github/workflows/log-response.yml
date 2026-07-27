@@ -20,6 +20,13 @@ on:
       seed:
         description: "RNG / scramble seed (part of the run slug)"
         default: "0"
+      scramble_seed:
+        description: "Seed for the within-layer weight permutation (blank = same
+          as 'seed'). Set it to sweep permutations while holding the
+          orientation/phase draws fixed: sweeping 'seed' alone moves both at
+          once, so it bounds their combined variance instead of isolating
+          either. Appears in the slug as -p<n> so a sweep cannot collide."
+        default: ""
       frequencies:
         description: "Comma-separated cycles/image (blank = the full 8-frequency grid)"
         default: ""
@@ -80,6 +87,7 @@ jobs:
       MODEL: ${{ inputs.model || 'vgg19' }}
       REPS: ${{ inputs.reps || '250' }}
       SEED: ${{ inputs.seed || '0' }}
+      SCRAMBLE_SEED: ${{ inputs.scramble_seed }}
       FREQUENCIES: ${{ inputs.frequencies }}
       CONTRASTS: ${{ inputs.contrasts }}
       LAYERS: ${{ inputs.layers }}
@@ -162,6 +170,13 @@ jobs:
           slug=$(printf '%s' "$MODEL" | tr -c 'a-zA-Z0-9' '-' | sed 's/-\{1,\}/-/g; s/^-//; s/-$//')
           if [ "$SCRAMBLE" = "true" ]; then slug="$slug-scramble"; fi
           slug="$slug-r$REPS-s$SEED"
+          # A permutation sweep holds --seed fixed and varies --scramble-seed, so
+          # without this every member of the sweep resolves to the same slug and
+          # all but the first would abort on the collision check below.
+          if [ "$SCRAMBLE" = "true" ] && [ -n "$SCRAMBLE_SEED" ] \
+             && [ "$SCRAMBLE_SEED" != "$SEED" ]; then
+            slug="$slug-p$SCRAMBLE_SEED"
+          fi
           # A suffix rather than a full override: the variant marker must stay
           # automatic, or the two matrix jobs would write to the same directory.
           suffix="$SLUG_SUFFIX"
@@ -205,6 +220,7 @@ jobs:
           if [ -n "$CONTRASTS" ]; then args+=(--contrasts "$CONTRASTS"); fi
           if [ -n "$LAYERS" ]; then args+=(--layers "$LAYERS"); fi
           if [ "$SCRAMBLE" = "true" ]; then args+=(--scramble); fi
+          if [ -n "$SCRAMBLE_SEED" ]; then args+=(--scramble-seed "$SCRAMBLE_SEED"); fi
 
           python -m log_response.run "${args[@]}" 2>&1 | tee run.log
 
