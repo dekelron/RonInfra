@@ -52,6 +52,11 @@ But the plotted curves survive as vector polylines, and the grids fall out of
 their geometry. `Figure3.pdf` is object 470 in the PDF; its four sub-panels
 (`data`, `conv1_1`, `fc8`, `prob`) each hold **15 polylines of 8 vertices**.
 
+`python -m log_response.figure3` does the extraction and prints both grids;
+`--compare` additionally checks the panels against the committed runs (see
+[Results](Results.md#reproduced-at-curve-level-not-just-at-the-summary-numbers)).
+`test_figure3_digitisation_recovers_the_documented_grids` pins it offline.
+
 **Frequencies — recovered exactly.** All curves share one set of 8 x-positions.
 Their spacing is six equal steps with a shorter one at each end, and reading the
 equal step as a doubling gives:
@@ -249,6 +254,10 @@ Three of the four reproduce on the paper's checkpoint. The scrambled control
 does not, and is left as a stated disagreement per rule 4 — the paper names no
 permutation seed, and four permutations at fixed settings span 0.169. See
 [Results](Results.md#which-checkpoint-the-paper-used-and-what-reproduces-on-it).
+
+Stronger than the table: digitising Figure 3b and comparing curve for curve puts
+`fc8` and `prob` at **0.4–0.5% median residual over 112 cells each**, with the
+shared contrast trend divided out. Four summary numbers become 448.
 
 The paper's own headline for this section is not the log law but **contrast
 constancy** — band-pass in spatial frequency at low contrast, converging to

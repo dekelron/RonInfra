@@ -484,6 +484,42 @@ This also reverses the framing of the section above it. "The converted Caffe run
 is the outlier" is true only among the torchvision runs; measured against the
 paper, `IMAGENET1K_V1` is the outlier and Caffe is the reference.
 
+### Reproduced at curve level, not just at the summary numbers
+
+Matching `prob` R² = 0.980 against a documented 98% is one number against one
+number. The paper's Figure 3b holds the whole measurement — four
+representations × 14 contrasts × 8 frequencies — so it can be compared directly.
+`python -m log_response.figure3 --compare` does it: the curves survive as vector
+polylines, the `c = 0` line fixes each panel's origin *and* proves the y-axis is
+linear, so each panel needs one free scale factor and nothing else.
+
+| panel | our tap | r | median resid | **r, frequency only** | resid | cells |
+|---|---|---|---|---|---|---|
+| `data` | [raw pixels](../results/data-r250-s0/notes.md) | 0.9649 | 12.2% | **−0.047** | 11.4% | 112 |
+| `conv1_1` | `features.0` | 0.9935 | 8.1% | **0.982** | 9.4% | 112 |
+| `fc8` | `logits` | 0.9998 | 0.6% | **0.999** | 0.5% | 112 |
+| `prob` | `prob` | 0.9998 | 0.5% | **0.999** | 0.4% | 112 |
+
+"Frequency only" divides each contrast row by its own mean first, removing the
+contrast trend that both sides share and would otherwise be flattered by. It is
+the column that means something.
+
+**`fc8` and `prob` reproduce to 0.4–0.5% across 112 cells each** — the paper's
+plotted curves and this repo's Caffe run are the same measurement, not merely
+the same summary statistic.
+
+**And `data` collapses to r = −0.047, exactly as predicted.** That was stated
+before running it: if the `data` panel is the [noise floor](#the-metric-has-a-noise-floor-and-features0-is-sitting-on-it),
+its cells are independent random draws in the paper's run and in ours, so they
+*cannot* correlate. Uncorrelated is what a broken digitisation would also
+produce — but the other three panels rule that out, since the same extraction
+and the same contrast pairing give 0.982–0.999 there. This is the strongest
+evidence for the noise floor in the repo, and it comes from the paper's own
+figure.
+
+`conv1_1` sits in between at 0.982, which is the same story from the other side:
+noise-floor magnitude, real frequency structure.
+
 ### Contrast constancy — the paper's actual §5 headline
 
 The log-linearity result is introduced in the paper as *"an interesting,
@@ -492,17 +528,21 @@ constancy: *"Contrast constancy: bandpass transduction in first layers is later
 corrected"* — a response strongly modulated by spatial frequency at low
 contrast, converging to frequency-invariant at high contrast.
 
-It reproduces. Ratio of the largest to the smallest D across the 8 frequencies,
-at the extremes of the contrast axis:
+It reproduces, and now against the figure rather than against the prose. Ratio
+of the largest to the smallest D across the 8 frequencies, at the extremes of
+the contrast axis:
 
-| tap | at lowest contrast | at c = 1 |
-|---|---|---|
-| Caffe `classifier.4` | 51.1× | **1.48×** |
-| Caffe `prob` | 85.2× | **1.40×** |
-| IN1K `prob` | 375× | 2.33× |
+| tap | at lowest contrast | at c = 1 | paper's Figure 3b |
+|---|---|---|---|
+| Caffe `logits` (= `fc8`) | 67.5× | **1.78×** | 64.5× → **1.77×** |
+| Caffe `prob` | 85.2× | **1.40×** | — → **1.40×** |
+| Caffe `classifier.4` | 51.1× | 1.48× | not plotted |
+| IN1K `prob` | 375× | 2.33× | (different checkpoint) |
 
-Both checkpoints show the collapse; Caffe gets closer to true invariance. This
-is measured, not new — it was sitting in the committed surfaces unreported.
+Strongly band-pass at low contrast, near frequency-invariant at high contrast —
+the paper's claim, and our Caffe run lands on its digitised values. (The paper's
+`prob` at the lowest contrast has a curve that rounds onto the baseline, below
+the figure's own resolution, so there is no ratio to read there.)
 
 ## VGG-19, verified run
 

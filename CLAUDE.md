@@ -10,7 +10,7 @@
 | `wiki/Method.md` | The exact procedure — grating definition, contrast/frequency grids, the distance-of-means metric, the regression, caveats, and stronger tests to add. The spec the code is checked against. |
 | `wiki/1701.04674-adaptation-as-readout.pdf` | The source paper. Its "mean absolute change in DNN representation between a gray image and sinusoidal gratings" is our `D`, and its "R² = 98% … for prob" is the contested number in `Method.md`'s expected-results table. |
 | `results/` | Committed runs, one directory each: `result.npz` (surfaces), `result.json` (fits), `run.json` (provenance), `notes.md` (prose). `results/README.md` is the index and states the conventions. |
-| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends, incl. `RawPixelModel` = the noise floor), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure and the λ depth profile), `provenance.py` (commit/versions/weight digest), `convert_weights.py` (Caffe/Keras VGG-19 → torchvision, with the preprocessing fold), `run.py` (CLI), `test_pipeline.py` (offline tests). |
+| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends, incl. `RawPixelModel` = the noise floor), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure and the λ depth profile), `provenance.py` (commit/versions/weight digest), `convert_weights.py` (Caffe/Keras VGG-19 → torchvision, with the preprocessing fold), `figure3.py` (digitises the paper's Figure 3b and compares it to a run), `run.py` (CLI), `test_pipeline.py` (offline tests). |
 
 Docs are intentionally few and short. Prefer extending an existing page over
 adding a new one.
@@ -159,6 +159,16 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   three hold. **Do not describe the Caffe run as "the outlier"** — it is the
   outlier only among the torchvision runs; against the paper it is the
   reference and `IMAGENET1K_V1` is the deviation.
+  - **It reproduces at curve level, not just on the summary numbers.**
+    `python -m log_response.figure3 --compare` digitises Figure 3b and matches
+    it panel by panel: with the shared contrast trend divided out, `fc8` and
+    `prob` agree at **r = 0.999, 0.4–0.5% median residual over 112 cells each**.
+    Four numbers become 448.
+  - **And the `data` panel anti-confirms the noise floor**, which is the
+    sharpest evidence for it in the repo: frequency-only correlation
+    **−0.047**, i.e. uncorrelated, exactly as independent noise draws must be.
+    Not a broken extraction — the same code and pairing give 0.982–0.999 on the
+    other three panels.
 - **Weight lineage, not repetition count, drives the difference between the two
   checkpoints.** At fixed reps, changing the checkpoint moves `prob` 0.063 and
   the control 0.332; at a fixed checkpoint, changing reps 5× moves them 0.004

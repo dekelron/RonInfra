@@ -46,6 +46,7 @@ from .gratings import (
     sample_gratings,
     to_rgb,
     CONTRASTS,
+    FREQUENCIES_CPI,
 )
 from .fit import (
     fit_log_linear,
@@ -571,6 +572,36 @@ def test_torchvision_refuses_random_init_by_default():
     assert m.weights_ok is False
     assert "random" in m.weights_source
     m.close()
+
+
+def test_figure3_digitisation_recovers_the_documented_grids():
+    """The paper's own figure must agree with the grids this repo runs.
+
+    Guards both the extraction and the claim in wiki/Method.md that the grids
+    are the paper's. The PDF is in-tree, so this runs offline like everything
+    else. Frequencies come from pure geometry and are exact; contrasts are read
+    off plotted data and carry that data's noise, so they are checked loosely.
+    """
+    import os
+
+    from .figure3 import PDF, PANELS, extract
+
+    if not os.path.exists(PDF):
+        print("SKIP test_figure3_digitisation_recovers_the_documented_grids (no PDF)")
+        return
+    fig = extract(PDF)
+
+    assert set(fig["panels"]) == set(PANELS)
+    for name, panel in fig["panels"].items():
+        assert panel.shape == (len(CONTRASTS), len(FREQUENCIES_CPI)), (name, panel.shape)
+
+    # Frequencies are pure geometry, so they are exact.
+    assert np.allclose(fig["frequencies"], FREQUENCIES_CPI, rtol=0.01), fig["frequencies"]
+    # Contrasts are read off plotted data and carry its noise; the span and the
+    # ordering are what the figure pins down, not the individual values.
+    assert np.allclose(fig["contrasts"], CONTRASTS, rtol=0.12), fig["contrasts"]
+    assert abs(fig["contrasts"][-1] - 1.0) < 1e-9
+    assert np.all(np.diff(fig["contrasts"]) > 0)
 
 
 def test_synthetic_reports_weights_not_applicable():
