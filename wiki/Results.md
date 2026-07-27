@@ -249,11 +249,36 @@ contrasts, giving λ = 1.000 at R² = 1.000. So the same layer is a noise floor
 under one ordering and an exactly-predicted signal under the other, and the
 difference is entirely the order of the mean and the absolute value.
 
-**Not yet done:** the same comparison at each of the 45 taps on a real model.
-One `--reps 50` run per checkpoint against the committed r250 does it — signal
-taps hold `D`, floor taps fall by √5 — and would settle how much of Caffe's flat
-λ ≈ 1 conv stack is locally-linear response and how much is floor. The only
-committed run carrying both metrics so far is raw pixels.
+### Measured per tap: only `features.0` is on the floor
+
+Four `--reps 50` 45-tap runs against the committed r250 ones settle it. Signal
+taps hold `D` when reps change; floor taps fall by √5 = 2.236. The noise
+fraction below is `(ratio² − 1)/4`, from `D(N)² ≈ S² + σ²·(250/N)`:
+
+| tap | Caffe trained | Caffe scrambled | IN1K trained | IN1K scrambled |
+|---|---|---|---|---|
+| `features.0` | **2.222** (98%) | **2.234** (100%) | **2.221** (98%) | **2.236** (100%) |
+| `features.1` | 1.050 (3%) | 1.196 (11%) | 1.503 (31%) | 1.258 (15%) |
+| `features.2` | 1.067 (3%) | 1.064 (3%) | 1.564 (36%) | 1.122 (6%) |
+| `features.19` | 1.006 (0%) | 1.003 (0%) | 1.008 (0%) | 1.011 (1%) |
+| `classifier.4` | 1.002 (0%) | 0.998 (0%) | 1.004 (0%) | 1.003 (0%) |
+| `prob` | 1.001 (0%) | 0.999 (0%) | 1.007 (0%) | 1.002 (0%) |
+
+**1 of 45 taps is a noise floor, in every one of the four runs**, and outside
+`features.0/1/2` the largest noise fraction anywhere is **3.4%**.
+
+**So Caffe's flat λ ≈ 1 conv stack is real.** The 26 taps sitting within 0.15 of
+the noise-floor λ — the reason for these runs — are measuring a genuinely
+locally-linear response. The competing explanation is excluded, and the
+local-linearisation reading above is the surviving one.
+
+**The two orderings give the same verdict from a single run**, which is the
+cheaper diagnostic. Across all 180 tap-runs, median |λ − λ_mod| is **0.039**
+where the noise fraction is under 5% (n=171) and **0.277** where it is over
+(n=9) — and all 9 are `features.0/1/2`. The sharpest single case is
+`features.1` on trained `IMAGENET1K_V1`: λ = **+1.67** against λ_mod = **+1.01**.
+The primary metric reports a strongly supralinear exponent there which is
+entirely its own sampling noise.
 
 ### Is the log response at `prob` just the softmax?
 

@@ -22,6 +22,10 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`vgg19-scramble-r50-s3-in1k`](vgg19-scramble-r50-s3-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 0.843 (`features.19`) | Seed 3. `prob` 0.693 — the low end. |
 | [`vgg19-r50-s0`](vgg19-r50-s0/notes.md) | VGG-19, trained | 50 | converted Caffe | 0.976 (`prob`) | Differs from the `IMAGENET1K_V1` runs because of its checkpoint, not its reps. |
 | [`vgg19-scramble-r50-s0`](vgg19-scramble-r50-s0/notes.md) | VGG-19, scrambled | 50 | converted Caffe | 0.428 (`prob`) | Control. Sits 0.33 below both `IMAGENET1K_V1` controls. |
+| [`vgg19-r50-s0-alllayers-caffe`](vgg19-r50-s0-alllayers-caffe/notes.md) | VGG-19, trained | 50 | converted Caffe | **1/45 taps on the floor** | The reps companion to the r250 run: only `features.0` falls with reps (2.222 ≈ √5). The flat λ≈1 conv stack is **real**. |
+| [`vgg19-scramble-r50-s0-alllayers-caffe`](vgg19-scramble-r50-s0-alllayers-caffe/notes.md) | VGG-19, scrambled | 50 | converted Caffe | 1/45 on the floor | Control. Its supralinear λ ≈ +2.76 is a real measurement too. |
+| [`vgg19-r50-s0-alllayers-in1k`](vgg19-r50-s0-alllayers-in1k/notes.md) | VGG-19, trained | 50 | `IMAGENET1K_V1` | 1/45 on the floor | `features.1`/`.2` are the only partial cases (31%, 36%) — and where λ +1.67 vs λ_mod +1.01 exposes it. |
+| [`vgg19-scramble-r50-s0-alllayers-in1k`](vgg19-scramble-r50-s0-alllayers-in1k/notes.md) | VGG-19, scrambled | 50 | `IMAGENET1K_V1` | 1/45 on the floor | Control. Max noise fraction outside `features.0/1/2` is 1.8%. |
 | [`data-r250-s0`](data-r250-s0/notes.md) | raw pixels | 250 | none | λ **+0.925**, R² 0.985 | The paper's `data` row, and the metric's **noise floor**. `features.0` reproduces it to 3 decimals on both checkpoints. |
 | [`data-r50-s0`](data-r50-s0/notes.md) | raw pixels | 50 | none | D(50)/D(250) = **2.237** | Companion to the above: makes the 1/√reps scaling checkable (√5 = 2.236). |
 

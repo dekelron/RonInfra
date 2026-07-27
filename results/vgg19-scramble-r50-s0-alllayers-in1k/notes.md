@@ -8,7 +8,12 @@
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Control for [`vgg19-r50-s0-alllayers-in1k`](../vgg19-r50-s0-alllayers-in1k/notes.md).
+
+**1 of 45** on the floor (`features.0`, **2.236**, 100% noise); max elsewhere
+**1.8%**. Its λ ≈ +0.19 at R² 0.81 is the log-*looking* control that λ alone
+cannot separate from the trained net — see wiki/Results.md. That reading is
+unaffected by the floor: the taps carrying it are clean.
 
 ## Reproduce
 

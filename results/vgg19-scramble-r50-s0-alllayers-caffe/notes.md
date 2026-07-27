@@ -8,7 +8,12 @@
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Control for [`vgg19-r50-s0-alllayers-caffe`](../vgg19-r50-s0-alllayers-caffe/notes.md).
+
+Same verdict on the noise question: **1 of 45** taps is on the floor
+(`features.0`, D(50)/D(250) = **2.234**, 100% noise); the largest noise
+fraction anywhere else is **2.9%**. So the scrambled net's supralinear
+classifier (λ ≈ +2.76, R² 0.971) is a real measurement too, not an artifact.
 
 ## Reproduce
 

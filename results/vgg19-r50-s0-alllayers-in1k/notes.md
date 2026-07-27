@@ -8,7 +8,15 @@
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Against [`vgg19-r250-s0-alllayers-fixed`](../vgg19-r250-s0-alllayers-fixed/notes.md).
+
+**1 of 45** taps on the floor — `features.0` at D(50)/D(250) = **2.221**,
+98% noise. `features.1` and `features.2` are the only partial cases anywhere
+in the four r50 runs, at 31% and 36%, and they are exactly where the two
+orderings disagree most: λ **+1.67** against λ_mod **+1.01** at `features.1`.
+The primary metric reports a wildly supralinear exponent there that is its
+own sampling noise. Outside `features.0/1/2` the max noise fraction is
+**3.1%**.
 
 ## Reproduce
 

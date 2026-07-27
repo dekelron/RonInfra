@@ -142,12 +142,14 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
    disagreement was an artifact of testing the claim on a checkpoint the paper
    never used. The scrambled control (0.429 vs 0.60) stays open per rule 4.
 
-5. **Run the per-tap reps sweep.** One `--reps 1000` run per checkpoint against
-   the committed r250. A real response holds `D` when reps change; the noise
-   floor falls as 1/√reps. This is what says which of the 45 taps are measuring
-   anything — in particular how much of Caffe's flat λ ≈ 1 conv stack is a
-   locally-linear response and how much is an empty tap. Cheaper and sharper
-   than the gate-flip count below.
+5. ~~**Run the per-tap reps sweep.**~~ **Done — and the conv stack is real.**
+   Four `--reps 50` 45-tap runs against the committed r250 ones. **Only
+   `features.0` is on the floor** (D(50)/D(250) = 2.22–2.24 against √5 = 2.236,
+   98–100% noise), in all four runs; outside `features.0/1/2` the largest noise
+   fraction anywhere is **3.4%**. So Caffe's flat λ ≈ 1 conv stack is measuring
+   a locally-linear response, not empty taps — the competing explanation below
+   is excluded. Went *down* in reps rather than up: √5 discrimination for a
+   fifth of the r250 cost, where `--reps 1000` would have given √4 for 4×.
 
 ## Open threads
 
@@ -203,8 +205,12 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     pixels `D_mod = μ·c·(2/π) = c/π` in closed form — matched to **0.04%** over
     all 14 contrasts, λ **1.000**, R² **1.000**. `D`'s population value there is
     zero, so it can calibrate nothing.
-  - Only `data-r250-s0` / `data-r50-s0` carry both so far; **no model run does
-    yet.**
+  - **It works as a per-tap diagnostic, from one run.** Across the 180 tap-runs
+    of the four r50 45-tap runs, median |λ − λ_mod| is **0.039** where the noise
+    fraction is under 5% (n=171) and **0.277** where it is over (n=9) — and all
+    9 are `features.0/1/2`. Sharpest case: `features.1` on trained IN1K reads
+    λ **+1.67** against λ_mod **+1.01**, i.e. the primary metric reports a
+    strongly supralinear exponent that is its own sampling noise.
 - **The metric has a zero-population floor at every affine layer, and
   `features.0` is on it.** Phase ~ U[0,2π) makes `E[grating] = gray` exactly, so
   the distance-of-*means* metric has population `D` = 0 wherever the layer is
@@ -266,11 +272,12 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   the whole conv stack; `IMAGENET1K_V1` leaves it gradually from mid-stack.
   **Untested.** The direct check is to count ReLU sign flips between gray and
   grating against `c`; that needs a forward pass, so it is an Actions job.
-  - **A competing explanation has to be excluded first**, because it predicts
-    the identical λ: an empty tap also reads λ ≈ 1 at high fit quality. 26 of
-    the 37 Caffe conv taps sit within 0.15 of the noise-floor λ at mean R²
-    0.9988. The reps sweep (item 5 in "Needs doing") separates the two and is
-    far cheaper than gate counting — do that one first.
+  - ~~**A competing explanation has to be excluded first**~~ — **excluded.** An
+    empty tap reads the same λ ≈ 1 at high fit quality, and 26 of the 37 Caffe
+    conv taps sit within 0.15 of the noise-floor λ. The reps sweep (item 5) says
+    they are real: only `features.0` falls with repetition count, everything
+    else holds `D` to within 3.4%. So gate-flip counting is now testing a
+    hypothesis with no live rival.
 - ~~The **linear-vs-log contrast grid** is the main untested caveat.~~ **Closed —
   tested, and the profile survives.** The whole depth profile was re-measured on
   `--contrasts linear` (same endpoints, even spacing, nothing else changed).
