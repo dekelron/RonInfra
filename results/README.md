@@ -4,6 +4,15 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 `D(freq, contrast)` surfaces), `result.json` (fit summary, diffs readably),
 `run.json` (provenance) and `notes.md` (what it was for, what it showed).
 
+> **Runs from 2026-07-27 carry two surfaces.** `surfaces` is the paper's
+> distance-of-means `D` and stays the headline; `mean_of_distances` is the other
+> order of operations, `mean_r mean_i |a_i(x_r) − gray_i|`. It rides along
+> because `D` has population value **zero** at any layer affine in the input
+> while `D_mod` does not — so where a layer's two λ disagree, the primary metric
+> is reporting its own sampling noise. `result.json` carries it under
+> `mean_of_distances`. Earlier runs simply lack it and load unchanged; adding it
+> left every committed surface bit-identical.
+
 | Run | Model | Reps | Weights | Headline | Notes |
 |---|---|---|---|---|---|
 | [`vgg19-r250-s0-alllayers-linear`](vgg19-r250-s0-alllayers-linear/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Grid control. Profile survives: mean \|Δλ\| 0.045, **44/44** steps agree in direction. |

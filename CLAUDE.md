@@ -132,7 +132,12 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
    `wiki/Results.md`.
 3. **Re-run the seed sweep with `--scramble-seed` fixed against `--seed`.** The
    done sweep varied both at once (one flag drove both until now), so it bounds
-   permutation variance rather than isolating it.
+   permutation variance rather than isolating it. The workflow now takes a
+   `scramble_seed` input separate from `seed`, and puts it in the slug as
+   `-p<n>` so a sweep does not collide — dispatch with `variants: scrambled`,
+   holding `seed` fixed. Wanted most on the **Caffe** checkpoint, where the
+   control is a single sample (0.429) and is the last of the paper's four §5
+   claims that does not reproduce.
 4. ~~**Reconcile `wiki/Method.md` with the measured grid.**~~ **Done — the table
    was right and the checkpoint was wrong.** The paper (§8.1) ran MatConvNet's
    *imported pre-trained original* VGG-19, i.e. the Oxford/Caffe weights, not

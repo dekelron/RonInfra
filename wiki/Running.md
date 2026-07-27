@@ -97,6 +97,24 @@ byte-identical across the two runs). Runner speed varies that much, so a job
 sized against the fast end can miss the 6 h cap. `--reps 1000` would be ~8 h at
 the slow end and is not viable on a standard runner at all.
 
+With `--layers all`, measured on the runner (4 cores, all eight jobs):
+
+| Grid | measured | spread |
+|---|---|---|
+| 45 taps, `--reps 250` | 110.6 / 131.5 / 133.1 / 137.3 min | 1.24× |
+| 45 taps, `--reps 50` | 26.0 / 30.6 / 30.8 / 30.9 min | 1.19× |
+
+**Prefer going down in reps, not up.** The r50 runs exist to separate a real
+response from the metric's noise floor, and for that `--reps 50` against a
+committed `--reps 250` gives √5 = 2.24 discrimination for a *fifth* of the cost,
+where `--reps 1000` would give √4 = 2.00 for four times it — 20× worse per unit
+of answer, and over the cap besides. More reps buys a better estimate; fewer
+reps buys the comparison.
+
+The r50 numbers are the first runs carrying both orderings of the metric. They
+came in at 26–31 min against the ~26 expected from scaling the r250 grid by 1/5,
+so the second accumulator costs at most ~15% and is inside runner variance.
+
 Other back-ends, scaled from the same sandbox loop: `alexnet` 0.016 s/forward,
 `resnet50` 0.071, `vit_b_16` 0.157, `resnet152` 0.183. `synthetic --reps 12`
 takes seconds. The `hf:` VLM and `sam:` back-ends are the only ones that really
@@ -135,6 +153,14 @@ until [ -f runs/vgg19.json ]; do sleep 5; done; tail -20 run.log
 re-derives from them.** A surface is `n_layers × n_freq × n_contrast` float64 —
 a few KB whatever `--reps` was, so even a 28 000-forward run costs ~7 KB. Never
 throw one away, and never recompute a fit you could re-load.
+
+Since 2026-07-27 the npz carries **two** such arrays: `surfaces` (the paper's
+distance-of-means `D`, the headline everywhere) and `mean_of_distances` (`D_mod`,
+the other order of operations). Both are re-fitted on load, and `report()` gains
+`lam(mod)` / `R^2(mod)` columns. Runs saved before that date have only the first
+and load with `mean_of_distances` set to `None` — nothing else changes, and no
+committed surface moved when it was added. Why both:
+[Method](Method.md#the-other-ordering-recorded-alongside).
 
 `--save <base>` writes `<base>.npz` (the surfaces) plus `<base>.json` (the fit
 summary). Pass it on any long run.
@@ -227,6 +253,22 @@ The commit-back runs on every event, so a dispatch from `master` commits to
 `master`. Both matrix jobs push to the same ref minutes apart; the step rebases
 and retries up to five times, which is how the two r250 directories landed as
 consecutive commits.
+
+**Dispatch inputs.** `model`, `reps`, `seed`, `frequencies`, `contrasts`,
+`layers`, `notes` map straight onto the CLI flags above. The rest are about
+where the run lands and which weights it uses:
+
+| Input | What it does |
+|---|---|
+| `weights` | `canonical` = torchvision `IMAGENET1K_V1`; `caffe` = the original Oxford VGG-19, fetched and converted on the runner with `--verify` (fails above 1e-5, so the fold is re-established per run rather than inherited). **The paper used the Caffe one** — see [Results](Results.md#which-checkpoint-the-paper-used-and-what-reproduces-on-it). |
+| `variants` | `both` (default) launches the pretrained run and its scrambled control in parallel; `pretrained` / `scrambled` for one. |
+| `scramble_seed` | Permutation seed, held separate from `seed`. Sweep this to isolate permutation variance — sweeping `seed` moves the image draws too. Enters the slug as `-p<n>`, so a sweep cannot collide. |
+| `slug_suffix` | Appended to the computed slug. **Needed whenever weight lineage differs**, because the slug encodes model/variant/reps/seed but not which checkpoint produced it. |
+
+The slug-collision check runs before the measurement, so a name clash costs
+seconds rather than the two hours the grid takes — and it refuses rather than
+overwriting, because `--save-run` preserves an existing `notes.md` and would
+otherwise leave prose describing numbers that had changed underneath it.
 
 Facts worth knowing, measured rather than assumed (the workflow's *Runner facts*
 step prints them on every run):
