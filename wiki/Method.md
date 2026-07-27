@@ -179,14 +179,20 @@ One property the R²-of-a-log-fit does not have:
 - **An uninformative fit is visible.** Pure noise returns the entire search
   range as its interval rather than a confident number.
 
-And one that looked like a second and is not. `features.0` measures λ =
-0.922–0.926 across all four 45-tap runs, trained and scrambled, which was
-written up here as a forced calibration point checking the whole pipeline for
-free. It is weaker than that: `features.0` sits on the metric's **noise floor**
-(next section), and a model-free run on raw pixels returns the same +0.925 at
-the same fit quality. It checks the grating generator and the fitting code — it
-cannot detect wrong weights, a dead hook, or a broken model, because it does not
-depend on the network.
+And one that needed narrowing. `features.0` measures λ = 0.922–0.926 across all
+four 45-tap runs, trained and scrambled, which was written up here as a forced
+calibration point. **λ there checks the grating generator and the fitter, not
+the model** — `features.0` sits on the metric's [noise floor](#the-noise-floor)
+and a model-free run on raw pixels returns the same +0.925 at the same fit
+quality, so nothing about the network can move it.
+
+The calibration point does exist, on the *other* axis. The floor fixes the
+magnitude and the contrast dependence of `D = c · mean_i|W·ḡ_f|_i` but not its
+frequency profile, which is conv1_1's radial amplitude response. Trained weights
+give a strongly band-pass `features.0` — max/min across frequency **9.09**
+(Caffe), **12.89** (`IMAGENET1K_V1`) — while scrambled weights collapse to
+**2.16** / **1.96**, essentially the model-free run's **1.78**. That is a check
+that trained weights actually reached the model.
 
 ## The noise floor
 
@@ -207,6 +213,9 @@ Consequences for reading a profile:
 - In VGG-19 only `features.0` is upstream of every nonlinearity. Deeper
   convolutions sit after a ReLU, where `E[a(x)] ≠ a(gray)`, and carry real
   signal — `features.19` holds its D across a 5× rep change.
+- **The floor is on the contrast axis only.** `ḡ_f` stays spectrally
+  concentrated at `f`, so an affine layer's *frequency* profile is still a real
+  measurement of its filter bank even where its magnitude and its λ are not.
 
 `--model data` measures the floor directly; see
 [`results/data-r250-s0`](../results/data-r250-s0/notes.md) and

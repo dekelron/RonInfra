@@ -50,7 +50,16 @@ nonlinearity, and across all four 45-tap runs it reproduces these numbers:
 | scrambled, `IMAGENET1K_V1` | +0.926 | 0.985 | 0.754 |
 
 Trained and scrambled, two different checkpoints, and a model-free control all
-agree to three decimals — because none of them is measuring the network. See
+agree to three decimals — because on the *contrast* axis none of them is
+measuring the network.
+
+That is a statement about λ, not about the layer. The floor fixes the magnitude
+and the contrast dependence of `D = c · mean_i|W·ḡ_f|_i`, but `ḡ_f` stays
+spectrally concentrated at `f`, so the **frequency** profile is still conv1_1's
+radial amplitude response. Measured across frequency at `c = 1`, max/min: this
+run **1.78**, trained Caffe **9.09**, trained `IMAGENET1K_V1` **12.89**,
+scrambled **2.16** / **1.96**. Scrambling collapses `features.0` onto this run's
+profile (r = 0.97–0.99); training separates it by 5–7×. See
 [Results](../../wiki/Results.md#the-metric-has-a-noise-floor-and-features0-is-sitting-on-it).
 
 Deeper taps are **not** covered by this argument: they sit downstream of a

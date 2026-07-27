@@ -605,6 +605,50 @@ def test_affine_layer_measures_only_sampling_noise():
     assert np.all(ratio < 6.0), ratio
 
 
+def test_noise_floor_still_carries_the_frequency_profile():
+    """The floor is on the contrast axis only.
+
+    D = c * mean|W . gbar_f|, and gbar_f stays spectrally concentrated at f, so
+    an affine layer's *frequency* profile is a real measurement of its filter
+    bank even though its magnitude is 1/sqrt(reps) and its lambda is forced to
+    1. Pins the distinction that wiki/Results.md rests on: a band-pass filter
+    must show frequency structure far beyond the raw-pixel floor.
+    """
+    class _LowPass(FeatureModel):
+        """One unit: the image blurred by a wide Gaussian, i.e. strongly low-pass."""
+
+        def __init__(self):
+            self.layers = ["blur"]
+            self.weights_ok = None
+            self.weights_source = "synthetic low-pass"
+
+        def represent(self, image):
+            g = np.asarray(image[..., 0], dtype=np.float64)
+            f = np.fft.fftshift(np.fft.fft2(g))
+            h, w = g.shape
+            yy, xx = np.ogrid[:h, :w]
+            r = np.sqrt((yy - h / 2) ** 2 + (xx - w / 2) ** 2)
+            return {"blur": np.real(np.fft.ifft2(np.fft.ifftshift(f * np.exp(-(r / 3.0) ** 2))))}
+
+    cfg = GratingConfig(
+        size=64, frequencies_cpi=(1.0, 4.0, 16.0), contrasts=(0.125, 0.25, 0.5, 1.0)
+    )
+    flat = run_experiment(RawPixelModel(), cfg, repetitions=24, seed=0, verbose=False)
+    tuned = run_experiment(_LowPass(), cfg, repetitions=24, seed=0, verbose=False)
+
+    spread = lambda s: float(s[:, -1].max() / s[:, -1].min())
+    # Raw pixels have no filter, so their profile is flat to within noise; the
+    # low-pass model must fall off with frequency by far more than that.
+    assert spread(flat.surfaces["data"]) < 3.0, spread(flat.surfaces["data"])
+    assert spread(tuned.surfaces["blur"]) > 10.0, spread(tuned.surfaces["blur"])
+    # ...while both stay consistent with lambda = 1 on this short grid: same
+    # contrast axis, different frequency axis. Read via the interval, because
+    # four contrast points do not pin the exponent tightly.
+    for res in (flat.results["data"], tuned.results["blur"]):
+        lo, hi = res.lam_ci
+        assert lo <= 1.0 <= hi, (res.layer, res.lam, res.lam_ci)
+
+
 def test_noise_floor_is_linear_in_contrast_whatever_the_grid():
     """...and its shape is exactly linear in contrast, so lambda ~ 1.
 

@@ -35,9 +35,11 @@ Every 45-tap run, re-fitted from its committed surfaces. λ = 0 is the log law,
 
 Four things to read off it before the prose:
 
-- **`features.0` is +0.92–0.93 in all six — because it is measuring nothing.**
+- **`features.0` is +0.92–0.93 in all six — because λ cannot see that layer.**
   A model-free run on raw pixels returns the same +0.925 at the same 0.985 fit
-  quality. That column is the metric's noise floor, not a property of VGG.
+  quality. That *column* is the metric's noise floor. The layer is not empty —
+  its frequency profile is a real measurement — but its contrast axis is
+  uninformative.
   [Why](#the-metric-has-a-noise-floor-and-features0-is-sitting-on-it).
 - **The conv median separates the checkpoints** (+1.06 Caffe, +0.69 IN1K) far
   more than `prob` does.
@@ -54,12 +56,14 @@ All 45 leaf modules, `--reps 250`, both checkpoints, trained and scrambled —
 four runs measured on identical code. **Always read λ against `lambda_r2`**: the
 exponent locates a response only insofar as the family describes it.
 
-**The checkpoints agree at the input because neither one is being measured
-there.** `features.0` (conv1_1) is **λ = 0.922** on `IMAGENET1K_V1` and **0.923**
-on the converted Caffe weights; the two scrambled runs give 0.926 and 0.926. All
-four agree to **0.01** — and so does a run with no network in it at all. This
-used to be written up here as a free calibration point. It is weaker than that:
-see [below](#the-metric-has-a-noise-floor-and-features0-is-sitting-on-it).
+**The checkpoints agree at the input because λ cannot see that layer.**
+`features.0` (conv1_1) is **λ = 0.922** on `IMAGENET1K_V1` and **0.923** on the
+converted Caffe weights; the two scrambled runs give 0.926 and 0.926. All four
+agree to **0.01** — and so does a run with no network in it at all. That
+agreement is forced by the metric, not a property of the checkpoints; see
+[below](#the-metric-has-a-noise-floor-and-features0-is-sitting-on-it). The layer
+itself is *not* empty — the same surface separates trained from scrambled
+cleanly along its **other** axis.
 
 It does still rule out one thing, which is what it was originally introduced
 for. A preprocessing **gain** error in the Caffe conversion would rescale a
@@ -191,10 +195,45 @@ not, the ReLU is locally affine, and the floor argument applies unchanged.
 
 **What this does and does not touch.** `prob`, `logits`, `classifier.*` and the
 deeper `features.*` taps are rep-invariant and carry real signal — every headline
-number stands. What changes is the reading of the shallow end: `features.0` is
-not a measurement of conv1_1, and the four-way agreement there is forced. Deeper
-convolutions are **not** covered by the argument, because they sit downstream of
-a ReLU where `E[a(x)] ≠ a(gray)`.
+number stands. What changes is the reading of the shallow end: λ at `features.0`
+is uninformative and the four-way agreement there is forced. Deeper convolutions
+are **not** covered by the argument, because they sit downstream of a ReLU where
+`E[a(x)] ≠ a(gray)`.
+
+#### The floor is on the contrast axis only — `features.0` still measures conv1_1
+
+The floor argument constrains `D = c · mean_i|W·ḡ_f|_i` in two of its three
+factors and leaves the third alone. The magnitude is 1/√reps and the contrast
+dependence is forced to λ = 1 — but `ḡ_f` is a sum of gratings all at frequency
+`f`, so it stays spectrally concentrated there, and the **frequency profile is
+conv1_1's radial amplitude response**. That is real, weight-dependent, and
+training-dependent. `D` at `c = 1`, each run normalised to its own mean:
+
+| run | f=1 | 3.5 | 14 | 56 | 75 | max/min |
+|---|---|---|---|---|---|---|
+| [raw pixels, no model](../results/data-r250-s0/notes.md) | 0.64 | 1.00 | 1.14 | 1.12 | 1.13 | **1.78** |
+| trained · Caffe | 0.22 | 0.45 | 1.04 | 2.02 | 1.74 | **9.09** |
+| trained · `IMAGENET1K_V1` | 0.17 | 0.36 | 0.88 | 2.19 | 2.20 | **12.89** |
+| scrambled · Caffe | 0.58 | 0.91 | 1.12 | 1.25 | 1.24 | **2.16** |
+| scrambled · `IMAGENET1K_V1` | 0.61 | 0.96 | 1.13 | 1.18 | 1.20 | **1.96** |
+
+Trained conv1_1 is strongly band-pass at 9–13×, far outside the ~1.8× noise
+scale. **Scrambling collapses it onto the raw-pixel profile** (r = 0.970 and
+0.989 against the model-free run), and the two trained checkpoints agree with
+each other at r = 0.995 — both learn a similar first-layer filter bank, as they
+should.
+
+So the free calibration point does exist; it is just on the frequency axis, not
+the contrast axis. Trained weights give a 9× band-pass profile at `features.0`;
+random, scrambled or unloaded weights give a flat ~1.8× one. That **is** a check
+that trained weights reached the model, which λ at the same tap is not.
+
+> **Corrected 2026-07-27.** Committed earlier the same day as "`features.0` is
+> not a measurement of conv1_1" and "neither checkpoint is being measured
+> there". Both overstate: the demotion holds for λ and for R² against log c, and
+> does not hold for the frequency profile. This also matters for the paper,
+> whose §5 iso-output comparison reports `conv1_1` at R² = 96% — that analysis
+> reads the frequency axis, so it is not affected by the floor.
 
 **Not yet done:** the same test at each of the 45 taps, which needs one
 `--reps 1000` run per checkpoint and would settle how much of Caffe's flat λ ≈ 1

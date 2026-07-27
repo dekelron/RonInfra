@@ -188,11 +188,22 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   power-R² 0.985, log-R² 0.754 — and `features.0` returns 0.922–0.926 /
   0.985–0.986 / 0.7545–0.7558 in all four 45-tap runs, trained and scrambled,
   both checkpoints. Consequences: **λ ≈ 1 at high R² is also what a dead tap
-  looks like**; the `features.0` "free calibration point" is only a check on the
-  grating generator and the fitter, not on the model; and R² 0.736 is what a
-  perfectly linear response scores against log c on this grid regardless of
-  anything. Everything from `features.19` outward is rep-invariant and carries
-  real signal, so no headline number moves.
+  looks like**; λ at `features.0` checks the grating generator and the fitter,
+  not the model; and R² 0.736 is what a perfectly linear response scores against
+  log c on this grid regardless of anything. Everything from `features.19`
+  outward is rep-invariant and carries real signal, so no headline number moves.
+  - **The floor is on the contrast axis only — do not say `features.0` measures
+    nothing.** `D = c·mean|W·ḡ_f|` and `ḡ_f` stays spectrally concentrated at
+    `f`, so the *frequency* profile is conv1_1's radial amplitude response: real,
+    weight-dependent, training-dependent. Trained is band-pass at max/min **9.09**
+    (Caffe) / **12.89** (IN1K); scrambled collapses to **2.16** / **1.96** against
+    the model-free run's **1.78**, at r = 0.97–0.99 with it. The two trained
+    checkpoints agree at r = 0.995. So the free calibration point is real, on the
+    frequency axis: trained weights give 9× band-pass, unloaded or scrambled ones
+    give a flat floor. The paper's §5 iso-output `conv1_1` result (R² = 96%) reads
+    that axis and is unaffected.
+    - **Corrected 2026-07-27**, having been committed earlier the same day as
+      "`features.0` is not a measurement of conv1_1".
 - **The scrambled control is not a single number — and not a single shape.**
   Four permutations at identical settings give `prob` R² 0.760 / 0.863 / 0.704 /
   0.693 (spread 0.169, sd 0.078). On λ the spread is qualitative, not just
