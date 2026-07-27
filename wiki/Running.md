@@ -61,7 +61,7 @@ python -m log_response.run --model data --reps 50        # noise floor
 | Flag | What it does |
 |---|---|
 | `--reps N` | Draws per cell, default 250. The cost knob — see the table below. |
-| `--layers all` | Every leaf module (45 on VGG-19) instead of the three-tap default. How the depth profile is measured. |
+| `--layers all` | Every leaf module (45 on VGG-19) instead of the three-tap default. How the depth profile is measured. Works on every back-end, including `clip:`/`hf:`/`sam:`. |
 | `--frequencies` | Override the 8 spatial frequencies (cycles/image). |
 | `--contrasts linear` | Sample the same contrast endpoints evenly instead of geometrically. The grid control; λ should not move, and [measurably does not](Results.md). |
 | `--size N` | Input side in pixels, default 224. Use 227 for architectures that expect it. Changes the stimulus, so runs at different sizes are not comparable. |
@@ -125,6 +125,38 @@ nonlinearity, Dropout skipped since it is the identity in eval mode. It costs
 **1.65×** (85 min against 51 for the full grid), all of it in the float64
 accumulate over 31M units per image rather than in the forward pass. The saved
 surface is still only ~41 KB.
+
+Two things it does that VGG-19 never made visible, because VGG-19 gives every
+ReLU its own module and calls each module once:
+
+- **A module called more than once per forward gets a slot per firing** —
+  `<name>`, `<name>@2`, `<name>@3`. torchvision's ResNet is the case: each
+  `BasicBlock`/`Bottleneck` holds a *single* `nn.ReLU` and calls it 2–3× (after
+  conv1, after conv2, after the residual add). Before this, one name kept only
+  the last firing and the rest were dropped — on `resnet50`, **32 of 158
+  activations**, with the surviving taps mislabelled.
+- **A hooked module that never fires is reported**, as a `RuntimeWarning` naming
+  the taps. `nn.MultiheadAttention` passes `out_proj.weight`/`bias` to
+  `F.multi_head_attention_forward` instead of calling the module, so
+  `--layers all` on `vit_b_16` registers 75 modules and **12 never fire**. The
+  run is correct — those taps do not exist — but a depth profile missing every
+  attention output projection should not be discovered afterwards.
+
+Measured tap counts and per-image accumulate load, for sizing a new run
+(224², `--layers all`, random init — the shape is weight-independent):
+
+| Arch | leaf modules | taps incl. `logits`/`prob` | reuse slots | units/image |
+|---|---|---|---|---|
+| `alexnet` | 19 | 21 | 0 | 1.1 M |
+| `vgg19` | 43 | **45** | 0 | 31.3 M |
+| `vgg19_bn` | 59 | 61 | 0 | 46.1 M |
+| `resnet50` | 126 | 160 | **32** | 32.0 M |
+| `vit_b_16` | 75 | 65 | 0 (12 unfired) | 20.3 M |
+| `convnext_tiny` | 156 | 158 | 0 | 31.4 M |
+
+VGG-19's 45 is unchanged, which is the point — every committed depth profile is
+a 45-tap VGG-19 run and `test_vgg_all_layers_is_unchanged_by_the_reuse_fix`
+pins it.
 
 That 1.65× is reducible to ~1.10× by accumulating into torch tensors in place
 instead of `numpy` with a per-layer `.astype(np.float64)`, which currently

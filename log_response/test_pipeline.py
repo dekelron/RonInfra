@@ -641,6 +641,50 @@ def test_sam_backend_tiny_offline():
     md.close()
 
 
+def test_layers_all_resolves_on_the_non_torchvision_backends():
+    """``--layers all`` is how the depth profile is measured, so every back-end
+    has to answer it.
+
+    The expansion used to live inside ``TorchvisionModel.__init__``, so
+    ``--layers all`` on CLIP / VLM / SAM fell through as a literal layer name
+    and raised ``KeyError: layer 'all' not found``: the one measurement a result
+    is actually read off could not be made on any of them. It is now on the
+    shared back-end.
+
+    Exercised here on SAM because the tiny model builds offline; CLIP and the
+    VLM take the same path through ``_resolve_layers``.
+    """
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import transformers  # noqa: F401
+    except ImportError:
+        raise unittest.SkipTest("torch/transformers not installed")
+
+    from .features import SAMModel
+
+    model, processor = _tiny_sam()
+    m = SAMModel(model=model, processor=processor, layers=["all"])
+
+    assert len(m.layers) > 5, m.layers
+    # Confined to the subtree that actually runs: encoder-only mode never calls
+    # the prompt encoder or the mask decoder, and a hook on a module that never
+    # fires contributes no tap while still costing a registration.
+    assert all(n.startswith("vision_encoder") for n in m.layers), m.layers
+
+    acts = m.represent(to_rgb(make_grating(0.5, 7, size=m.input_size)))
+    assert "embed" in acts
+    # Every registered tap fired (reuse slots may add more, never fewer).
+    assert set(acts) >= set(m.layers), sorted(set(m.layers) - set(acts))
+    m.close()
+
+    # With the decoder on, the restriction lifts -- those modules now run.
+    md = SAMModel(model=model, processor=processor, layers=["all"], mask_decoder=True)
+    assert any(n.startswith("mask_decoder") for n in md.layers), md.layers
+    md.close()
+
+
 def test_torchvision_refuses_random_init_by_default():
     """The critical guard: an untrained net must fail loudly, not silently.
 
@@ -982,6 +1026,129 @@ def test_pre_activation_taps_survive_inplace_relu():
     assert not np.array_equal(conv, relu), "conv tap captured its ReLU's output"
     assert conv.min() < 0, "pre-activation conv output has no negative values"
     assert relu.min() == 0, "post-ReLU output should be rectified"
+
+
+def test_reused_modules_are_not_collapsed_into_one_tap():
+    """A module called twice in one forward must yield two taps, not one.
+
+    torchvision's ResNet holds a *single* ``nn.ReLU`` per block and calls it
+    more than once -- BasicBlock after conv1 and again after the residual add,
+    Bottleneck three times. One module name therefore denotes several
+    activations, and a hook that assigns to ``self._acts[name]`` keeps only the
+    last firing: ``--layers all`` would report the post-add activation under a
+    name that reads as the first rectification and drop the others entirely.
+
+    That is the same silent mislabelling as the in-place ReLU bug above -- the
+    numbers look plausible and the layer is wrong -- and it is why no ResNet
+    depth profile could be trusted before this. Firings after the first get
+    their own ``<name>@n`` slot.
+
+    VGG-19 is unaffected (each ReLU is its own module), so no committed run
+    moves.
+    """
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import torchvision  # noqa: F401
+    except Exception as exc:
+        raise unittest.SkipTest(f"torch/torchvision not installed ({exc})")
+
+    from .features import TorchvisionModel
+
+    model = TorchvisionModel(
+        arch="resnet18",
+        pretrained=False,
+        layers=["layer1.0.relu"],
+        allow_random_init=True,
+    )
+    # One module in the tree -- the whole point is that it fires more than once.
+    assert model._all_layers().count("layer1.0.relu") == 1
+
+    rep = model.represent(np.random.default_rng(0).random((64, 64, 3)))
+    assert "layer1.0.relu" in rep, sorted(rep)
+    assert "layer1.0.relu@2" in rep, f"second firing was dropped: {sorted(rep)}"
+
+    first, second = rep["layer1.0.relu"], rep["layer1.0.relu@2"]
+    assert first.shape == second.shape
+    assert not np.array_equal(first, second), "both slots hold the same tensor"
+
+    # The metric needs a layer set that does not move between images.
+    rep2 = model.represent(np.random.default_rng(1).random((64, 64, 3)))
+    assert set(rep2) == set(rep)
+    model.close()
+
+
+def test_taps_that_never_fire_are_reported_not_silently_dropped():
+    """Hooking a module that never runs must say so.
+
+    torchvision's ViT builds ``nn.MultiheadAttention``, whose forward passes
+    ``out_proj.weight``/``bias`` to ``F.multi_head_attention_forward`` instead
+    of calling the module -- so the hook never fires and the tap is absent.
+    ``--layers all`` on vit_b_16 registers 75 modules and 12 of them produce
+    nothing. The run is still correct; the danger is discovering afterwards
+    that a depth profile was missing every attention output projection.
+    """
+    import unittest
+    import warnings as warnings_mod
+
+    try:
+        import torch  # noqa: F401
+        import torchvision  # noqa: F401
+    except Exception as exc:
+        raise unittest.SkipTest(f"torch/torchvision not installed ({exc})")
+
+    from .features import TorchvisionModel
+
+    model = TorchvisionModel(
+        arch="vit_b_16", pretrained=False, layers=["all"], allow_random_init=True
+    )
+    rep = model.represent(np.random.default_rng(0).random((224, 224, 3)))
+    unfired = [n for n in model.layers if n not in rep]
+    assert unfired and all("out_proj" in n for n in unfired), unfired
+
+    cfg = GratingConfig(size=224, contrasts=(0.05, 1.0), frequencies_cpi=(7.0,))
+    with warnings_mod.catch_warnings(record=True) as caught:
+        warnings_mod.simplefilter("always")
+        result = run_experiment(model, cfg, repetitions=1, verbose=False)
+    messages = [str(w.message) for w in caught]
+    assert any("never fired" in m for m in messages), messages
+    # What is measured is exactly what ran -- no empty taps in the result.
+    assert not (set(result.layers) & set(unfired))
+    model.close()
+
+
+def test_vgg_all_layers_is_unchanged_by_the_reuse_fix():
+    """The 45-tap VGG-19 layer set must be exactly what was committed.
+
+    Every committed depth profile is a 45-tap VGG-19 run, and comparability
+    with them is the reason ``_all_layers`` keeps its original predicate. If
+    hoisting it or adding the reuse slots moved this list, the new runs would
+    not be comparable with the old ones.
+    """
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import torchvision  # noqa: F401
+    except Exception as exc:
+        raise unittest.SkipTest(f"torch/torchvision not installed ({exc})")
+
+    from .features import TorchvisionModel
+
+    model = TorchvisionModel(
+        arch="vgg19", pretrained=False, layers=["all"], allow_random_init=True
+    )
+    # 43 leaf modules; 'logits' and 'prob' are added in represent() for 45.
+    assert len(model.layers) == 43, len(model.layers)
+    assert model.layers[0] == "features.0"
+    assert model.layers[-1] == "classifier.6"
+    assert not any("@" in name for name in model.layers)
+
+    rep = model.represent(np.random.default_rng(0).random((64, 64, 3)))
+    # No module fires twice in VGG, so no reuse slot may appear.
+    assert set(rep) == set(model.layers) | {"logits", "prob"}, sorted(rep)
+    model.close()
 
 
 def test_preprocessing_fold_is_exact():

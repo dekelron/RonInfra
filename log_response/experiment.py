@@ -38,6 +38,7 @@ from functools import cached_property
 import json
 import math
 import os
+import warnings
 import numpy as np
 
 from .gratings import GratingConfig, sample_gratings, reference_rgb
@@ -227,9 +228,32 @@ def run_experiment(
     reps = cfg.repetitions if repetitions is None else repetitions
     rng = np.random.default_rng(seed)
 
-    # Reference representation (single gray image).
+    # Reference representation (single gray image). Its keys ARE the layer set:
+    # a tap exists if and only if its module actually ran.
     ref_rep = model.represent(reference_rgb(cfg))
     layers = list(ref_rep.keys())
+
+    # A hooked module that never runs contributes no tap, and used to do so in
+    # silence -- you asked for N layers and got fewer, with nothing said. It is
+    # not hypothetical: torchvision's ViT builds nn.MultiheadAttention, whose
+    # forward hands out_proj.weight/bias to F.multi_head_attention_forward
+    # rather than calling the module, so `--layers all` on vit_b_16 registers 75
+    # modules and 12 of them never fire. The measurement is still correct -- the
+    # taps simply do not exist -- but a depth profile silently missing every
+    # attention output projection is not something to discover afterwards.
+    unfired = [name for name in getattr(model, "layers", []) if name not in ref_rep]
+    if unfired:
+        warnings.warn(
+            f"{len(unfired)} of {len(getattr(model, 'layers', []))} requested "
+            f"taps never fired and are absent from this run: "
+            f"{', '.join(unfired[:3])}"
+            + (f", ... (+{len(unfired) - 3} more)" if len(unfired) > 3 else "")
+            + ". Their modules are hooked but never called -- weights used "
+            "functionally, or a branch that does not run on this input.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
     ref_rep = {k: v.astype(np.float64) for k, v in ref_rep.items()}
 
     freqs = cfg.frequency_array

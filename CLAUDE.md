@@ -100,6 +100,36 @@ What this does and does not invalidate:
 Fixed by cloning in the hook; `test_pre_activation_taps_survive_inplace_relu`
 fails without it. Re-run before quoting any early- or middle-layer number.
 
+## One module can be several taps — this bites ResNet, not VGG
+
+Same failure family as the above, found 2026-07-27 while opening the
+cross-architecture work, and **no committed run is affected**. A forward hook
+fires once per *call*, not once per module, and torchvision's ResNet holds a
+single `nn.ReLU` per block that it calls 2–3× (`BasicBlock` after conv1 and
+after the residual add; `Bottleneck` three times). The hook assigned to
+`self._acts[name]`, so one name kept only the **last** firing and the earlier
+activations were dropped — on `resnet50`, 32 of 158 activations gone and the
+surviving taps mislabelled, exactly the pre-activation bug's signature.
+
+Every firing after the first now gets its own slot: `<name>`, `<name>@2`,
+`<name>@3`. VGG-19 gives each ReLU its own module and calls it once, so its
+45-tap set is byte-for-byte what it was — pinned by
+`test_vgg_all_layers_is_unchanged_by_the_reuse_fix`, and
+`test_reused_modules_are_not_collapsed_into_one_tap` fails without the fix.
+
+Two neighbours, same theme — a tap's name has to match what it recorded:
+
+- **A hooked module that never fires now warns** instead of vanishing.
+  `nn.MultiheadAttention` hands `out_proj.weight`/`bias` to
+  `F.multi_head_attention_forward` rather than calling the module, so
+  `--layers all` on `vit_b_16` registers 75 modules and 12 produce no tap.
+- **`--layers all` works on every back-end now.** The expansion lived inside
+  `TorchvisionModel`, so `--layers all` on `clip:`/`hf:`/`sam:` raised
+  `KeyError: layer 'all' not found` — the depth profile, which is the figure a
+  result is read off, could not be measured on any of them. On CLIP it stops at
+  the `visual` tower and on SAM at `vision_encoder` unless `--mask-decoder`,
+  since the rest does not run per grating.
+
 ## Needs doing
 
 Ordered. Nothing here is blocking — every quoted number now has a committed run.

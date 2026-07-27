@@ -207,9 +207,22 @@ class _TorchBackend(FeatureModel):
     and ``_norm_mean``/``_norm_std`` before calling ``_init_hooks``/``_register``.
     """
 
+    # Set by a subclass when only part of the network runs on a forward pass, so
+    # ``--layers all`` does not register hooks on modules that never fire (CLIP's
+    # text tower, SAM's mask decoder in encoder-only mode). None taps everything.
+    _all_layers_prefix: str | None = None
+
     def _init_hooks(self) -> None:
         self._acts: dict[str, np.ndarray] = {}
+        # Firings of each hooked module within the current forward -- see the
+        # module-reuse note in _register.
+        self._calls: dict[str, int] = {}
         self._hooks: list = []
+
+    def _reset(self) -> None:
+        """Clear the per-forward capture state. Call at the top of represent()."""
+        self._acts = {}
+        self._calls = {}
 
     def _register(self, names: list[str]) -> None:
         modules = dict(self.net.named_modules())
@@ -220,6 +233,19 @@ class _TorchBackend(FeatureModel):
             def hook(_m, _in, out, key=name):
                 if isinstance(out, (tuple, list)):  # e.g. blocks returning extras
                     out = out[0]
+                # A module can be *called more than once* per forward, and then
+                # one name denotes several activations. torchvision's ResNet is
+                # the case that matters: BasicBlock and Bottleneck hold a single
+                # nn.ReLU and call it 2x / 3x (after conv1, after conv2, and
+                # after the residual add). Assigning to self._acts[key] would
+                # keep only the last firing and silently drop the others, so the
+                # tap would be mislabelled exactly as the pre-activation taps
+                # were before the .clone() below -- plausible numbers, wrong
+                # layer. Instead every firing after the first gets its own slot,
+                # '<name>@2', '<name>@3', ... The count is deterministic for a
+                # fixed input shape, so the layer set is stable across images,
+                # which is what the distance-of-means metric requires.
+                #
                 # .float() so half/bfloat16 nets (numpy has no bfloat16) work.
                 #
                 # .clone() is load-bearing, not defensive. On CPU with float32
@@ -231,9 +257,47 @@ class _TorchBackend(FeatureModel):
                 # silently reports the post-activation values instead: a conv
                 # tap and the ReLU tap after it come back bit-identical, with no
                 # negative values anywhere in the "pre-ReLU" surface.
-                self._acts[key] = out.detach().clone().float().cpu().numpy()
+                n = self._calls.get(key, 0) + 1
+                self._calls[key] = n
+                slot = key if n == 1 else f"{key}@{n}"
+                self._acts[slot] = out.detach().clone().float().cpu().numpy()
 
             self._hooks.append(modules[name].register_forward_hook(hook))
+
+    def _all_layers(self) -> list[str]:
+        """Every leaf module, so the depth profile is sampled continuously.
+
+        Both sides of each nonlinearity are included -- a Conv2d output is the
+        pre-activation and the ReLU that follows it the post-activation -- which
+        is the point: it locates *where* along the network the response changes
+        shape, rather than sampling three points and interpolating.
+
+        Dropout is skipped: it is the identity in eval mode, so it would
+        duplicate the preceding layer's surface exactly.
+
+        ``_all_layers_prefix`` restricts this to one subtree where the rest of
+        the network does not run on a forward pass. With it None the predicate
+        is exactly the one every committed VGG-19 run was measured under.
+        """
+        import torch.nn as nn
+
+        prefix = self._all_layers_prefix
+        return [
+            name
+            for name, module in self.net.named_modules()
+            if not list(module.children())
+            and not isinstance(module, (nn.Dropout, nn.Dropout2d))
+            and (prefix is None or name == prefix or name.startswith(prefix + "."))
+        ]
+
+    def _resolve_layers(self, layers: list[str] | None) -> list[str] | None:
+        """Expand the ``['all']`` sentinel; pass anything else through.
+
+        Lives here rather than in one back-end because the depth profile is the
+        measurement -- a back-end that cannot answer ``--layers all`` cannot
+        produce one at all.
+        """
+        return self._all_layers() if layers == ["all"] else layers
 
     def close(self) -> None:
         """Remove the forward hooks (call if creating many models per process)."""
@@ -340,31 +404,9 @@ class TorchvisionModel(_TorchBackend):
 
         self.net.eval().to(self.device)
 
-        if layers == ["all"]:
-            layers = self._all_layers()
-        self.layers = layers or self._default_layers(arch)
+        self.layers = self._resolve_layers(layers) or self._default_layers(arch)
         self._init_hooks()
         self._register(self.layers)
-
-    def _all_layers(self) -> list[str]:
-        """Every leaf module, so the depth profile is sampled continuously.
-
-        Both sides of each nonlinearity are included -- a Conv2d output is the
-        pre-activation and the ReLU that follows it the post-activation -- which
-        is the point: it locates *where* along the network the response changes
-        shape, rather than sampling three points and interpolating.
-
-        Dropout is skipped: it is the identity in eval mode, so it would
-        duplicate the preceding layer's surface exactly.
-        """
-        import torch.nn as nn
-
-        return [
-            name
-            for name, module in self.net.named_modules()
-            if not list(module.children())
-            and not isinstance(module, (nn.Dropout, nn.Dropout2d))
-        ]
 
     def _default_layers(self, arch: str) -> list[str]:
         # A spread from early to end computation. 'logits'/'prob' are appended in
@@ -379,7 +421,7 @@ class TorchvisionModel(_TorchBackend):
         return [list(dict(self.net.named_modules()).keys())[-1]]
 
     def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
-        self._acts = {}
+        self._reset()
         with self.torch.no_grad():
             logits = self.net(self._preprocess(image))
         acts = {k: v.copy() for k, v in self._acts.items()}
@@ -503,7 +545,10 @@ class CLIPModel(_TorchBackend):
             text = self.net.encode_text(tokenizer(self.prompts).to(self.device))
         self._text_features = text / text.norm(dim=-1, keepdim=True)
 
-        self.layers = layers or self._default_layers()
+        # Only the image tower runs per grating: text features are computed once
+        # above, so --layers all must not hook the text transformer.
+        self._all_layers_prefix = "visual"
+        self.layers = self._resolve_layers(layers) or self._default_layers()
         self._init_hooks()
         self._register(self.layers)
 
@@ -526,7 +571,7 @@ class CLIPModel(_TorchBackend):
 
     def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
         torch = self.torch
-        self._acts = {}
+        self._reset()
         with torch.no_grad():
             embed = self.net.encode_image(self._preprocess(image))
             norm = embed / embed.norm(dim=-1, keepdim=True)
@@ -643,7 +688,7 @@ class HFVLMModel(_TorchBackend):
         self._text = self._build_text()
         self.input_size = self._infer_input_size()
 
-        self.layers = layers or self._default_layers()
+        self.layers = self._resolve_layers(layers) or self._default_layers()
         self._init_hooks()
         self._register(self.layers)
 
@@ -731,7 +776,7 @@ class HFVLMModel(_TorchBackend):
 
     def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
         torch = self.torch
-        self._acts = {}
+        self._reset()
         inputs = self._inputs(image)
         with torch.no_grad():
             try:
@@ -839,7 +884,10 @@ class SAMModel(_TorchBackend):
             default=1024,
         )
 
-        self.layers = layers or self._default_layers()
+        # Encoder-only by default, so --layers all stops at the vision encoder;
+        # with the mask decoder on, the prompt encoder and decoder run too.
+        self._all_layers_prefix = None if mask_decoder else "vision_encoder"
+        self.layers = self._resolve_layers(layers) or self._default_layers()
         self._init_hooks()
         self._register(self.layers)
 
@@ -859,7 +907,7 @@ class SAMModel(_TorchBackend):
 
     def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
         torch = self.torch
-        self._acts = {}
+        self._reset()
         # Float values in [0, 255]: the processor's 1/255 rescale restores the
         # exact [0,1] grating (no 8-bit quantisation).
         arr = np.ascontiguousarray(image * 255.0, dtype=np.float32)
