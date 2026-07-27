@@ -1,7 +1,7 @@
 """Run the log-contrast-response experiment end to end.
 
-For each layer and each (contrast, frequency) cell the metric is a **distance of
-means**, not a mean of distances:
+For each layer and each (contrast, frequency) cell the primary metric is the
+paper's: a **distance of means**, not a mean of distances:
 
     mu_i(c,f) = mean over the 250 random images of unit i's activation
     D(c,f)    = mean_i | mu_i(c,f) - a_i(gray) |
@@ -10,13 +10,31 @@ Averaging activations across the random orientation/phase draws happens BEFORE
 the absolute value, so phase/orientation-specific activity cancels first (see
 wiki/Method.md, Jensen's inequality note).
 
+The **other ordering** is recorded alongside it, for every run:
+
+    D_mod(c,f) = mean over the 250 images of  mean_i | a_i(x_r) - a_i(gray) |
+
+It is not a better metric, it is a different one, and the difference is
+load-bearing. Phase ~ U[0,2pi) makes E[grating] = gray exactly, so D has
+population value **zero** at any layer that is affine in the input and what a
+finite run measures there is 1/sqrt(reps) sampling noise. D_mod takes the
+absolute value first, so nothing cancels and shallow layers carry real signal.
+Reporting both is what separates "this layer responds linearly to contrast"
+from "this layer's signal is below the metric's floor".
+
+It is free: the per-image distance reduces to a scalar immediately, so it costs
+one accumulator *number* per layer rather than one accumulator array, and the
+forward pass dominates the arithmetic either way. Runs saved before this
+existed simply carry no D_mod, and load with it set to None.
+
 Produces, per layer: the L1 surface D(freq, contrast); per-frequency and pooled
 linear fits of D vs log10(contrast) with R^2; and optional figures.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import cached_property
 import json
 import math
 import os
@@ -42,6 +60,25 @@ class ExperimentResult:
     results: dict[str, LayerLogResult]
     # layer -> (n_freq, n_contrast) standard error of D, or None if not measured.
     noise: dict[str, np.ndarray] | None = None
+    # layer -> (n_freq, n_contrast) mean-of-distances surface (the other order of
+    # operations; see the module docstring). None for runs saved before it
+    # existed -- every committed directory from before 2026-07-27.
+    mean_of_distances: dict[str, np.ndarray] | None = None
+
+    @cached_property
+    def mod_results(self) -> dict[str, LayerLogResult] | None:
+        """The same fits, applied to the mean-of-distances surfaces."""
+        if self.mean_of_distances is None:
+            return None
+        return {
+            name: summarise_layer(
+                name,
+                contrasts=self.config.contrast_array,
+                frequencies=self.config.frequency_array,
+                response=self.mean_of_distances[name],
+            )
+            for name in self.layers
+        }
 
     def _chi2_per_dof(self, layer: str) -> float:
         """Best law's chi-squared per degree of freedom, needs ``noise``.
@@ -97,10 +134,12 @@ class ExperimentResult:
         lines.append(f"repetitions per cell (random orient/phase): {self.repetitions}")
         lines.append("")
         name_w = max(14, max(len(layer) for layer in self.layers) + 2)
+        mod_results = self.mod_results
         header = (
             f"{'layer':<{name_w}}{'mean R^2':>10}{'pooled R^2':>12}{'spacing CV':>12}"
             f"{'lambda':>9}{'95% CI':>16}{'lam R^2':>9}{'c%lin':>8}{'c%log':>8}"
             + (f"{'chi2/dof':>12}" if self.noise else "")
+            + (f"{'lam(mod)':>10}{'R^2(mod)':>10}" if mod_results else "")
         )
         lines.append(header)
         lines.append("-" * len(header))
@@ -119,6 +158,11 @@ class ExperimentResult:
                 f"{res.lam:>+9.2f}{f'[{lo:+.2f}, {hi:+.2f}]':>16}{res.lam_r2:>9.3f}"
                 f"{cerr[0]:>8.2f}{cerr[1]:>8.2f}"
                 + (f"{self._chi2_per_dof(layer):>12.3g}" if self.noise else "")
+                + (
+                    f"{mod_results[layer].lam:>+10.2f}"
+                    f"{mod_results[layer].lam_r2:>10.3f}"
+                    if mod_results else ""
+                )
             )
         lines.append("")
         lines.append(
@@ -144,6 +188,13 @@ class ExperimentResult:
             "this sags the exponent locates a response the family does not "
             "describe, and means correspondingly less."
         )
+        if mod_results:
+            lines.append(
+                "lam(mod): the same exponent on the OTHER order of operations, "
+                "mean_r mean_i |a_i(x_r) - gray_i|. That one has no "
+                "zero-population floor, so where a layer's two lambdas disagree "
+                "the primary metric is reporting its own sampling noise."
+            )
         return "\n".join(lines)
 
 
@@ -184,6 +235,7 @@ def run_experiment(
     freqs = cfg.frequency_array
     contrasts = cfg.contrast_array
     surfaces = {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
+    mod = {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
     nblocks = int(noise_blocks) if noise_blocks and noise_blocks > 1 else 0
     noise = (
         {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
@@ -196,6 +248,10 @@ def run_experiment(
         for ci, c in enumerate(contrasts):
             # Accumulate activations across the random images (mean first).
             sums = {layer: np.zeros_like(ref_rep[layer]) for layer in layers}
+            # The other order of operations. Each image's distance collapses to
+            # a scalar right away, so this is an accumulator number per layer,
+            # not an accumulator array -- it costs no memory worth counting.
+            mod_sums = {layer: 0.0 for layer in layers}
             blocks = (
                 [{layer: np.zeros_like(ref_rep[layer]) for layer in layers}
                  for _ in range(nblocks)]
@@ -209,6 +265,7 @@ def run_experiment(
                 for layer in layers:
                     value = rep[layer].astype(np.float64)
                     sums[layer] += value
+                    mod_sums[layer] += l1_distance(value, ref_rep[layer])
                     if blocks is not None:
                         blocks[idx % nblocks][layer] += value
                 if blocks is not None:
@@ -217,6 +274,8 @@ def run_experiment(
                 mu = sums[layer] / reps
                 # D = mean_i | mu_i - gray_i |  (distance of the class-mean rep)
                 surfaces[layer][fi, ci] = l1_distance(mu, ref_rep[layer])
+                # D_mod = mean_r mean_i | a_i(x_r) - gray_i |  (mean of distances)
+                mod[layer][fi, ci] = mod_sums[layer] / reps
                 if blocks is not None:
                     per_block = [
                         l1_distance(blocks[b][layer] / counts[b], ref_rep[layer])
@@ -245,7 +304,7 @@ def run_experiment(
     }
     return ExperimentResult(
         config=cfg, repetitions=reps, layers=layers, surfaces=surfaces,
-        results=results, noise=noise,
+        results=results, noise=noise, mean_of_distances=mod,
     )
 
 
@@ -264,6 +323,7 @@ def result_summary(result: ExperimentResult, metadata: dict | None = None) -> di
     """A JSON-friendly summary: grids, per-layer fits (slopes, R^2), spacing CV."""
     contrasts = result.config.contrast_array
     log_c = np.log10(contrasts)
+    mod_results = result.mod_results
     layers = []
     for name in result.layers:
         res = result.results[name]
@@ -271,9 +331,19 @@ def result_summary(result: ExperimentResult, metadata: dict | None = None) -> di
             linear_spacing_uniformity(res.response[fi], log_c)
             for fi in range(res.response.shape[0])
         ]
+        mod = mod_results[name] if mod_results else None
         layers.append(
             {
                 "layer": name,
+                # The other order of operations, recorded alongside rather than
+                # instead of: it has no zero-population floor, so where the two
+                # disagree the primary metric is measuring its own noise.
+                **({} if mod is None else {"mean_of_distances": {
+                    "lambda": _finite(mod.lam),
+                    "lambda_ci": [_finite(v) for v in mod.lam_ci],
+                    "lambda_r2": _finite(mod.lam_r2),
+                    "mean_r2": _finite(mod.mean_r2),
+                }}),
                 "mean_r2": _finite(res.mean_r2),
                 # The headline statistic. Recorded here as well as recomputed on
                 # load, so a committed directory states its own result rather
@@ -331,15 +401,21 @@ def save_result(
     meta.setdefault("size", int(result.config.size))
     meta.setdefault("mean", float(result.config.mean))
 
+    arrays = {
+        "surfaces": surfaces,
+        "layers": np.asarray(layers),
+        "contrasts": result.config.contrast_array,
+        "frequencies": result.config.frequency_array,
+        "meta": np.asarray(json.dumps(meta)),
+    }
+    if result.mean_of_distances is not None:
+        arrays["mean_of_distances"] = np.stack(
+            [np.asarray(result.mean_of_distances[name], dtype=np.float64)
+             for name in layers],
+            axis=0,
+        )
     npz_path = base + ".npz"
-    np.savez_compressed(
-        npz_path,
-        surfaces=surfaces,
-        layers=np.asarray(layers),
-        contrasts=result.config.contrast_array,
-        frequencies=result.config.frequency_array,
-        meta=np.asarray(json.dumps(meta)),
-    )
+    np.savez_compressed(npz_path, **arrays)
     json_path = base + ".json"
     with open(json_path, "w", encoding="utf-8") as fh:
         json.dump(result_summary(result, metadata), fh, indent=2)
@@ -465,9 +541,15 @@ def load_result(path: str) -> tuple[ExperimentResult, dict]:
         name: summarise_layer(name, contrasts, frequencies, surfaces[name])
         for name in layers
     }
+    # Absent from every run saved before 2026-07-27; those load with it None.
+    mod = None
+    if "mean_of_distances" in data.files:
+        mod_arr = np.asarray(data["mean_of_distances"], dtype=np.float64)
+        mod = {name: mod_arr[i] for i, name in enumerate(layers)}
     reps = int(meta.get("repetitions", cfg.repetitions))
     result = ExperimentResult(
-        config=cfg, repetitions=reps, layers=layers, surfaces=surfaces, results=results
+        config=cfg, repetitions=reps, layers=layers, surfaces=surfaces,
+        results=results, mean_of_distances=mod,
     )
     return result, meta
 

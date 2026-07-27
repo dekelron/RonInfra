@@ -15,14 +15,15 @@
     "command": "run.py --model data --reps 50 --save-run results/data-r50-s0 --quiet --notes Raw image pixels at 50 reps: the companion to data-r250-s0 that makes the 1/sqrt(reps) scaling of the noise floor checkable from committed surfaces.",
     "code": {
       "available": true,
-      "commit": "3ecbdfe9cdb96d12e296b9ee6b0eebfa2fc7e5d2",
+      "commit": "3b9a092f0a529c3315074df6115e31bc6984de3e",
       "branch": "claude/free-online-compute-r0p8y2",
       "dirty": true,
       "dirty_files": [
-        "log_response/features.py",
-        "log_response/run.py",
+        "log_response/experiment.py",
         "log_response/test_pipeline.py",
-        "results/data-r250-s0/"
+        "results/data-r250-s0/result.json",
+        "results/data-r250-s0/result.npz",
+        "results/data-r250-s0/run.json"
       ]
     },
     "versions": {
@@ -36,9 +37,9 @@
       "machine": "x86_64",
       "cpu_count": 4,
       "executable": "/usr/local/bin/python",
-      "wall_seconds": 6.8
+      "wall_seconds": 10.8
     },
-    "created_utc": "2026-07-26T21:13:22Z",
+    "created_utc": "2026-07-27T07:11:05Z",
     "notes": "Raw image pixels at 50 reps: the companion to data-r250-s0 that makes the 1/sqrt(reps) scaling of the noise floor checkable from committed surfaces."
   },
   "repetitions": 50,
@@ -73,6 +74,15 @@
   "layers": [
     {
       "layer": "data",
+      "mean_of_distances": {
+        "lambda": 1.0001154649112665,
+        "lambda_ci": [
+          0.9999182676253237,
+          1.0002674736751085
+        ],
+        "lambda_r2": 0.9999995507534561,
+        "mean_r2": 0.7358881056847171
+      },
       "mean_r2": 0.7487374099129583,
       "lambda": 0.943264518013551,
       "lambda_ci": [

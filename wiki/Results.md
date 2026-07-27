@@ -235,9 +235,25 @@ that trained weights reached the model, which λ at the same tap is not.
 > whose §5 iso-output comparison reports `conv1_1` at R² = 96% — that analysis
 > reads the frequency axis, so it is not affected by the floor.
 
-**Not yet done:** the same test at each of the 45 taps, which needs one
-`--reps 1000` run per checkpoint and would settle how much of Caffe's flat λ ≈ 1
-conv stack is locally-linear response and how much is floor.
+**The other ordering makes the point directly.** Since 2026-07-27 every run also
+records `D_mod = mean_r mean_i |a_i(x_r) − gray_i|`, which takes the absolute
+value per image so nothing cancels. On raw pixels, same images, same layer:
+
+| | D(50)/D(250) | reading |
+|---|---|---|
+| `D` — distance of means (the paper's) | **2.237** [1.19, 5.31] | √5 — noise |
+| `D_mod` — mean of distances | **1.000** [0.9953, 1.0024] | rep-invariant — signal |
+
+`D_mod` also has a closed form here: `c/π`, matched to **0.04%** across all 14
+contrasts, giving λ = 1.000 at R² = 1.000. So the same layer is a noise floor
+under one ordering and an exactly-predicted signal under the other, and the
+difference is entirely the order of the mean and the absolute value.
+
+**Not yet done:** the same comparison at each of the 45 taps on a real model.
+One `--reps 50` run per checkpoint against the committed r250 does it — signal
+taps hold `D`, floor taps fall by √5 — and would settle how much of Caffe's flat
+λ ≈ 1 conv stack is locally-linear response and how much is floor. The only
+committed run carrying both metrics so far is raw pixels.
 
 ### Is the log response at `prob` just the softmax?
 

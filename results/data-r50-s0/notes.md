@@ -29,6 +29,15 @@ Applied to the real runs, this is what says `features.0` is a floor and
 `features.0` moves by up to 2.19× while `features.19`, `classifier.3`,
 `logits` and `prob` all sit flat at 1.00.
 
+Re-run on 2026-07-27 to record the mean-of-distances surface as well (primary
+surfaces bit-identical). It makes the same point without needing two runs at
+all — on the same images, the same layer:
+
+```
+D(50)/D(250)     distance of means  2.237  [1.19, 5.31]      noise
+                 mean of distances  1.000  [0.9953, 1.0024]  signal
+```
+
 ## Reproduce
 
 ```

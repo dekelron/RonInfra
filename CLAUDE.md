@@ -190,6 +190,21 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   - Bonus: the paper's `data` panel has a median 44% frequency-to-frequency
     spread with no trend in contrast — the noise floor, and
     `results/data-r250-s0` reproduces it at 41%.
+- **Both orderings of the metric are now recorded on every run** (2026-07-27).
+  `D` (distance of means) stays the headline — it is the paper's, eq. 4. `D_mod`
+  = `mean_r mean_i |a_i(x_r) − gray_i|` rides along for free (each image's
+  distance collapses to a scalar, so it is an accumulator *number* per layer).
+  Why: `D` has population value zero at any affine layer, `D_mod` does not, so
+  **where a layer's two λ disagree the primary metric is reporting its own
+  noise**. `result.json` carries it under `mean_of_distances`; runs saved before
+  this date lack it and load with it `None`. Adding it left every committed
+  surface bit-identical.
+  - **It brings an exact calibration point**, which the repo never had. On raw
+    pixels `D_mod = μ·c·(2/π) = c/π` in closed form — matched to **0.04%** over
+    all 14 contrasts, λ **1.000**, R² **1.000**. `D`'s population value there is
+    zero, so it can calibrate nothing.
+  - Only `data-r250-s0` / `data-r50-s0` carry both so far; **no model run does
+    yet.**
 - **The metric has a zero-population floor at every affine layer, and
   `features.0` is on it.** Phase ~ U[0,2π) makes `E[grating] = gray` exactly, so
   the distance-of-*means* metric has population `D` = 0 wherever the layer is

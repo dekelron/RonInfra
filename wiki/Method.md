@@ -128,6 +128,36 @@ The paper's *primary* §5 analysis is a comparison of DNN iso-output curves
 against human psychophysics; there is no human data in this repo, so only the
 DNN half is implemented.
 
+### The other ordering, recorded alongside
+
+Every run from 2026-07-27 also records the metric with the operations reversed:
+
+```
+D_mod(c,f) = (1/250) Σ_r  (1/N_ℓ) Σ_i | a_ℓi(x_{c,f,r}) − b_ℓi |
+```
+
+This is **not** the paper's metric and does not replace it — `D` stays the
+headline everywhere. It is recorded because the two disagree in a diagnostic
+way. `D` has population value zero at any layer affine in the input (the
+[noise floor](#the-noise-floor)); `D_mod` takes the absolute value per image, so
+nothing cancels and shallow layers keep a real signal. **Where a layer's two λ
+disagree, the primary metric is reporting its own sampling noise.**
+
+It costs nothing: each image's distance collapses to a scalar immediately, so it
+is one accumulator *number* per layer rather than an array, and the forward pass
+dominates either way. `result.json` carries it under `mean_of_distances`; runs
+saved before this date simply do not have it, and load unchanged.
+
+**It also buys an exact calibration point, which `D` cannot provide.** For a
+grating of contrast `c` about mean `μ`, the mean absolute deviation from gray is
+`μ·c·mean|sin| = μ·c·(2/π)` — independent of frequency, orientation and phase.
+At `μ = 0.5` that is `c/π`. Measured on raw pixels
+([`data-r250-s0`](../results/data-r250-s0/notes.md)) it matches to **0.04%**
+across all 14 contrasts, giving λ = **1.000** at R² = **1.000**. Any error in
+the grating generator, the contrast convention or the metric shows up as a
+deviation from a closed form. `D`'s population value at raw pixels is zero, so
+there is nothing there to check a measurement against.
+
 **Probability layer bound:** with p,q the 1000-class softmax vectors,
 `D_prob = (1/1000) Σ_i |p_i − q_i| = (2/1000)·TV(p,q)`, so `0 ≤ D_prob ≤ 0.002`.
 This bound means no *global* log law is possible — D must →0 near zero contrast
@@ -303,7 +333,9 @@ much is an empty measurement — a question the shape of the curve cannot answer
 Then: fit and **hold out contrasts** to compare candidate laws — log, soft-log
 `α+β log(1+c/σ)`, power `α+β c^γ`, saturating `α+β c^n/(σ^n+c^n)`; bootstrap
 phase/orientation samples for CIs; repeat across init/scramble seeds; compare
-**logits vs softmax**; compare **distance-of-means vs mean-of-distances** (the
-second has no zero-population floor, so it would measure the shallow layers this
-one cannot); analyse individual units vs the pooled response; extend contrast
-below 1/128 to find where the apparent log breaks.
+**logits vs softmax**; analyse individual units vs the pooled response; extend
+contrast below 1/128 to find where the apparent log breaks.
+
+*(Distance-of-means vs mean-of-distances is done — both are now recorded on
+every run, see above. What is still missing is a **model** run carrying both;
+the only committed pair so far is raw pixels.)*

@@ -66,6 +66,34 @@ Deeper taps are **not** covered by this argument: they sit downstream of a
 ReLU, so `E[a(x)] ≠ a(gray)` and they can carry real signal even when they are
 convolutions. `features.19` holds its D across a 5× rep change, so it does.
 
+## The other ordering, on the same images
+
+Re-run on 2026-07-27 to record `D_mod = mean_r mean_i |a_i(x_r) − gray_i|`
+alongside. The primary surfaces are **bit-identical** to the first version of
+this run; the file just gained an array.
+
+`D_mod` has a closed form at raw pixels. For a grating of contrast `c` about
+mean `μ` the mean absolute deviation from gray is `μ·c·(2/π)`, independent of
+frequency, orientation and phase — `c/π` at `μ = 0.5`:
+
+| c | measured | c/π | error |
+|---|---|---|---|
+| 1/128 | 0.002487 | 0.002487 | 0.02% |
+| 1/8 | 0.039794 | 0.039789 | 0.01% |
+| 1 | 0.318309 | 0.318310 | 0.00% |
+
+Worst of all 14: **0.04%**. λ = **1.000**, R² = **1.000**, flat across frequency
+(0.31818–0.31847 at `c = 1`). This is the exact calibration point the primary
+metric cannot offer — its population value here is zero, so there is nothing to
+check a measurement against.
+
+Side by side against [`data-r50-s0`](../data-r50-s0/notes.md):
+
+```
+D(50)/D(250)     distance of means  2.237   (= sqrt 5 : noise)
+                 mean of distances  1.000   (rep-invariant : signal)
+```
+
 ## Reproduce
 
 ```

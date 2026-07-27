@@ -282,6 +282,104 @@ def test_experiment_uses_distance_of_means_not_mean_of_distances():
     assert d_mean_first < 0.4 * d_mean_of_dists  # ... but it cancels mean-first
 
 
+def test_mean_of_distances_is_recorded_alongside_and_dominates():
+    """Both orderings are measured, and Jensen fixes their relative size.
+
+    ||E[A] - b||_1 <= E[||A - b||_1], so the mean-of-distances surface can never
+    be the smaller of the two. Equality only where nothing cancels.
+    """
+    cfg = GratingConfig(size=96, frequencies_cpi=(7.0,))
+    result = run_experiment(_PhaseSignedModel(), cfg, repetitions=40, seed=1,
+                            verbose=False)
+    assert result.mean_of_distances is not None
+    dom = result.surfaces["signed"]
+    mod = result.mean_of_distances["signed"]
+    assert mod.shape == dom.shape
+    assert np.all(mod >= dom - 1e-12), (dom, mod)
+    # This model is built so the signed activity cancels mean-first, so the two
+    # must differ by a lot, not by rounding.
+    assert dom[0, -1] < 0.4 * mod[0, -1]
+
+
+def test_mean_of_distances_has_no_noise_floor():
+    """The point of recording it: it survives where the primary metric cannot.
+
+    At a layer affine in the input the paper's metric has population value 0 and
+    falls as 1/sqrt(reps). Taking the absolute value per image first leaves
+    nothing to cancel, so the same layer keeps a rep-invariant signal.
+    """
+    cfg = GratingConfig(size=64, frequencies_cpi=(7.0,), contrasts=(0.25, 1.0))
+    few = run_experiment(RawPixelModel(), cfg, repetitions=16, seed=0, verbose=False)
+    many = run_experiment(RawPixelModel(), cfg, repetitions=256, seed=0, verbose=False)
+
+    primary = few.surfaces["data"] / many.surfaces["data"]
+    other = few.mean_of_distances["data"] / many.mean_of_distances["data"]
+    assert np.all(primary > 2.0), primary          # sqrt(16) = 4 for pure noise
+    assert np.allclose(other, 1.0, atol=0.05), other  # rep-invariant: real signal
+
+
+def test_mean_of_distances_hits_the_closed_form_at_raw_pixels():
+    """An exact calibration point, which the primary metric cannot provide.
+
+    For a grating of Michelson contrast c about mean mu, the mean absolute
+    deviation from gray is mu*c*mean|sin| = mu*c*(2/pi), i.e. c/pi at mu = 0.5 --
+    independent of frequency, orientation and phase. So mean-of-distances on raw
+    pixels has a closed form, and any error in the grating generator, the
+    contrast convention or the metric shows up as a deviation from it.
+
+    The paper's metric has no such check: its population value at raw pixels is
+    zero, so there is nothing to compare a measurement against.
+    """
+    cfg = GratingConfig(size=128, frequencies_cpi=(3.5, 14.0))
+    result = run_experiment(RawPixelModel(), cfg, repetitions=24, seed=0, verbose=False)
+    measured = result.mean_of_distances["data"]
+    expected = cfg.mean * (2.0 / np.pi) * cfg.contrast_array[None, :]
+    assert np.allclose(measured, expected, rtol=0.02), measured / expected
+    # ...and therefore lambda = 1 exactly, not the noise floor's 0.92.
+    res = result.mod_results["data"]
+    assert abs(res.lam - 1.0) < 0.02, res.lam
+    assert res.lam_r2 > 0.999, res.lam_r2
+
+
+def test_mean_of_distances_round_trips_and_old_runs_still_load():
+    import os
+    import tempfile
+
+    cfg = GratingConfig(size=48, frequencies_cpi=(7.0,), contrasts=(0.25, 0.5, 1.0))
+    result = run_experiment(RawPixelModel(), cfg, repetitions=4, seed=0, verbose=False)
+    with tempfile.TemporaryDirectory() as tmp:
+        base = os.path.join(tmp, "run")
+        save_result(result, base, metadata={"model": "data"})
+        back, _ = load_result(base)
+        assert back.mean_of_distances is not None
+        assert np.allclose(back.mean_of_distances["data"],
+                           result.mean_of_distances["data"])
+        assert back.mod_results["data"].lam == result.mod_results["data"].lam
+
+        # A run saved without it -- i.e. every directory committed before
+        # 2026-07-27 -- must still load, with the field simply absent.
+        stripped = os.path.join(tmp, "old")
+        data = dict(np.load(base + ".npz", allow_pickle=False))
+        data.pop("mean_of_distances")
+        np.savez_compressed(stripped + ".npz", **data)
+        old, _ = load_result(stripped)
+        assert old.mean_of_distances is None
+        assert old.mod_results is None
+        assert np.allclose(old.surfaces["data"], result.surfaces["data"])
+        old.report()  # must not raise with the columns absent
+
+
+def test_committed_runs_predate_the_second_metric():
+    """Adding it must not have disturbed a single committed surface."""
+    import glob
+    import os
+
+    for npz in sorted(glob.glob("results/*/result.npz")):
+        result, _ = load_result(os.path.dirname(npz))
+        assert result.surfaces, npz
+        result.report()
+
+
 def test_parse_clip_spec():
     assert parse_clip_spec("clip") == ("ViT-B-32", "openai")
     assert parse_clip_spec("clip:ViT-L-14") == ("ViT-L-14", "openai")
