@@ -1,0 +1,57 @@
+{
+  "code": {
+    "available": true,
+    "branch": "claude/vgg19-next-networks-xyl9ty",
+    "commit": "f9ab3861976aec92124627ba4e18ab313d172f89",
+    "dirty": false,
+    "dirty_files": null
+  },
+  "command": "run.py --model alexnet --reps 250 --seed 0 --save-run results/alexnet-r250-s0 --notes AlexNet depth profile, 21 taps. Depth control: does the crossover to log need 33 layers, or is it carried by the classifier ReLU + softmax? --figures out/ --layers all",
+  "created_utc": "2026-07-27T16:07:02Z",
+  "device": "cpu",
+  "environment": {
+    "cpu_count": 4,
+    "executable": "/opt/hostedtoolcache/Python/3.11.15/x64/bin/python",
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    "wall_seconds": 628.7
+  },
+  "layers": [
+    "features.0",
+    "features.1",
+    "features.2",
+    "features.3",
+    "features.4",
+    "features.5",
+    "features.6",
+    "features.7",
+    "features.8",
+    "features.9",
+    "features.10",
+    "features.11",
+    "features.12",
+    "avgpool",
+    "classifier.1",
+    "classifier.2",
+    "classifier.4",
+    "classifier.5",
+    "classifier.6",
+    "logits",
+    "prob"
+  ],
+  "model": "alexnet",
+  "notes": "AlexNet depth profile, 21 taps. Depth control: does the crossover to log need 33 layers, or is it carried by the classifier ReLU + softmax?",
+  "scramble": false,
+  "scramble_seed": 0,
+  "seed": 0,
+  "versions": {
+    "numpy": "2.4.6",
+    "python": "3.11.15",
+    "torch": "2.13.0+cpu",
+    "torchvision": "0.28.0+cpu"
+  },
+  "weights": {
+    "pretrained_verified": true,
+    "source": "torchvision alexnet IMAGENET1K_V1"
+  }
+}
