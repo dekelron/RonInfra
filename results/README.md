@@ -92,6 +92,18 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > between architectures, so two runs with equal median λ can have quite
 > different responses. Again nothing was re-run; the surfaces already held it.
 
+> **Corrected in the same pass: `lambda_ci` in 16 directories was stale.** Those
+> files' interval endpoints all sat on a 0.025 grid, because they were written by
+> an intermediate fitter and committed alongside — but not regenerated against —
+> the bisecting version that shipped in `da87dd0`. The consequence is the one
+> `fit.py` warns about at the bisection: **29 intervals excluded their own point
+> estimate**, some collapsing to zero width (`features.1` on the Caffe run read
+> λ = +1.2045 with a CI of `[+1.200, +1.200]`). All 360 affected intervals were
+> too **narrow**, never too wide, so the stale files overstated precision.
+> Regenerated from the surfaces: λ point estimates moved by at most 7.4e-5
+> relative, no `result.npz` was touched, and the prose was unaffected because
+> `wiki/Results.md` had been quoting live re-fits all along.
+
 Note that "best mean R²" is not `prob` for either r250 run — that is the finding,
 not a slip. Read the r250 rows with the spacing CV in their notes: the scrambled
 column reaches 0.76–0.92 with a CV of 3.5–4.1, so a high R² there is a line
