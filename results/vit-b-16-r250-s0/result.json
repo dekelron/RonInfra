@@ -1,0 +1,4814 @@
+{
+  "metadata": {
+    "model": "vit_b_16",
+    "scramble": false,
+    "seed": 0,
+    "scramble_seed": 0,
+    "device": "cpu",
+    "layers": [
+      "conv_proj",
+      "encoder.layers.encoder_layer_0.ln_1",
+      "encoder.layers.encoder_layer_0.ln_2",
+      "encoder.layers.encoder_layer_0.mlp.0",
+      "encoder.layers.encoder_layer_0.mlp.1",
+      "encoder.layers.encoder_layer_0.mlp.3",
+      "encoder.layers.encoder_layer_1.ln_1",
+      "encoder.layers.encoder_layer_1.ln_2",
+      "encoder.layers.encoder_layer_1.mlp.0",
+      "encoder.layers.encoder_layer_1.mlp.1",
+      "encoder.layers.encoder_layer_1.mlp.3",
+      "encoder.layers.encoder_layer_2.ln_1",
+      "encoder.layers.encoder_layer_2.ln_2",
+      "encoder.layers.encoder_layer_2.mlp.0",
+      "encoder.layers.encoder_layer_2.mlp.1",
+      "encoder.layers.encoder_layer_2.mlp.3",
+      "encoder.layers.encoder_layer_3.ln_1",
+      "encoder.layers.encoder_layer_3.ln_2",
+      "encoder.layers.encoder_layer_3.mlp.0",
+      "encoder.layers.encoder_layer_3.mlp.1",
+      "encoder.layers.encoder_layer_3.mlp.3",
+      "encoder.layers.encoder_layer_4.ln_1",
+      "encoder.layers.encoder_layer_4.ln_2",
+      "encoder.layers.encoder_layer_4.mlp.0",
+      "encoder.layers.encoder_layer_4.mlp.1",
+      "encoder.layers.encoder_layer_4.mlp.3",
+      "encoder.layers.encoder_layer_5.ln_1",
+      "encoder.layers.encoder_layer_5.ln_2",
+      "encoder.layers.encoder_layer_5.mlp.0",
+      "encoder.layers.encoder_layer_5.mlp.1",
+      "encoder.layers.encoder_layer_5.mlp.3",
+      "encoder.layers.encoder_layer_6.ln_1",
+      "encoder.layers.encoder_layer_6.ln_2",
+      "encoder.layers.encoder_layer_6.mlp.0",
+      "encoder.layers.encoder_layer_6.mlp.1",
+      "encoder.layers.encoder_layer_6.mlp.3",
+      "encoder.layers.encoder_layer_7.ln_1",
+      "encoder.layers.encoder_layer_7.ln_2",
+      "encoder.layers.encoder_layer_7.mlp.0",
+      "encoder.layers.encoder_layer_7.mlp.1",
+      "encoder.layers.encoder_layer_7.mlp.3",
+      "encoder.layers.encoder_layer_8.ln_1",
+      "encoder.layers.encoder_layer_8.ln_2",
+      "encoder.layers.encoder_layer_8.mlp.0",
+      "encoder.layers.encoder_layer_8.mlp.1",
+      "encoder.layers.encoder_layer_8.mlp.3",
+      "encoder.layers.encoder_layer_9.ln_1",
+      "encoder.layers.encoder_layer_9.ln_2",
+      "encoder.layers.encoder_layer_9.mlp.0",
+      "encoder.layers.encoder_layer_9.mlp.1",
+      "encoder.layers.encoder_layer_9.mlp.3",
+      "encoder.layers.encoder_layer_10.ln_1",
+      "encoder.layers.encoder_layer_10.ln_2",
+      "encoder.layers.encoder_layer_10.mlp.0",
+      "encoder.layers.encoder_layer_10.mlp.1",
+      "encoder.layers.encoder_layer_10.mlp.3",
+      "encoder.layers.encoder_layer_11.ln_1",
+      "encoder.layers.encoder_layer_11.ln_2",
+      "encoder.layers.encoder_layer_11.mlp.0",
+      "encoder.layers.encoder_layer_11.mlp.1",
+      "encoder.layers.encoder_layer_11.mlp.3",
+      "encoder.ln",
+      "heads.head",
+      "logits",
+      "prob"
+    ],
+    "weights": {
+      "pretrained_verified": true,
+      "source": "torchvision vit_b_16 IMAGENET1K_V1"
+    },
+    "command": "run.py --model vit_b_16 --reps 250 --seed 0 --save-run results/vit-b-16-r250-s0 --notes ViT-B/16 depth profile, 65 taps (12 of 75 registered modules never fire -- MultiheadAttention out_proj, now warned about). GELU not ReLU, LayerNorm, attention softmax: no hard gates anywhere. Sharpest test of the gate-flip reading. Watch the high-frequency cells: 56 and 75 cyc/img are above the 14x14 patch grid's Nyquist. --figures out/ --layers all",
+    "code": {
+      "available": true,
+      "commit": "7bdf878d43c41e71fe763a70ed939839fae8780b",
+      "branch": "claude/vgg19-next-networks-xyl9ty",
+      "dirty": false,
+      "dirty_files": null
+    },
+    "versions": {
+      "python": "3.11.15",
+      "numpy": "2.4.6",
+      "torch": "2.13.0+cpu",
+      "torchvision": "0.28.0+cpu"
+    },
+    "environment": {
+      "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+      "machine": "x86_64",
+      "cpu_count": 4,
+      "executable": "/opt/hostedtoolcache/Python/3.11.15/x64/bin/python",
+      "wall_seconds": 7758.8
+    },
+    "created_utc": "2026-07-28T03:07:49Z",
+    "notes": "ViT-B/16 depth profile, 65 taps (12 of 75 registered modules never fire -- MultiheadAttention out_proj, now warned about). GELU not ReLU, LayerNorm, attention softmax: no hard gates anywhere. Sharpest test of the gate-flip reading. Watch the high-frequency cells: 56 and 75 cyc/img are above the 14x14 patch grid's Nyquist."
+  },
+  "repetitions": 250,
+  "size": 224,
+  "mean": 0.5,
+  "contrasts": [
+    0.0078125,
+    0.015625,
+    0.0234375,
+    0.03125,
+    0.046875,
+    0.0625,
+    0.0859375,
+    0.125,
+    0.1796875,
+    0.2578125,
+    0.359375,
+    0.5,
+    0.71875,
+    1.0
+  ],
+  "frequencies": [
+    1.0,
+    1.75,
+    3.5,
+    7.0,
+    14.0,
+    28.0,
+    56.0,
+    75.0
+  ],
+  "layers": [
+    {
+      "layer": "conv_proj",
+      "mean_of_distances": {
+        "lambda": 0.9992298615776622,
+        "lambda_ci": [
+          0.9970913564127674,
+          1.0015937245823265
+        ],
+        "lambda_r2": 0.9999764023138473,
+        "mean_r2": 0.7369419394108907
+      },
+      "mean_r2": 0.7567503145119603,
+      "lambda": 0.9264751726792999,
+      "lambda_ci": [
+        0.8520757029048505,
+        1.014174642752374
+      ],
+      "lambda_r2": 0.9866873265520054,
+      "pooled_r2": 0.48569827440718394,
+      "pooled_slope": 0.004900363598818774,
+      "spacing_cv": 1.2359162706028954,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.7834494908333637,
+          "slope": 0.0006919165247325875,
+          "intercept": 0.001139412010731231
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.7637083556695794,
+          "slope": 0.0009333130934085055,
+          "intercept": 0.0015098520859575834
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7584144455108935,
+          "slope": 0.0017161040533294851,
+          "intercept": 0.002752266025660733
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7858989874662456,
+          "slope": 0.003083303233271188,
+          "intercept": 0.004952749433016574
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.744554034254907,
+          "slope": 0.005708701178816413,
+          "intercept": 0.0091057408546628
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.7338900144788683,
+          "slope": 0.009202303042036269,
+          "intercept": 0.014694335541175418
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7385267832183569,
+          "slope": 0.010036091974508709,
+          "intercept": 0.0159777653101508
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.745560404663467,
+          "slope": 0.007831175690447039,
+          "intercept": 0.012491347164198405
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_0.ln_1",
+      "mean_of_distances": {
+        "lambda": 0.23190825492972925,
+        "lambda_ci": [
+          0.09403974974719398,
+          0.3770345664448944
+        ],
+        "lambda_r2": 0.9809389634119126,
+        "mean_r2": 0.9122262266508913
+      },
+      "mean_r2": 0.8228069893367891,
+      "lambda": 0.5051738042543092,
+      "lambda_ci": [
+        0.3413993413463168,
+        0.6847115210024174
+      ],
+      "lambda_r2": 0.9783383642212312,
+      "pooled_r2": 0.7769187333955992,
+      "pooled_slope": 0.011698781499800527,
+      "spacing_cv": 0.8545497451983504,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.6291043154357169,
+          "slope": 0.00478831358133999,
+          "intercept": 0.007160671188939427
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.6509423664060365,
+          "slope": 0.0058233485669533834,
+          "intercept": 0.008742465394018475
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7204710239071572,
+          "slope": 0.008091355005091526,
+          "intercept": 0.01237936544151125
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8180773308901925,
+          "slope": 0.011492493006370494,
+          "intercept": 0.018194565798007448
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9031242140440214,
+          "slope": 0.014577305024318804,
+          "intercept": 0.02437023602641881
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9532722674843597,
+          "slope": 0.016253345088213387,
+          "intercept": 0.029442677420792186
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9626746664991179,
+          "slope": 0.016616961264025596,
+          "intercept": 0.031233582781129362
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9447897300277106,
+          "slope": 0.015947130462091088,
+          "intercept": 0.028295222409695474
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_0.ln_2",
+      "mean_of_distances": {
+        "lambda": 0.21121931084780748,
+        "lambda_ci": [
+          0.06646516732508087,
+          0.3636924299334819
+        ],
+        "lambda_r2": 0.9802499181354241,
+        "mean_r2": 0.9246424463656397
+      },
+      "mean_r2": 0.9047696513632263,
+      "lambda": 0.29922915965272745,
+      "lambda_ci": [
+        0.11580969405553017,
+        0.49772089385323737
+      ],
+      "lambda_r2": 0.9668887552252777,
+      "pooled_r2": 0.8184571990664034,
+      "pooled_slope": 0.03845214431108262,
+      "spacing_cv": 0.7508757302918376,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8640683853477914,
+          "slope": 0.016438367851758496,
+          "intercept": 0.026789132193186235
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.850478361731259,
+          "slope": 0.01920668840950555,
+          "intercept": 0.03101159809285319
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8565495516696762,
+          "slope": 0.027872961241437164,
+          "intercept": 0.04495670484839957
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8904970847409043,
+          "slope": 0.04188933781461658,
+          "intercept": 0.06920662088745452
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9340285466745233,
+          "slope": 0.04917443348272945,
+          "intercept": 0.08591846843194471
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9470432746973156,
+          "slope": 0.05140047830768832,
+          "intercept": 0.09976316544172865
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9420995877675791,
+          "slope": 0.05051130125660806,
+          "intercept": 0.10412617959194098
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9533924182767614,
+          "slope": 0.0511235861243174,
+          "intercept": 0.09400897565262235
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_0.mlp.0",
+      "mean_of_distances": {
+        "lambda": 0.30071844935408515,
+        "lambda_ci": [
+          0.19032350939271814,
+          0.40757249894233866
+        ],
+        "lambda_r2": 0.98507744695982,
+        "mean_r2": 0.9421190408602238
+      },
+      "mean_r2": 0.9011264443701901,
+      "lambda": 0.343477557826148,
+      "lambda_ci": [
+        0.21937556095792998,
+        0.5663954272207044
+      ],
+      "lambda_r2": 0.9662377427679685,
+      "pooled_r2": 0.7297658059058751,
+      "pooled_slope": 0.051780645650905774,
+      "spacing_cv": 0.8087973809848916,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8747621117375814,
+          "slope": 0.015725744938377313,
+          "intercept": 0.026689688566062998
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8772630535698008,
+          "slope": 0.01984855718067416,
+          "intercept": 0.0330357251581071
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8922179513793989,
+          "slope": 0.029291567346698046,
+          "intercept": 0.04875342506799069
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8958829411096826,
+          "slope": 0.04374456736305068,
+          "intercept": 0.07290012032501073
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8773511500409927,
+          "slope": 0.06488229270858155,
+          "intercept": 0.10749656691324
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9333761782947078,
+          "slope": 0.08135687091393402,
+          "intercept": 0.1419057366318895
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9551574214963634,
+          "slope": 0.08247440016776912,
+          "intercept": 0.15026411460367822
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9030007473329933,
+          "slope": 0.07692116458816138,
+          "intercept": 0.13037277501436292
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_0.mlp.1",
+      "mean_of_distances": {
+        "lambda": 0.3150694323149269,
+        "lambda_ci": [
+          0.14367539213559866,
+          0.44913932959252395
+        ],
+        "lambda_r2": 0.9791427496080334,
+        "mean_r2": 0.9397189252506422
+      },
+      "mean_r2": 0.9116022181509833,
+      "lambda": 0.27779167758811024,
+      "lambda_ci": [
+        0.09106425293191604,
+        0.5463064148246395
+      ],
+      "lambda_r2": 0.9590453757481154,
+      "pooled_r2": 0.6962100677650709,
+      "pooled_slope": 0.0192096180650675,
+      "spacing_cv": 0.7903103019834641,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8574466649330459,
+          "slope": 0.0053014193943006225,
+          "intercept": 0.009053090843860072
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8749149773698208,
+          "slope": 0.006625626960470887,
+          "intercept": 0.011111885251093571
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8899119272756195,
+          "slope": 0.009306818269828675,
+          "intercept": 0.015528515718915042
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9045023160856449,
+          "slope": 0.01298087841974431,
+          "intercept": 0.021713566070426345
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8714010748539156,
+          "slope": 0.02043542454211602,
+          "intercept": 0.0336502829663555
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9495273434268442,
+          "slope": 0.031159513462576418,
+          "intercept": 0.05493598485236438
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9844617816877543,
+          "slope": 0.03572626349513499,
+          "intercept": 0.06851672639746723
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9606516595752209,
+          "slope": 0.03214099997636811,
+          "intercept": 0.057664338125901306
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_0.mlp.3",
+      "mean_of_distances": {
+        "lambda": 0.44109264168886764,
+        "lambda_ci": [
+          0.33256779260689967,
+          0.5562008782826039
+        ],
+        "lambda_r2": 0.9883396392830069,
+        "mean_r2": 0.9247545499349737
+      },
+      "mean_r2": 0.9189086327474507,
+      "lambda": 0.42335383507321633,
+      "lambda_ci": [
+        0.2712336203634097,
+        0.5703766506327902
+      ],
+      "lambda_r2": 0.9803942900470657,
+      "pooled_r2": 0.6836557185132679,
+      "pooled_slope": 0.06163855778456758,
+      "spacing_cv": 0.6060923379850917,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8818520617632319,
+          "slope": 0.01199377867489178,
+          "intercept": 0.01970423849465699
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.862623146122721,
+          "slope": 0.01863059875859733,
+          "intercept": 0.030082943429034618
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8692142093399491,
+          "slope": 0.03144366284974595,
+          "intercept": 0.05099879687827152
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8907736169594749,
+          "slope": 0.048030348868301834,
+          "intercept": 0.07928678851943806
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9073186643937095,
+          "slope": 0.06272708826559674,
+          "intercept": 0.1051084419284338
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9733400413979061,
+          "slope": 0.0831551469533968,
+          "intercept": 0.15441464016474127
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9873996970691008,
+          "slope": 0.11120499197829023,
+          "intercept": 0.22340255956414598
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.978747624933513,
+          "slope": 0.12592284592772016,
+          "intercept": 0.2384086028837638
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_1.ln_1",
+      "mean_of_distances": {
+        "lambda": 0.14402401448907162,
+        "lambda_ci": [
+          0.06100293343732552,
+          0.22917498608427747
+        ],
+        "lambda_r2": 0.9827194055870574,
+        "mean_r2": 0.8941779092490019
+      },
+      "mean_r2": 0.8870195287639947,
+      "lambda": 0.2618584871860012,
+      "lambda_ci": [
+        0.09431580786361458,
+        0.44091139995039547
+      ],
+      "lambda_r2": 0.9670641610436002,
+      "pooled_r2": 0.807525244126909,
+      "pooled_slope": 0.02994887220946349,
+      "spacing_cv": 0.8144067673846203,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8625842890666804,
+          "slope": 0.01153116025183633,
+          "intercept": 0.018790079465066244
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8557863898604237,
+          "slope": 0.016820596536926486,
+          "intercept": 0.027111614156331582
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8765111462932915,
+          "slope": 0.026570964803829394,
+          "intercept": 0.0433756853535568
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9173408304217898,
+          "slope": 0.03670780811342574,
+          "intercept": 0.06203998363500696
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9405814465182936,
+          "slope": 0.04057548598835397,
+          "intercept": 0.07211435935779908
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9115055109946475,
+          "slope": 0.03758568878335082,
+          "intercept": 0.08022858249779034
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8374399066357551,
+          "slope": 0.031354905473374724,
+          "intercept": 0.08315587439456751
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8944067103210763,
+          "slope": 0.03844436772461051,
+          "intercept": 0.09048074308953002
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_1.ln_2",
+      "mean_of_distances": {
+        "lambda": 0.13689583034002328,
+        "lambda_ci": [
+          0.0387897764367557,
+          0.23787584524775582
+        ],
+        "lambda_r2": 0.9880136788623852,
+        "mean_r2": 0.8708741026516382
+      },
+      "mean_r2": 0.8539375082556109,
+      "lambda": 0.14801634605999403,
+      "lambda_ci": [
+        -0.02435655564506639,
+        0.32907104086730354
+      ],
+      "lambda_r2": 0.9726793189468199,
+      "pooled_r2": 0.8053779548946506,
+      "pooled_slope": 0.07643878435991742,
+      "spacing_cv": 0.8584893443836574,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8237652105082086,
+          "slope": 0.037923713493772514,
+          "intercept": 0.060726656715637164
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8367471208012759,
+          "slope": 0.053456273997295516,
+          "intercept": 0.08541787371901936
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.88342128919903,
+          "slope": 0.07738189277481199,
+          "intercept": 0.12695561059161903
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9356683098077311,
+          "slope": 0.1002236807759398,
+          "intercept": 0.173400090451392
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9534621524240159,
+          "slope": 0.10991658120904912,
+          "intercept": 0.2068397896380667
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8630998173021356,
+          "slope": 0.08918011387804847,
+          "intercept": 0.21470663102900675
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7130765246892337,
+          "slope": 0.061104638998802155,
+          "intercept": 0.2073354716309074
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8222596413132559,
+          "slope": 0.08232337975162005,
+          "intercept": 0.2221280844615937
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_1.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.0015843131403298315,
+        "lambda_ci": [
+          -0.15530063000683672,
+          0.15650488375526697
+        ],
+        "lambda_r2": 0.9865283254063135,
+        "mean_r2": 0.9392048551081602
+      },
+      "mean_r2": 0.9072785176058774,
+      "lambda": -0.020136254735607127,
+      "lambda_ci": [
+        -0.20875614161852382,
+        0.20494607633970713
+      ],
+      "lambda_r2": 0.9726530802787433,
+      "pooled_r2": 0.7959682998156311,
+      "pooled_slope": 0.25825714585480547,
+      "spacing_cv": 0.6924023634147538,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.806169137135271,
+          "slope": 0.09178827049422376,
+          "intercept": 0.14549327654088098
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8299195241208543,
+          "slope": 0.13268522323647075,
+          "intercept": 0.21095485815185716
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8965117699668322,
+          "slope": 0.18590957418295959,
+          "intercept": 0.3089375537168224
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9265860253376712,
+          "slope": 0.22597515865661047,
+          "intercept": 0.41205480129346767
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9474218480028601,
+          "slope": 0.2914068958360437,
+          "intercept": 0.5851705824492247
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9819316801281114,
+          "slope": 0.37355471941056273,
+          "intercept": 0.8417437220182488
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9256839639642889,
+          "slope": 0.36355462749382295,
+          "intercept": 0.9558669443914449
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9440041921911302,
+          "slope": 0.40118269752775015,
+          "intercept": 0.9272360272290091
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_1.mlp.1",
+      "mean_of_distances": {
+        "lambda": 0.0027257987559266826,
+        "lambda_ci": [
+          -0.10505884560646059,
+          0.17814775673583796
+        ],
+        "lambda_r2": 0.9861107494754333,
+        "mean_r2": 0.9391140506326826
+      },
+      "mean_r2": 0.9015184047080171,
+      "lambda": -0.003269893279603149,
+      "lambda_ci": [
+        -0.17623391816607786,
+        0.19298466286397514
+      ],
+      "lambda_r2": 0.9766253562964939,
+      "pooled_r2": 0.8674100770410401,
+      "pooled_slope": 0.02584647554077607,
+      "spacing_cv": 0.6759092068478103,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8039944022254466,
+          "slope": 0.014185839945132705,
+          "intercept": 0.022537036185808483
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.840810029827275,
+          "slope": 0.018432702115965423,
+          "intercept": 0.02958204436018456
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9088440306925912,
+          "slope": 0.02428699659316043,
+          "intercept": 0.04084559549352816
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9533231451885154,
+          "slope": 0.028999640171623053,
+          "intercept": 0.05332552020267478
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9625650719480288,
+          "slope": 0.031935917319973535,
+          "intercept": 0.0666851928104183
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9426153684375105,
+          "slope": 0.030250040345784966,
+          "intercept": 0.07692124357107825
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9014652956447761,
+          "slope": 0.025574602438276597,
+          "intercept": 0.08291311051858223
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8985298936999938,
+          "slope": 0.03310606539629186,
+          "intercept": 0.08841481959265814
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_1.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.053971710599915665,
+        "lambda_ci": [
+          -0.22863911923965247,
+          0.06255562985596237
+        ],
+        "lambda_r2": 0.9767179652009699,
+        "mean_r2": 0.9523511773170557
+      },
+      "mean_r2": 0.9193448729995143,
+      "lambda": -0.0659980817061181,
+      "lambda_ci": [
+        -0.20613387987104032,
+        0.07625109286170305
+      ],
+      "lambda_r2": 0.9839281237431599,
+      "pooled_r2": 0.892527593068313,
+      "pooled_slope": 0.046984740501758264,
+      "spacing_cv": 0.6214662303398165,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8501457811865812,
+          "slope": 0.028270550659892837,
+          "intercept": 0.04573979790871777
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8904065203617534,
+          "slope": 0.03630659659946459,
+          "intercept": 0.059951227367005845
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9412472995839565,
+          "slope": 0.04563972553106695,
+          "intercept": 0.0802313446035196
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9668976074838947,
+          "slope": 0.051463647415487625,
+          "intercept": 0.10076495929861115
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9753790396324997,
+          "slope": 0.055330205612503035,
+          "intercept": 0.12200904459591809
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9157112371066249,
+          "slope": 0.05041170899032267,
+          "intercept": 0.1440822582460973
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8731342447766235,
+          "slope": 0.049198769679576045,
+          "intercept": 0.16308419677848662
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9418372538641802,
+          "slope": 0.059256719525752524,
+          "intercept": 0.16186631927551035
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_2.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.14792165302799243,
+        "lambda_ci": [
+          -0.21297159792922055,
+          -0.08299869458057783
+        ],
+        "lambda_r2": 0.9860921583262396,
+        "mean_r2": 0.9194675032600526
+      },
+      "mean_r2": 0.8929894456983039,
+      "lambda": -0.0639326140417375,
+      "lambda_ci": [
+        -0.1689458111303378,
+        0.042017536848237266
+      ],
+      "lambda_r2": 0.9852342241368136,
+      "pooled_r2": 0.8749915779154246,
+      "pooled_slope": 0.03870037660850952,
+      "spacing_cv": 0.63624297823089,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8818772364443874,
+          "slope": 0.027806268601130914,
+          "intercept": 0.0458614492497541
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9143513569972624,
+          "slope": 0.034044263499294375,
+          "intercept": 0.057437584628972915
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9561025363393024,
+          "slope": 0.04269842115817979,
+          "intercept": 0.07627638125012544
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9858903448215232,
+          "slope": 0.04801063822110911,
+          "intercept": 0.09520509335427756
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9730015114520367,
+          "slope": 0.046118172583680735,
+          "intercept": 0.10625685911452987
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8464498909246893,
+          "slope": 0.036923165914526684,
+          "intercept": 0.11645082179663062
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7662622089447402,
+          "slope": 0.0310614551155154,
+          "intercept": 0.12433814268495733
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8199804796624885,
+          "slope": 0.04294062777463929,
+          "intercept": 0.13736374976269014
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_2.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.2144151947757195,
+        "lambda_ci": [
+          -0.43796978494761624,
+          -0.008388676347682405
+        ],
+        "lambda_r2": 0.9774346185464344,
+        "mean_r2": 0.9164395956052045
+      },
+      "mean_r2": 0.9145353696550753,
+      "lambda": 0.0022612189597629746,
+      "lambda_ci": [
+        -0.0874751486172998,
+        0.09337910222770097
+      ],
+      "lambda_r2": 0.9872881480566252,
+      "pooled_r2": 0.8893960907805458,
+      "pooled_slope": 0.06257587225928453,
+      "spacing_cv": 0.609958207076552,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9153365803454776,
+          "slope": 0.044253574281469144,
+          "intercept": 0.07492074797587558
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9478677350953839,
+          "slope": 0.05345979962401635,
+          "intercept": 0.09404262617877547
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9821022216523618,
+          "slope": 0.06437712958604895,
+          "intercept": 0.1224887173935124
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9946555197038289,
+          "slope": 0.07301820403178534,
+          "intercept": 0.1565160516581195
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9885472024884722,
+          "slope": 0.07138083202116752,
+          "intercept": 0.17609417347755785
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9178644734304592,
+          "slope": 0.06472432839600516,
+          "intercept": 0.20065463950939383
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7407815186957529,
+          "slope": 0.054688958365298475,
+          "intercept": 0.2181749495854345
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8291277058288665,
+          "slope": 0.07470415176848558,
+          "intercept": 0.23368069296891972
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_2.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.1590816810227565,
+        "lambda_ci": [
+          -0.23438143350597077,
+          0.007798472173344506
+        ],
+        "lambda_r2": 0.9669539280908166,
+        "mean_r2": 0.9487270599058457
+      },
+      "mean_r2": 0.9527527195656151,
+      "lambda": -0.014367702926091155,
+      "lambda_ci": [
+        -0.18386449503679228,
+        0.18498060900927032
+      ],
+      "lambda_r2": 0.9584311282657829,
+      "pooled_r2": 0.8546240051391982,
+      "pooled_slope": 0.12109322392794054,
+      "spacing_cv": 0.6406350326447194,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9076217939409865,
+          "slope": 0.067356399599585,
+          "intercept": 0.11782425302882037
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9353968437989687,
+          "slope": 0.07801131516890246,
+          "intercept": 0.14422467073439593
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9659287168302074,
+          "slope": 0.08873576809362634,
+          "intercept": 0.18199578910233957
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9596972338190237,
+          "slope": 0.10362308367496423,
+          "intercept": 0.2428652067617523
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9425197772869547,
+          "slope": 0.1133694507352179,
+          "intercept": 0.2937879904201671
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9425016741447965,
+          "slope": 0.14610556038766592,
+          "intercept": 0.3857566100694909
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.982473383129949,
+          "slope": 0.18501362049593614,
+          "intercept": 0.483997507957424
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9858823335740342,
+          "slope": 0.18653059326762672,
+          "intercept": 0.44668406997703164
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_2.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.10105303837657859,
+        "lambda_ci": [
+          -0.22148219291710966,
+          0.05176724106973522
+        ],
+        "lambda_r2": 0.9633404619485509,
+        "mean_r2": 0.9377779927372205
+      },
+      "mean_r2": 0.943569576298108,
+      "lambda": -0.038648817068665374,
+      "lambda_ci": [
+        -0.18993615148274604,
+        0.09576418881972087
+      ],
+      "lambda_r2": 0.9587417304039447,
+      "pooled_r2": 0.8721985131196538,
+      "pooled_slope": 0.023826305202878505,
+      "spacing_cv": 0.6294152794896792,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9404818397000654,
+          "slope": 0.01598127485300359,
+          "intercept": 0.02856006799476699
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9647783583012579,
+          "slope": 0.017565681177406596,
+          "intercept": 0.03405065832341797
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9718102813227415,
+          "slope": 0.018515652450097914,
+          "intercept": 0.041206561673053546
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9086276530488635,
+          "slope": 0.019545652144440245,
+          "intercept": 0.05372104267025455
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8967285708858772,
+          "slope": 0.021031823270309905,
+          "intercept": 0.06527257588241277
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8935926342103071,
+          "slope": 0.030716298967273944,
+          "intercept": 0.08017682599889368
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9873315850862934,
+          "slope": 0.03331954765488444,
+          "intercept": 0.08650365565473037
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9852056878294578,
+          "slope": 0.03393451110561152,
+          "intercept": 0.08520276260677588
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_2.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.3293500229694334,
+        "lambda_ci": [
+          -0.5196607156840443,
+          -0.1495024954640016
+        ],
+        "lambda_r2": 0.9123111825038909,
+        "mean_r2": 0.7496774899763742
+      },
+      "mean_r2": 0.7602868263622407,
+      "lambda": -0.45187013165690604,
+      "lambda_ci": [
+        -0.7013181559588589,
+        -0.2740043285588086
+      ],
+      "lambda_r2": 0.892429420231126,
+      "pooled_r2": 0.7406602146833796,
+      "pooled_slope": 0.03244493289879874,
+      "spacing_cv": 1.2412104864886253,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9540253839628435,
+          "slope": 0.04011811048358651,
+          "intercept": 0.07451396232309719
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9435316155070484,
+          "slope": 0.03814979596760309,
+          "intercept": 0.08116165170729618
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8447668453559563,
+          "slope": 0.031318154533072705,
+          "intercept": 0.08642046227028474
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.41480031967728614,
+          "slope": 0.01887999947518396,
+          "intercept": 0.09585472618419677
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.4267906572263349,
+          "slope": 0.01492032060160339,
+          "intercept": 0.10331600241944688
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.7839355810402608,
+          "slope": 0.02620303845214909,
+          "intercept": 0.11585590326852492
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8263098304722728,
+          "slope": 0.042611877301860834,
+          "intercept": 0.13610056010789226
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8881343776559227,
+          "slope": 0.04735816637533046,
+          "intercept": 0.13981963203044778
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_3.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.46023062333167586,
+        "lambda_ci": [
+          -0.5465834409550595,
+          -0.19536400074392685
+        ],
+        "lambda_r2": 0.9594136707273759,
+        "mean_r2": 0.8720421178644184
+      },
+      "mean_r2": 0.8906242606736943,
+      "lambda": -0.2729606441314245,
+      "lambda_ci": [
+        -0.5670393270418232,
+        -0.12054557339768826
+      ],
+      "lambda_r2": 0.9589982883629522,
+      "pooled_r2": 0.8711126247130123,
+      "pooled_slope": 0.040018865310037365,
+      "spacing_cv": 0.7326232710522333,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9617148887455595,
+          "slope": 0.043878488014973786,
+          "intercept": 0.08061426193843726
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9739701845605431,
+          "slope": 0.04425372255213152,
+          "intercept": 0.09108618594565042
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9497116230730476,
+          "slope": 0.0414207663287038,
+          "intercept": 0.10286387069473768
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7877792841004027,
+          "slope": 0.03258804703001222,
+          "intercept": 0.1166820216859859
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8383757122858837,
+          "slope": 0.02869787579968108,
+          "intercept": 0.12540985661565915
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9411506962903055,
+          "slope": 0.03728386909077299,
+          "intercept": 0.14102627600769002
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8289812599379955,
+          "slope": 0.0429807890315625,
+          "intercept": 0.15027033815415558
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8433104363958168,
+          "slope": 0.0490473646324612,
+          "intercept": 0.15118174866854478
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_3.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.5576520077964799,
+        "lambda_ci": [
+          -0.6439298428753383,
+          -0.4750232911987571
+        ],
+        "lambda_r2": 0.9560262317264023,
+        "mean_r2": 0.7826280941712038
+      },
+      "mean_r2": 0.8369845747496945,
+      "lambda": -0.4023678545969577,
+      "lambda_ci": [
+        -0.6894757493864642,
+        -0.24339733648975598
+      ],
+      "lambda_r2": 0.9419502301785505,
+      "pooled_r2": 0.812874593183164,
+      "pooled_slope": 0.0764693912411045,
+      "spacing_cv": 0.924372612878171,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9580489926013288,
+          "slope": 0.09945414069828777,
+          "intercept": 0.19079718281262675
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9362127098408831,
+          "slope": 0.09423246100884956,
+          "intercept": 0.208521964311824
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8375265293922141,
+          "slope": 0.07764404353577012,
+          "intercept": 0.22351462170901076
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5956219239335054,
+          "slope": 0.05092730772674703,
+          "intercept": 0.23716658510535546
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.7443469460449665,
+          "slope": 0.04447022889787066,
+          "intercept": 0.24625554496609722
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9535777861200173,
+          "slope": 0.06944152872056265,
+          "intercept": 0.2716285971167906
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8237909301354165,
+          "slope": 0.08376528066521424,
+          "intercept": 0.29253964223869117
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8467507799292242,
+          "slope": 0.09182013867553426,
+          "intercept": 0.2939864326025492
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_3.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.23746549148588733,
+        "lambda_ci": [
+          -0.3853949753859444,
+          -0.09340410765979716
+        ],
+        "lambda_r2": 0.9537363128108891,
+        "mean_r2": 0.8210953177053476
+      },
+      "mean_r2": 0.8525414281980119,
+      "lambda": -0.22192371544036124,
+      "lambda_ci": [
+        -0.38699500731591097,
+        -0.04319423296654909
+      ],
+      "lambda_r2": 0.9269865516514182,
+      "pooled_r2": 0.8336182819780815,
+      "pooled_slope": 0.14891091252324426,
+      "spacing_cv": 0.9328163703750629,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9494643519503023,
+          "slope": 0.16552269602056957,
+          "intercept": 0.3206948367852672
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.928165677488391,
+          "slope": 0.16281600923493592,
+          "intercept": 0.36403411699381955
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8435958045351978,
+          "slope": 0.14519322236718632,
+          "intercept": 0.4165182020872924
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5767569640482808,
+          "slope": 0.10373472757145172,
+          "intercept": 0.48497231483683323
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6245702463245393,
+          "slope": 0.07311259235473935,
+          "intercept": 0.48358347772616384
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9621166700722918,
+          "slope": 0.14432057795447242,
+          "intercept": 0.5116770088116969
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9616780969416623,
+          "slope": 0.20859701496979086,
+          "intercept": 0.5723864421892527
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9739836142234304,
+          "slope": 0.1879904597128091,
+          "intercept": 0.5160232780640056
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_3.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.4715014609527684,
+        "lambda_ci": [
+          -0.6012428330601979,
+          -0.36283245352714927
+        ],
+        "lambda_r2": 0.9265890578543212,
+        "mean_r2": 0.7230638690992053
+      },
+      "mean_r2": 0.7322719486014123,
+      "lambda": -0.49397750237384186,
+      "lambda_ci": [
+        -0.6345249603759923,
+        -0.3753032843418305
+      ],
+      "lambda_r2": 0.9134267290881798,
+      "pooled_r2": 0.7150751364361974,
+      "pooled_slope": 0.020638415814699947,
+      "spacing_cv": 1.2148889121158861,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9451493403057777,
+          "slope": 0.0291082424519396,
+          "intercept": 0.05840053665668786
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8919254021723989,
+          "slope": 0.02703951787698239,
+          "intercept": 0.06468477233884179
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7246264821419303,
+          "slope": 0.020699377780792505,
+          "intercept": 0.0697009348975343
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.3311243372562225,
+          "slope": 0.010191216253140421,
+          "intercept": 0.072873445733723
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.29709828324929144,
+          "slope": 0.005614942413431753,
+          "intercept": 0.07101745811120899
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9353635883557546,
+          "slope": 0.018988778210650956,
+          "intercept": 0.08154717024873197
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.824266732793861,
+          "slope": 0.026566729870235613,
+          "intercept": 0.0882665732415478
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9086214225360623,
+          "slope": 0.02689852166042647,
+          "intercept": 0.0829422438417634
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_3.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.5802562998350632,
+        "lambda_ci": [
+          -0.838904322679999,
+          -0.28551691911614924
+        ],
+        "lambda_r2": 0.8431348355723538,
+        "mean_r2": 0.6526713601409457
+      },
+      "mean_r2": 0.6462619654104732,
+      "lambda": -0.6017434010159723,
+      "lambda_ci": [
+        -0.8498532076445837,
+        -0.2853028977294254
+      ],
+      "lambda_r2": 0.8587183289904883,
+      "pooled_r2": 0.6082859756870507,
+      "pooled_slope": 0.04769003497533104,
+      "spacing_cv": 2.149728133318457,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9550565076161208,
+          "slope": 0.07681295416748744,
+          "intercept": 0.15630165630381412
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9091434398369816,
+          "slope": 0.0716721232420438,
+          "intercept": 0.1744862602136229
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7095918958190895,
+          "slope": 0.053391873490636926,
+          "intercept": 0.18970203230065305
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.10860496727525859,
+          "slope": 0.013821215016047167,
+          "intercept": 0.18477159837000423
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.001074007771841079,
+          "slope": 0.0005501374268342314,
+          "intercept": 0.17448432864749308
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9470310981972149,
+          "slope": 0.03924229490521926,
+          "intercept": 0.19396779052063268
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7161421810219419,
+          "slope": 0.06424332432505105,
+          "intercept": 0.21257543946037322
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8234516257453378,
+          "slope": 0.06178635722932873,
+          "intercept": 0.19423282933024744
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_4.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.47711243919021057,
+        "lambda_ci": [
+          -0.6405911675413102,
+          -0.3256315117143774
+        ],
+        "lambda_r2": 0.9477668409777774,
+        "mean_r2": 0.838273503956473
+      },
+      "mean_r2": 0.8421435418041776,
+      "lambda": -0.4006909730860988,
+      "lambda_ci": [
+        -0.6731420975581797,
+        -0.29081772142582984
+      ],
+      "lambda_r2": 0.9554891195085735,
+      "pooled_r2": 0.7768531199384334,
+      "pooled_slope": 0.05105366714601101,
+      "spacing_cv": 0.8801999524037574,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9663366022843979,
+          "slope": 0.07275504207666018,
+          "intercept": 0.1456656089536249
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9461172425690517,
+          "slope": 0.07062446159217593,
+          "intercept": 0.16505609997771872
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8368772532980259,
+          "slope": 0.057875238774077645,
+          "intercept": 0.18218873964387236
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5803620151511054,
+          "slope": 0.03079228813677546,
+          "intercept": 0.18155410659084478
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.7696100138778801,
+          "slope": 0.018769493226578327,
+          "intercept": 0.17326481187854703
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9430333315288534,
+          "slope": 0.03761884614821191,
+          "intercept": 0.18091230268305372
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8369050211482056,
+          "slope": 0.058442833664284224,
+          "intercept": 0.19151722143759628
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8579068545759009,
+          "slope": 0.06155113354932492,
+          "intercept": 0.1888539940515845
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_4.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.49484215785409946,
+        "lambda_ci": [
+          -0.6032744708242452,
+          -0.33191483032937574
+        ],
+        "lambda_r2": 0.9568344764889163,
+        "mean_r2": 0.8382624134677876
+      },
+      "mean_r2": 0.8327121328086822,
+      "lambda": -0.40770424217915296,
+      "lambda_ci": [
+        -0.6574683276938278,
+        -0.30082540323762486
+      ],
+      "lambda_r2": 0.9584714596362924,
+      "pooled_r2": 0.7586702472350272,
+      "pooled_slope": 0.09240575314731145,
+      "spacing_cv": 0.9363083865798378,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9642432628545609,
+          "slope": 0.13983845110370566,
+          "intercept": 0.28391103402742635
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9339723950640637,
+          "slope": 0.13255703273162728,
+          "intercept": 0.3180285308240013
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.801065545267085,
+          "slope": 0.09992695770237937,
+          "intercept": 0.3361969488681297
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5453863685382172,
+          "slope": 0.05055778706429692,
+          "intercept": 0.3300503848909353
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.7626020455141149,
+          "slope": 0.031011528113627437,
+          "intercept": 0.31799793123585157
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9531469536378325,
+          "slope": 0.06879843737025998,
+          "intercept": 0.33086774782615874
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8291540946929425,
+          "slope": 0.10459436767871762,
+          "intercept": 0.34736318629256846
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8721263969006405,
+          "slope": 0.111961463413878,
+          "intercept": 0.3423065365159948
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_4.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.40454774719042785,
+        "lambda_ci": [
+          -0.7451657465847492,
+          -0.2266576198363854
+        ],
+        "lambda_r2": 0.9509332917750164,
+        "mean_r2": 0.7801351453207165
+      },
+      "mean_r2": 0.7823804311374,
+      "lambda": -0.4504549923208058,
+      "lambda_ci": [
+        -0.6729186674998303,
+        -0.21620278719592992
+      ],
+      "lambda_r2": 0.9516047517891317,
+      "pooled_r2": 0.7149987562921694,
+      "pooled_slope": 0.14343167250149777,
+      "spacing_cv": 1.3309412786454897,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9669581541112605,
+          "slope": 0.23687509912154028,
+          "intercept": 0.48476523061047067
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9447776000352457,
+          "slope": 0.22806089738787555,
+          "intercept": 0.5459762664532224
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.825091165257565,
+          "slope": 0.17559955415688805,
+          "intercept": 0.5773588237470967
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.4296767751809425,
+          "slope": 0.07334746689913711,
+          "intercept": 0.5539339120022096
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.4212182475386623,
+          "slope": 0.02841420979727434,
+          "intercept": 0.541931297861288
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9259450532876168,
+          "slope": 0.09235232570867195,
+          "intercept": 0.5157543132430872
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8395588589716528,
+          "slope": 0.1537114966527054,
+          "intercept": 0.5129263066565524
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9058175947162537,
+          "slope": 0.15909233028789066,
+          "intercept": 0.4859735967763924
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_4.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.4031943845507262,
+        "lambda_ci": [
+          -0.6479383970398512,
+          -0.24316741580646647
+        ],
+        "lambda_r2": 0.9039977315735959,
+        "mean_r2": 0.684082746918575
+      },
+      "mean_r2": 0.6878719761823779,
+      "lambda": -0.47192820591044526,
+      "lambda_ci": [
+        -0.6890757773791,
+        -0.284495510414677
+      ],
+      "lambda_r2": 0.9062837329405846,
+      "pooled_r2": 0.6407249686133332,
+      "pooled_slope": 0.02008006654591687,
+      "spacing_cv": 3.1228572275791713,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9563000984675056,
+          "slope": 0.035165027844928025,
+          "intercept": 0.07480758600361424
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9196731233917734,
+          "slope": 0.033744829247563654,
+          "intercept": 0.08507992307808306
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.772508645622159,
+          "slope": 0.02696230813011361,
+          "intercept": 0.09541798193392337
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.1635533869732826,
+          "slope": 0.006946182647540495,
+          "intercept": 0.09015038424092436
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.02074439515013382,
+          "slope": 0.0007804323742150924,
+          "intercept": 0.08402141940714446
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8976571273896187,
+          "slope": 0.01580899283189394,
+          "intercept": 0.07499873512181582
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8608020608699208,
+          "slope": 0.019754737426067547,
+          "intercept": 0.0670560556227454
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9117369715946294,
+          "slope": 0.0214780218650128,
+          "intercept": 0.06748713197171545
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_4.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.4387712886223136,
+        "lambda_ci": [
+          -0.65082159016295,
+          -0.26481613053277275
+        ],
+        "lambda_r2": 0.8785512354003122,
+        "mean_r2": 0.6612114540582693
+      },
+      "mean_r2": 0.6736766805460379,
+      "lambda": -0.4277940761741371,
+      "lambda_ci": [
+        -0.6805838109421445,
+        -0.2973440372301034
+      ],
+      "lambda_r2": 0.883291974857102,
+      "pooled_r2": 0.6422061243838468,
+      "pooled_slope": 0.046119105780924756,
+      "spacing_cv": 3.418336650763291,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9540084291909943,
+          "slope": 0.07755758283486948,
+          "intercept": 0.1691570220237824
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9060409634861118,
+          "slope": 0.07319192771597499,
+          "intercept": 0.19085281685627187
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7218238847237826,
+          "slope": 0.05457947863364768,
+          "intercept": 0.20975164580673425
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.09632178271708947,
+          "slope": 0.011712663568597499,
+          "intercept": 0.19783788265125868
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.0033584074659037677,
+          "slope": 0.000977138222496518,
+          "intercept": 0.19116716439090548
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9380129564161998,
+          "slope": 0.05010807786503139,
+          "intercept": 0.19733240069972982
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8730295851176346,
+          "slope": 0.052847451010607914,
+          "intercept": 0.16368843368315114
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8968174352505874,
+          "slope": 0.047978526396173074,
+          "intercept": 0.1491115203970155
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_5.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.4960672772404751,
+        "lambda_ci": [
+          -0.6547370149491493,
+          -0.3472920282562821
+        ],
+        "lambda_r2": 0.951607902734795,
+        "mean_r2": 0.816253866541943
+      },
+      "mean_r2": 0.8087264749083731,
+      "lambda": -0.5250510135435625,
+      "lambda_ci": [
+        -0.6586041959383802,
+        -0.3239434432181555
+      ],
+      "lambda_r2": 0.9426578427345358,
+      "pooled_r2": 0.7404875352646147,
+      "pooled_slope": 0.05012424604474007,
+      "spacing_cv": 1.0360938194303102,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9473270109835799,
+          "slope": 0.07843263952067538,
+          "intercept": 0.16771858874558201
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9027619194261614,
+          "slope": 0.07193038984364915,
+          "intercept": 0.18427175129848866
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7821886954991364,
+          "slope": 0.05491236797050285,
+          "intercept": 0.19603941989684961
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5576198403839776,
+          "slope": 0.027515051126890924,
+          "intercept": 0.1907548794727332
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5982827545263378,
+          "slope": 0.013442278515392854,
+          "intercept": 0.17794635097249883
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9517493452490469,
+          "slope": 0.03795743032015237,
+          "intercept": 0.1833226977006289
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8489572971115039,
+          "slope": 0.058521237317195725,
+          "intercept": 0.1852343543606437
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8809249360872418,
+          "slope": 0.05828257374346171,
+          "intercept": 0.17624943840863416
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_5.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.5099193481882303,
+        "lambda_ci": [
+          -0.6444334060993651,
+          -0.38271057627853594
+        ],
+        "lambda_r2": 0.9475402820256186,
+        "mean_r2": 0.8063397297540081
+      },
+      "mean_r2": 0.7989269970716066,
+      "lambda": -0.5639763242684577,
+      "lambda_ci": [
+        -0.6718188514734539,
+        -0.3543783267073948
+      ],
+      "lambda_r2": 0.9378731949157443,
+      "pooled_r2": 0.7408996198834884,
+      "pooled_slope": 0.08791950472913057,
+      "spacing_cv": 1.0766120083677908,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9514991798236966,
+          "slope": 0.13407389968041647,
+          "intercept": 0.300778854788318
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9156364443063576,
+          "slope": 0.1236860370643719,
+          "intercept": 0.3276883806368831
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7996020295445313,
+          "slope": 0.10031120196830157,
+          "intercept": 0.36076919420899234
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5659523555431747,
+          "slope": 0.05382394981151836,
+          "intercept": 0.3644961335036343
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5356186794286624,
+          "slope": 0.023165535019589074,
+          "intercept": 0.33857212209859705
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9239171346155984,
+          "slope": 0.06266358880637976,
+          "intercept": 0.34202621680261036
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8281617341418548,
+          "slope": 0.1034429369160874,
+          "intercept": 0.3404374023420651
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8710284191689777,
+          "slope": 0.10218888856638035,
+          "intercept": 0.3233025001863158
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_5.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.6110910573497377,
+        "lambda_ci": [
+          -0.8689131042858098,
+          -0.41020482166046823
+        ],
+        "lambda_r2": 0.9458440860432352,
+        "mean_r2": 0.7792264335930539
+      },
+      "mean_r2": 0.7805763629687976,
+      "lambda": -0.5903840245857919,
+      "lambda_ci": [
+        -0.7587439382865548,
+        -0.43526343264984296
+      ],
+      "lambda_r2": 0.9377993195330061,
+      "pooled_r2": 0.731860463230502,
+      "pooled_slope": 0.1269029709792711,
+      "spacing_cv": 1.213589834624267,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9405217414640749,
+          "slope": 0.1912022570016291,
+          "intercept": 0.44950027563216816
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9313931105914214,
+          "slope": 0.18176752501389495,
+          "intercept": 0.4923515931329596
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8526308637071784,
+          "slope": 0.16540278473977538,
+          "intercept": 0.5730526973399346
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6209606857987241,
+          "slope": 0.09846517473689721,
+          "intercept": 0.6132153479725778
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.4311454604827414,
+          "slope": 0.03462210023885207,
+          "intercept": 0.5494655808483371
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8721758543063604,
+          "slope": 0.08111973337470939,
+          "intercept": 0.5053052479556643
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7751282868959156,
+          "slope": 0.1408378180448817,
+          "intercept": 0.4780597248145759
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8206549005039651,
+          "slope": 0.12180637468353038,
+          "intercept": 0.4167473720661129
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_5.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.6140507304277313,
+        "lambda_ci": [
+          -0.9157132218691839,
+          -0.40526819720072255
+        ],
+        "lambda_r2": 0.9262580974351368,
+        "mean_r2": 0.7921511362988884
+      },
+      "mean_r2": 0.7906826545153511,
+      "lambda": -0.5763690305760153,
+      "lambda_ci": [
+        -0.9129888017268569,
+        -0.3395303775360931
+      ],
+      "lambda_r2": 0.9249488521147715,
+      "pooled_r2": 0.7371569821527878,
+      "pooled_slope": 0.019388353209020506,
+      "spacing_cv": 1.1578740554777882,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9353048702743783,
+          "slope": 0.02912342592184841,
+          "intercept": 0.06827311990745698
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9235510064884606,
+          "slope": 0.02870205111754238,
+          "intercept": 0.07729000571583915
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8667451331689997,
+          "slope": 0.02704553672791096,
+          "intercept": 0.09232357797349491
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6896430029521179,
+          "slope": 0.015759409949948514,
+          "intercept": 0.09695497638226779
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.48658006705510715,
+          "slope": 0.006257006729234392,
+          "intercept": 0.08175593703640498
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8337101870573369,
+          "slope": 0.012592661237357734,
+          "intercept": 0.0762063467915546
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7678885983494219,
+          "slope": 0.018952816835127784,
+          "intercept": 0.06585935934287626
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8220383707769868,
+          "slope": 0.016673917153193985,
+          "intercept": 0.05880243587445952
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_5.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.5130260776409651,
+        "lambda_ci": [
+          -0.9045464868389225,
+          -0.3304407013527705
+        ],
+        "lambda_r2": 0.935559996282696,
+        "mean_r2": 0.7353285297742469
+      },
+      "mean_r2": 0.7489564978987109,
+      "lambda": -0.41149744580058567,
+      "lambda_ci": [
+        -0.7324206299982945,
+        -0.2577393898995577
+      ],
+      "lambda_r2": 0.9197159911863022,
+      "pooled_r2": 0.7259232732041707,
+      "pooled_slope": 0.05809786788467353,
+      "spacing_cv": 1.4373946740518317,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9285735296676186,
+          "slope": 0.08383826550849172,
+          "intercept": 0.19652627992632407
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8929290512632571,
+          "slope": 0.08159894040467014,
+          "intercept": 0.22370253764582448
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8111313343300156,
+          "slope": 0.07187311949171507,
+          "intercept": 0.25763313066314986
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.47640147387503007,
+          "slope": 0.038711481827037944,
+          "intercept": 0.27156100504884045
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.261029659223892,
+          "slope": 0.013055438691672744,
+          "intercept": 0.24785029221123112
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8664868024154752,
+          "slope": 0.048172055658723165,
+          "intercept": 0.2405222412318247
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8727817344753007,
+          "slope": 0.06851874934709853,
+          "intercept": 0.19988206684311327
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8823183979390977,
+          "slope": 0.05901489214797944,
+          "intercept": 0.17936918556790113
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_6.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.48504358322788665,
+        "lambda_ci": [
+          -0.6299277387469358,
+          -0.23183891065705547
+        ],
+        "lambda_r2": 0.9515265413769585,
+        "mean_r2": 0.8146246271555627
+      },
+      "mean_r2": 0.8086117365721219,
+      "lambda": -0.48590201637402936,
+      "lambda_ci": [
+        -0.5929139511635648,
+        -0.33434497331834423
+      ],
+      "lambda_r2": 0.9404728303064955,
+      "pooled_r2": 0.7596256947539526,
+      "pooled_slope": 0.049951487539420476,
+      "spacing_cv": 1.0895243857218984,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9395823769544094,
+          "slope": 0.07290104505159872,
+          "intercept": 0.1674592161765937
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8858023138583695,
+          "slope": 0.06506125169404618,
+          "intercept": 0.17994280703370727
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7857904376382902,
+          "slope": 0.0528641993919293,
+          "intercept": 0.1985598929763681
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5495933976444607,
+          "slope": 0.029458397975759873,
+          "intercept": 0.20485136984882024
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5923160251747189,
+          "slope": 0.014731514476117018,
+          "intercept": 0.19150576932691693
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9413143249472059,
+          "slope": 0.042207873125916284,
+          "intercept": 0.1936968715719273
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8807863630298032,
+          "slope": 0.06253483871691265,
+          "intercept": 0.18686131043878096
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8937086533297173,
+          "slope": 0.059852779883084156,
+          "intercept": 0.1791533995414231
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_6.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.46955444750576303,
+        "lambda_ci": [
+          -0.6335491482811346,
+          -0.1652438736641085
+        ],
+        "lambda_r2": 0.9436983122848748,
+        "mean_r2": 0.8125760359964522
+      },
+      "mean_r2": 0.8101085973966746,
+      "lambda": -0.4200368410270159,
+      "lambda_ci": [
+        -0.5864293460636636,
+        -0.2749365631212935
+      ],
+      "lambda_r2": 0.9328861735316075,
+      "pooled_r2": 0.7667071961726366,
+      "pooled_slope": 0.09434286418182286,
+      "spacing_cv": 1.0816484872656114,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9396198691861923,
+          "slope": 0.13824393559283052,
+          "intercept": 0.3137703352306891
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8815449351891274,
+          "slope": 0.12258924454592152,
+          "intercept": 0.3359581623570249
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7829890531365528,
+          "slope": 0.09768232652803376,
+          "intercept": 0.36366675690690886
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5390189419277628,
+          "slope": 0.05547007246688068,
+          "intercept": 0.3725554776666499
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5872367285375784,
+          "slope": 0.03115753420286087,
+          "intercept": 0.3541199960250122
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.957372630836704,
+          "slope": 0.08246110863089634,
+          "intercept": 0.3543352978365909
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8965348886885667,
+          "slope": 0.11877207874267152,
+          "intercept": 0.3414418356125717
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8965517316709131,
+          "slope": 0.10836661274448847,
+          "intercept": 0.3188942349094628
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_6.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.5643634442837016,
+        "lambda_ci": [
+          -0.7971912581228495,
+          -0.3635366454427218
+        ],
+        "lambda_r2": 0.9479697575749049,
+        "mean_r2": 0.7786190579677755
+      },
+      "mean_r2": 0.7917065772268272,
+      "lambda": -0.5134710113879215,
+      "lambda_ci": [
+        -0.8134223206895035,
+        -0.3408521614497299
+      ],
+      "lambda_r2": 0.9365798631424681,
+      "pooled_r2": 0.739604021033939,
+      "pooled_slope": 0.1291543468220161,
+      "spacing_cv": 1.21082354340269,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9378591488522118,
+          "slope": 0.19217881395184155,
+          "intercept": 0.445120442972835
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8886922047930885,
+          "slope": 0.17090338150219328,
+          "intercept": 0.47647671044946854
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7960847593566374,
+          "slope": 0.14710563836217302,
+          "intercept": 0.5450676322215116
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6543812100257185,
+          "slope": 0.09968719134017935,
+          "intercept": 0.5989988760519864
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.49877385302497435,
+          "slope": 0.03653245366400906,
+          "intercept": 0.5361140384234157
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9075763644369834,
+          "slope": 0.08999874595031747,
+          "intercept": 0.475866997936269
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8375436169508763,
+          "slope": 0.16909427015727016,
+          "intercept": 0.48830733875682986
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8127414603741276,
+          "slope": 0.12773427964814646,
+          "intercept": 0.4133784201565923
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_6.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.5676464756489764,
+        "lambda_ci": [
+          -0.7849722008120013,
+          -0.37306944693665833
+        ],
+        "lambda_r2": 0.9304559443715479,
+        "mean_r2": 0.7939515150368746
+      },
+      "mean_r2": 0.7901796497300754,
+      "lambda": -0.5666541171898731,
+      "lambda_ci": [
+        -0.7561601128025799,
+        -0.2989370078004894
+      ],
+      "lambda_r2": 0.9207651316589601,
+      "pooled_r2": 0.7161073368634814,
+      "pooled_slope": 0.016496652334421515,
+      "spacing_cv": 1.1715330007138203,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9115172411548202,
+          "slope": 0.027370725544194573,
+          "intercept": 0.06427193361464728
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8301409112052537,
+          "slope": 0.022331986738912055,
+          "intercept": 0.06573430105937259
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7418526195164891,
+          "slope": 0.017106406013595213,
+          "intercept": 0.06952619630000738
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7223769356390108,
+          "slope": 0.012088495582154045,
+          "intercept": 0.0734951865130876
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5178453310383287,
+          "slope": 0.004413898870064732,
+          "intercept": 0.06486900018078036
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9217631133099713,
+          "slope": 0.011169092364019938,
+          "intercept": 0.05851666010220152
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8415634900059512,
+          "slope": 0.02078020796131317,
+          "intercept": 0.06132661462063376
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8343775559707779,
+          "slope": 0.016712405601118526,
+          "intercept": 0.0540028687282024
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_6.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.6078247697599073,
+        "lambda_ci": [
+          -0.8752070516691257,
+          -0.3874917442199822
+        ],
+        "lambda_r2": 0.9271733773725254,
+        "mean_r2": 0.7570301733625254
+      },
+      "mean_r2": 0.7543561080899696,
+      "lambda": -0.5961112551123583,
+      "lambda_ci": [
+        -0.8397316876926165,
+        -0.386192953803277
+      ],
+      "lambda_r2": 0.9136968629674791,
+      "pooled_r2": 0.707106608895226,
+      "pooled_slope": 0.04514732618871647,
+      "spacing_cv": 1.308914402639036,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8865080105640859,
+          "slope": 0.06960814025316188,
+          "intercept": 0.16596988443976998
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.7729680215487105,
+          "slope": 0.05577564112611877,
+          "intercept": 0.1713632574748795
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7162508329881829,
+          "slope": 0.04810263659205721,
+          "intercept": 0.19671087214940042
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6885873469504316,
+          "slope": 0.03718839428920471,
+          "intercept": 0.21567254859477616
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.3855483602129405,
+          "slope": 0.011612722734390981,
+          "intercept": 0.18556096533143399
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8926814946710626,
+          "slope": 0.03195114687166633,
+          "intercept": 0.16533542150835093
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8584245963882678,
+          "slope": 0.06007057609363957,
+          "intercept": 0.1714033153599985
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8338802013960747,
+          "slope": 0.046869351549492566,
+          "intercept": 0.1494767496151423
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_7.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.498652763448746,
+        "lambda_ci": [
+          -0.6725974409920181,
+          -0.3432791818217162
+        ],
+        "lambda_r2": 0.9470013816301763,
+        "mean_r2": 0.7926248266715834
+      },
+      "mean_r2": 0.7914774739546622,
+      "lambda": -0.5007731573748353,
+      "lambda_ci": [
+        -0.6409947820307969,
+        -0.25921551383924757
+      ],
+      "lambda_r2": 0.9372779723650155,
+      "pooled_r2": 0.7518817017537585,
+      "pooled_slope": 0.05389765542190115,
+      "spacing_cv": 1.1699584334942252,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9248755069691452,
+          "slope": 0.078168601126505,
+          "intercept": 0.17976585788488755
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.851258242389838,
+          "slope": 0.06846888408461771,
+          "intercept": 0.1931804645306748
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7493045938551143,
+          "slope": 0.05428621481279963,
+          "intercept": 0.20900936963494007
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5475888916779126,
+          "slope": 0.03314220127489738,
+          "intercept": 0.21624590816406647
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5243125905950183,
+          "slope": 0.0162043095153954,
+          "intercept": 0.20192662161542932
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9495354676364668,
+          "slope": 0.0480725597950375,
+          "intercept": 0.2035896580290273
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8858206992246515,
+          "slope": 0.0698966184309774,
+          "intercept": 0.19732975952716864
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8991237992891505,
+          "slope": 0.06294185433497966,
+          "intercept": 0.1811937747124495
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_7.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.4754808934770287,
+        "lambda_ci": [
+          -0.6487459905268004,
+          -0.29424174770021827
+        ],
+        "lambda_r2": 0.9450069516330459,
+        "mean_r2": 0.8061910564147965
+      },
+      "mean_r2": 0.8082223817488019,
+      "lambda": -0.4609563830256729,
+      "lambda_ci": [
+        -0.603693590894844,
+        -0.2203688026581858
+      ],
+      "lambda_r2": 0.9310801554109666,
+      "pooled_r2": 0.7697334189244607,
+      "pooled_slope": 0.110326110657149,
+      "spacing_cv": 1.1060505932314522,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9342100122827574,
+          "slope": 0.15822024089539424,
+          "intercept": 0.35847368442191396
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8648653961856687,
+          "slope": 0.14112284024651947,
+          "intercept": 0.38854507570780844
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7626694933001318,
+          "slope": 0.11043214381513755,
+          "intercept": 0.4159337302770045
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5743719646061967,
+          "slope": 0.0687233931623784,
+          "intercept": 0.42726763952456137
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5585283136903951,
+          "slope": 0.03654042143047575,
+          "intercept": 0.4020974027330833
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9602447132684842,
+          "slope": 0.10042605125376647,
+          "intercept": 0.4055779305586997
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9011072646566934,
+          "slope": 0.14156953416791004,
+          "intercept": 0.3932338093067871
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9097818960000879,
+          "slope": 0.12557426028561092,
+          "intercept": 0.35771079548611723
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_7.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.4985366665309309,
+        "lambda_ci": [
+          -0.7011308602176582,
+          -0.31149695520154885
+        ],
+        "lambda_r2": 0.9567365406962802,
+        "mean_r2": 0.7996810419135362
+      },
+      "mean_r2": 0.8183354389601221,
+      "lambda": -0.4308533065375805,
+      "lambda_ci": [
+        -0.6474633729707561,
+        -0.19093751104683335
+      ],
+      "lambda_r2": 0.9402108019622755,
+      "pooled_r2": 0.7721659242258343,
+      "pooled_slope": 0.15535109724481025,
+      "spacing_cv": 1.1103034467693393,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9511130700558734,
+          "slope": 0.22549280284679743,
+          "intercept": 0.5031973670128413
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9035570141345717,
+          "slope": 0.2087853050494604,
+          "intercept": 0.5561350027610018
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7866194014833381,
+          "slope": 0.16414453101446705,
+          "intercept": 0.6021886321068997
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6265465319900926,
+          "slope": 0.10529783746926104,
+          "intercept": 0.6265754720437143
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5750165486472745,
+          "slope": 0.049695550117586404,
+          "intercept": 0.5728599990552002
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9505152612705021,
+          "slope": 0.13215747061281904,
+          "intercept": 0.5564603209180984
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8882901910050685,
+          "slope": 0.2011761550580361,
+          "intercept": 0.5498304881966539
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8650254930942557,
+          "slope": 0.15605912579005538,
+          "intercept": 0.47490976181152506
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_7.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.5034799876804592,
+        "lambda_ci": [
+          -0.681747554398679,
+          -0.3491680036265451
+        ],
+        "lambda_r2": 0.952112018468958,
+        "mean_r2": 0.8082524130004418
+      },
+      "mean_r2": 0.8102729689605153,
+      "lambda": -0.49590127226588065,
+      "lambda_ci": [
+        -0.6977325691213182,
+        -0.3536399526458582
+      ],
+      "lambda_r2": 0.9428154376334105,
+      "pooled_r2": 0.7582526028156471,
+      "pooled_slope": 0.01817546664158241,
+      "spacing_cv": 1.1247059996121684,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9406063756576339,
+          "slope": 0.027929659978496658,
+          "intercept": 0.06264690116260115
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8833993257844038,
+          "slope": 0.025260031117138947,
+          "intercept": 0.06829564272802777
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7756536663248678,
+          "slope": 0.01936542541978112,
+          "intercept": 0.07208461643729183
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7238972004665367,
+          "slope": 0.013023367098935824,
+          "intercept": 0.07236792064789008
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5137958443563322,
+          "slope": 0.005349635229319386,
+          "intercept": 0.06401045018604262
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9540955549582985,
+          "slope": 0.015340257181005472,
+          "intercept": 0.06406157529765269
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8438491489290216,
+          "slope": 0.021342308556821208,
+          "intercept": 0.06126524229084769
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8468866352070278,
+          "slope": 0.017793048551160786,
+          "intercept": 0.05503795064434853
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_7.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.46527070697277495,
+        "lambda_ci": [
+          -0.6312930114704708,
+          -0.19020174296646464
+        ],
+        "lambda_r2": 0.9466727272407944,
+        "mean_r2": 0.8384077682577322
+      },
+      "mean_r2": 0.8500512623961816,
+      "lambda": -0.42367808972637033,
+      "lambda_ci": [
+        -0.5751690074745966,
+        -0.17550426695587518
+      ],
+      "lambda_r2": 0.9398876968479539,
+      "pooled_r2": 0.8224075970329012,
+      "pooled_slope": 0.06573621573355926,
+      "spacing_cv": 0.9967243852795673,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9536553928736782,
+          "slope": 0.08611144434570966,
+          "intercept": 0.19019186958561476
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8958185205787123,
+          "slope": 0.0813175053662774,
+          "intercept": 0.21364324058787876
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7776945053638982,
+          "slope": 0.06313208986042973,
+          "intercept": 0.2287900472949009
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7787113925692105,
+          "slope": 0.049880616732070004,
+          "intercept": 0.2361778491716502
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6542142536416016,
+          "slope": 0.02973959909563984,
+          "intercept": 0.21309635542919936
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9744155539749139,
+          "slope": 0.06698023437129066,
+          "intercept": 0.2254061326088718
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8849096740494645,
+          "slope": 0.08030760748434886,
+          "intercept": 0.2127187117735719
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8809908061179736,
+          "slope": 0.06842062861270828,
+          "intercept": 0.19107826494940844
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_8.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.4913838379358092,
+        "lambda_ci": [
+          -0.6607951759298667,
+          -0.3317787206460869
+        ],
+        "lambda_r2": 0.9553107845722429,
+        "mean_r2": 0.8039806637004977
+      },
+      "mean_r2": 0.8094591521288921,
+      "lambda": -0.4806753143363348,
+      "lambda_ci": [
+        -0.6228442149878938,
+        -0.22941510775827825
+      ],
+      "lambda_r2": 0.9451784419951225,
+      "pooled_r2": 0.7744612436616477,
+      "pooled_slope": 0.05923924505690668,
+      "spacing_cv": 1.109094370415411,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9301537431358128,
+          "slope": 0.08073689978778989,
+          "intercept": 0.18432815617528628
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8619776314292128,
+          "slope": 0.07258048963370599,
+          "intercept": 0.201344022263003
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7571816146341609,
+          "slope": 0.056829144605950004,
+          "intercept": 0.2161361591145179
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5880393887668705,
+          "slope": 0.036842617409645874,
+          "intercept": 0.22480319415426983
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.596749836877339,
+          "slope": 0.02169740366359998,
+          "intercept": 0.21456330141643512
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9542389363712752,
+          "slope": 0.05673176490854343,
+          "intercept": 0.22072254982372833
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8853007652069226,
+          "slope": 0.07864800387403915,
+          "intercept": 0.2169543473471866
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9020313006095433,
+          "slope": 0.06984763657197933,
+          "intercept": 0.19667633395971837
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_8.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.49089735114402183,
+        "lambda_ci": [
+          -0.6625517212607549,
+          -0.32929735817854755
+        ],
+        "lambda_r2": 0.9536303739569012,
+        "mean_r2": 0.8139743123707468
+      },
+      "mean_r2": 0.8204606695868794,
+      "lambda": -0.4669209652939903,
+      "lambda_ci": [
+        -0.6068786297175415,
+        -0.21158669806437888
+      ],
+      "lambda_r2": 0.9384388590183262,
+      "pooled_r2": 0.7840049707724394,
+      "pooled_slope": 0.11897282796299372,
+      "spacing_cv": 1.0761830859405177,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9284735625245615,
+          "slope": 0.16180395950653545,
+          "intercept": 0.36883533730055873
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8642428141327606,
+          "slope": 0.14595231015258558,
+          "intercept": 0.4030608030691777
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7632260565189519,
+          "slope": 0.11396373737939332,
+          "intercept": 0.43134276606571725
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6278035594734368,
+          "slope": 0.07462322012384646,
+          "intercept": 0.44360635864110354
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6153550278323647,
+          "slope": 0.04476650492095294,
+          "intercept": 0.4200816297465135
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9632966327736827,
+          "slope": 0.1154634439448684,
+          "intercept": 0.43575143890542517
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8929892286783171,
+          "slope": 0.15636610400283926,
+          "intercept": 0.4268720810196783
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9082984747609594,
+          "slope": 0.13884334367292891,
+          "intercept": 0.3871045592791072
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_8.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.5415671302381959,
+        "lambda_ci": [
+          -0.750737075035547,
+          -0.3604591368860015
+        ],
+        "lambda_r2": 0.9593422933704843,
+        "mean_r2": 0.7644726870210281
+      },
+      "mean_r2": 0.7734460500373685,
+      "lambda": -0.49177639832306536,
+      "lambda_ci": [
+        -0.6599692888502229,
+        -0.33443358312811555
+      ],
+      "lambda_r2": 0.9405834927102661,
+      "pooled_r2": 0.7388588677462575,
+      "pooled_slope": 0.13866039849979364,
+      "spacing_cv": 1.309952451950583,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9185101696319353,
+          "slope": 0.20637483547981778,
+          "intercept": 0.4704942736399756
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8520066741355561,
+          "slope": 0.17704751695593993,
+          "intercept": 0.5014612358214345
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.726623248698524,
+          "slope": 0.13018824654744401,
+          "intercept": 0.5275664362326463
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.5324181746085838,
+          "slope": 0.08196742079965569,
+          "intercept": 0.5496821480063313
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.465163644642545,
+          "slope": 0.04223101087651265,
+          "intercept": 0.539896234334589
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9324135214910672,
+          "slope": 0.1297065746408569,
+          "intercept": 0.5351812571261075
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8879614107283544,
+          "slope": 0.1916733413849156,
+          "intercept": 0.5273919873629362
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.872471556362382,
+          "slope": 0.15009424131320762,
+          "intercept": 0.4674626669822975
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_8.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.5380854012673618,
+        "lambda_ci": [
+          -0.717075427872667,
+          -0.37429046890036455
+        ],
+        "lambda_r2": 0.9556702762799854,
+        "mean_r2": 0.81256270037809
+      },
+      "mean_r2": 0.8128168609924213,
+      "lambda": -0.5183787407918294,
+      "lambda_ci": [
+        -0.6703159995886319,
+        -0.2749412052789445
+      ],
+      "lambda_r2": 0.9396882632458403,
+      "pooled_r2": 0.7529535855523808,
+      "pooled_slope": 0.011422361919891611,
+      "spacing_cv": 1.1074284113349449,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9156267343986603,
+          "slope": 0.017355242278253115,
+          "intercept": 0.03997236714390173
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.845763181267182,
+          "slope": 0.014826865515914814,
+          "intercept": 0.042401871536311087
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7211488621091391,
+          "slope": 0.010618120241403038,
+          "intercept": 0.04370994469148774
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7033665597929637,
+          "slope": 0.007198922643560293,
+          "intercept": 0.044007653672915974
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6280550434168147,
+          "slope": 0.0037306204872709415,
+          "intercept": 0.041360684049636644
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9411216086228887,
+          "slope": 0.010308919310167513,
+          "intercept": 0.042689303004344294
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8663743727022283,
+          "slope": 0.014953662185181528,
+          "intercept": 0.04217083511691414
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8810785256294934,
+          "slope": 0.012386542697381733,
+          "intercept": 0.03846184111985892
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_8.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.4567323053939132,
+        "lambda_ci": [
+          -0.6193991318506546,
+          -0.3023572011514117
+        ],
+        "lambda_r2": 0.9608362349819594,
+        "mean_r2": 0.8460617252473241
+      },
+      "mean_r2": 0.8448680307412417,
+      "lambda": -0.3938365520685297,
+      "lambda_ci": [
+        -0.5562655757889543,
+        -0.10474140432673405
+      ],
+      "lambda_r2": 0.9483223042952116,
+      "pooled_r2": 0.7856881926788318,
+      "pooled_slope": 0.034194483847073215,
+      "spacing_cv": 0.9897292541155488,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9403735924925358,
+          "slope": 0.050657018141501586,
+          "intercept": 0.11333510797330787
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8759485735503093,
+          "slope": 0.044418843793651554,
+          "intercept": 0.12141559543032149
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7732510764910643,
+          "slope": 0.032339939904867644,
+          "intercept": 0.12324931553862987
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7221661634574418,
+          "slope": 0.02155372141332578,
+          "intercept": 0.1231215412657258
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6248365372667792,
+          "slope": 0.010653830160177413,
+          "intercept": 0.11059114728104244
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9533234064630144,
+          "slope": 0.03012082620313797,
+          "intercept": 0.11705240129878404
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.927050758690636,
+          "slope": 0.045719613330980534,
+          "intercept": 0.1217730415380261
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9419941375181533,
+          "slope": 0.038092077828943464,
+          "intercept": 0.10864748282236217
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_9.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.4863053521852974,
+        "lambda_ci": [
+          -0.6569138088147564,
+          -0.27180741913861484
+        ],
+        "lambda_r2": 0.9575226625810058,
+        "mean_r2": 0.8243245362566636
+      },
+      "mean_r2": 0.830107362746933,
+      "lambda": -0.4709569360020314,
+      "lambda_ci": [
+        -0.6100621733834635,
+        -0.2206925219709716
+      ],
+      "lambda_r2": 0.9459212217993082,
+      "pooled_r2": 0.7895336429646338,
+      "pooled_slope": 0.0499092887251615,
+      "spacing_cv": 1.0363845365245465,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.932480957555227,
+          "slope": 0.06818595706554269,
+          "intercept": 0.15473989201064592
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8642725526839439,
+          "slope": 0.06148182288667142,
+          "intercept": 0.1696558051208792
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7620150101647725,
+          "slope": 0.0473020865891149,
+          "intercept": 0.17992416991711613
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6417725325767105,
+          "slope": 0.03158088623091342,
+          "intercept": 0.184410982173715
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6805185515197658,
+          "slope": 0.02031133187665425,
+          "intercept": 0.17433189906724397
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9589256645622777,
+          "slope": 0.04739313643371516,
+          "intercept": 0.18060696320760034
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8893424715052882,
+          "slope": 0.06486327941383212,
+          "intercept": 0.17746507250258312
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9115311614074779,
+          "slope": 0.05815580930484854,
+          "intercept": 0.1620789298167149
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_9.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.49103891477867523,
+        "lambda_ci": [
+          -0.6636473009514641,
+          -0.29563476992007287
+        ],
+        "lambda_r2": 0.9584798715316014,
+        "mean_r2": 0.8246347482522367
+      },
+      "mean_r2": 0.8309587061410408,
+      "lambda": -0.469273928365355,
+      "lambda_ci": [
+        -0.6184374784039507,
+        -0.22292109890281736
+      ],
+      "lambda_r2": 0.9441976697293919,
+      "pooled_r2": 0.7904156378770488,
+      "pooled_slope": 0.12381492812808963,
+      "spacing_cv": 1.04767840837769,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9281758290929764,
+          "slope": 0.16846842207217697,
+          "intercept": 0.3826652348930799
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8617366417613865,
+          "slope": 0.15127801001807784,
+          "intercept": 0.41829359642134384
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7704252399261291,
+          "slope": 0.11775083711818388,
+          "intercept": 0.4436502274556796
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6546478563854675,
+          "slope": 0.07831483169212876,
+          "intercept": 0.45331072718027016
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6821675653813997,
+          "slope": 0.0507397822660926,
+          "intercept": 0.4312331346582252
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9602672490800092,
+          "slope": 0.11933776517561516,
+          "intercept": 0.44902226680131
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.884164752577473,
+          "slope": 0.16035296647924632,
+          "intercept": 0.439713474116765
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.906084514923486,
+          "slope": 0.144276810203196,
+          "intercept": 0.4038921581844461
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_9.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.5674688963069332,
+        "lambda_ci": [
+          -0.7925671510300742,
+          -0.3815659594063752
+        ],
+        "lambda_r2": 0.9597191340358324,
+        "mean_r2": 0.7662342322506381
+      },
+      "mean_r2": 0.7928671131500107,
+      "lambda": -0.48874969306496785,
+      "lambda_ci": [
+        -0.6598681151762184,
+        -0.29832571024500143
+      ],
+      "lambda_r2": 0.9383562723282022,
+      "pooled_r2": 0.7572518915694015,
+      "pooled_slope": 0.11191414151710805,
+      "spacing_cv": 1.1769257191343168,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9155077231735911,
+          "slope": 0.16320890910450137,
+          "intercept": 0.37388059439647237
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8386739075043066,
+          "slope": 0.13778153120429432,
+          "intercept": 0.394580764487715
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.740671705801002,
+          "slope": 0.10128014316568856,
+          "intercept": 0.4095050445852386
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6262174907392033,
+          "slope": 0.06834318878687198,
+          "intercept": 0.42506590911778147
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5025756098973235,
+          "slope": 0.039452301820429025,
+          "intercept": 0.41008147552611623
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9423645660641872,
+          "slope": 0.10528090531176672,
+          "intercept": 0.4264133087302777
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.896099653615461,
+          "slope": 0.15291935461581277,
+          "intercept": 0.4204525667534032
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8808262484050113,
+          "slope": 0.1270467981275002,
+          "intercept": 0.38255017521237705
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_9.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.5936654059660806,
+        "lambda_ci": [
+          -0.7997371582550462,
+          -0.40663175507625077
+        ],
+        "lambda_r2": 0.9598623130184827,
+        "mean_r2": 0.7775022588328585
+      },
+      "mean_r2": 0.7947829240685638,
+      "lambda": -0.5362872496076553,
+      "lambda_ci": [
+        -0.6985524260218284,
+        -0.2574860275218671
+      ],
+      "lambda_r2": 0.9403299204794511,
+      "pooled_r2": 0.7452380592128781,
+      "pooled_slope": 0.010680203649436979,
+      "spacing_cv": 1.1490041183322646,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8982408988916536,
+          "slope": 0.016201964948825934,
+          "intercept": 0.03775918418714191
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8127829491111974,
+          "slope": 0.013268832757682938,
+          "intercept": 0.039217895950960036
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7102620941693976,
+          "slope": 0.009473372277872436,
+          "intercept": 0.040047585212153694
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6534659414560691,
+          "slope": 0.006490942633736184,
+          "intercept": 0.04094611862505714
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.5757044764719876,
+          "slope": 0.0037972231586627316,
+          "intercept": 0.03902677817926153
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9464070062231367,
+          "slope": 0.009801823597780505,
+          "intercept": 0.040726194811563435
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8853594612291622,
+          "slope": 0.014285991496961283,
+          "intercept": 0.04028771814164295
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8760405649959068,
+          "slope": 0.012121478323973912,
+          "intercept": 0.03751710140328279
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_9.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.3635245147892492,
+        "lambda_ci": [
+          -0.6167682131769647,
+          -0.1915910548129034
+        ],
+        "lambda_r2": 0.9695979015774372,
+        "mean_r2": 0.8875504726817912
+      },
+      "mean_r2": 0.8891930498896589,
+      "lambda": -0.324980663990855,
+      "lambda_ci": [
+        -0.5518382465751281,
+        -0.1775381615334703
+      ],
+      "lambda_r2": 0.9615128374058948,
+      "pooled_r2": 0.8521190733388861,
+      "pooled_slope": 0.03050549011069992,
+      "spacing_cv": 0.8689582286355217,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9113998071845448,
+          "slope": 0.035823938264794845,
+          "intercept": 0.08210262030678048
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8578433334504623,
+          "slope": 0.033238521748920016,
+          "intercept": 0.09194228982119271
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.824165220292552,
+          "slope": 0.0274223289658764,
+          "intercept": 0.09748850923441461
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8623971852216411,
+          "slope": 0.024747824067279257,
+          "intercept": 0.10557012388148102
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8590964914423332,
+          "slope": 0.01723314600159237,
+          "intercept": 0.09608812996387131
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9653968799497389,
+          "slope": 0.028901540537217347,
+          "intercept": 0.100758108069354
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9239219963819508,
+          "slope": 0.0388569536242314,
+          "intercept": 0.10428416003359017
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9093234851940478,
+          "slope": 0.03781966767568793,
+          "intercept": 0.10378170734597698
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_10.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.4975979690375619,
+        "lambda_ci": [
+          -0.6709353665446296,
+          -0.25371793543195664
+        ],
+        "lambda_r2": 0.9604858378649462,
+        "mean_r2": 0.8298163220333558
+      },
+      "mean_r2": 0.8357275640449024,
+      "lambda": -0.4169035968017495,
+      "lambda_ci": [
+        -0.6108543798162576,
+        -0.20721156469977403
+      ],
+      "lambda_r2": 0.9477406026019315,
+      "pooled_r2": 0.7937841215292153,
+      "pooled_slope": 0.05154488676043912,
+      "spacing_cv": 1.0259868624897437,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9269849291386945,
+          "slope": 0.06919396555334831,
+          "intercept": 0.15746586070622348
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.858195772683911,
+          "slope": 0.06248742670790538,
+          "intercept": 0.1730588908195393
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7496109091571966,
+          "slope": 0.047751474388729426,
+          "intercept": 0.18307673875742483
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6734737191249778,
+          "slope": 0.032730923705077776,
+          "intercept": 0.18725462382306476
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.7107033020941851,
+          "slope": 0.021736200718326503,
+          "intercept": 0.17695471041744132
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.96531142601664,
+          "slope": 0.05025261500146646,
+          "intercept": 0.18579051361756166
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8896018848970351,
+          "slope": 0.06664876608720174,
+          "intercept": 0.1820811897625214
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9119385692465795,
+          "slope": 0.06155772192145758,
+          "intercept": 0.1704779220501755
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_10.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.5115281494336859,
+        "lambda_ci": [
+          -0.6900960411186194,
+          -0.3443614480089908
+        ],
+        "lambda_r2": 0.959507269830386,
+        "mean_r2": 0.8167273750359646
+      },
+      "mean_r2": 0.826472737948479,
+      "lambda": -0.4734743592122701,
+      "lambda_ci": [
+        -0.6356439232752931,
+        -0.22792522276492527
+      ],
+      "lambda_r2": 0.942519349306544,
+      "pooled_r2": 0.7813233989181316,
+      "pooled_slope": 0.11844282787687878,
+      "spacing_cv": 1.0535409729309835,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9199172840851597,
+          "slope": 0.1649426928752369,
+          "intercept": 0.3769134124748656
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8466982895647588,
+          "slope": 0.1457248767990886,
+          "intercept": 0.40878310071842283
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7511332885492115,
+          "slope": 0.11004404929439307,
+          "intercept": 0.4264141310083284
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6668492522790439,
+          "slope": 0.07452094091007506,
+          "intercept": 0.4337979507090491
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6774372689393577,
+          "slope": 0.04693400304127741,
+          "intercept": 0.41016552776621285
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9629548412500203,
+          "slope": 0.11315092532441773,
+          "intercept": 0.4309987866118628
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8839185339270188,
+          "slope": 0.15390977300665934,
+          "intercept": 0.42568977642621053
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9028731449932614,
+          "slope": 0.1383153617638831,
+          "intercept": 0.3937594208818303
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_10.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.5788263872713846,
+        "lambda_ci": [
+          -0.7934901281020661,
+          -0.4006615750786359
+        ],
+        "lambda_r2": 0.9664065949741414,
+        "mean_r2": 0.7572500590766607
+      },
+      "mean_r2": 0.8052097062653663,
+      "lambda": -0.5306846147061581,
+      "lambda_ci": [
+        -0.6903733284737623,
+        -0.2602615245073027
+      ],
+      "lambda_r2": 0.9431026542840975,
+      "pooled_r2": 0.765788672606978,
+      "pooled_slope": 0.11311480590536976,
+      "spacing_cv": 1.1352755569599733,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8997534408996509,
+          "slope": 0.163430980546271,
+          "intercept": 0.3787361637137275
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8226870213308791,
+          "slope": 0.13678273763166443,
+          "intercept": 0.3989685840654519
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7394649451483665,
+          "slope": 0.1016984619887266,
+          "intercept": 0.41538754773538866
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6631888629005473,
+          "slope": 0.07567861471122082,
+          "intercept": 0.4378678498944736
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6164753364927076,
+          "slope": 0.04598944967899141,
+          "intercept": 0.41137465115913
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9580163988666403,
+          "slope": 0.11254497933791346,
+          "intercept": 0.43051087484605083
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8733750903370594,
+          "slope": 0.14936968914417928,
+          "intercept": 0.42038313448216247
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8687165541470785,
+          "slope": 0.11942353420399168,
+          "intercept": 0.37367648451517405
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_10.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.6166549901921449,
+        "lambda_ci": [
+          -0.8192337129452746,
+          -0.4315302580074258
+        ],
+        "lambda_r2": 0.9645803165482545,
+        "mean_r2": 0.7548492408292824
+      },
+      "mean_r2": 0.8009447769513449,
+      "lambda": -0.5335374419644643,
+      "lambda_ci": [
+        -0.7135817522473977,
+        -0.2067926912006194
+      ],
+      "lambda_r2": 0.9450094918554355,
+      "pooled_r2": 0.7411612050133204,
+      "pooled_slope": 0.011773058808011275,
+      "spacing_cv": 1.1323089138309008,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8783278720269974,
+          "slope": 0.018136227843155352,
+          "intercept": 0.042756857678803425
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.7906742576645122,
+          "slope": 0.014670408035360436,
+          "intercept": 0.04435867079395427
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.6808331068353266,
+          "slope": 0.010273900245691315,
+          "intercept": 0.04543774267425178
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6884415794955197,
+          "slope": 0.007515966165299841,
+          "intercept": 0.04649963205373466
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6219305770902637,
+          "slope": 0.004222107048103932,
+          "intercept": 0.04254816159671971
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9601661242709171,
+          "slope": 0.01062441875878141,
+          "intercept": 0.043941998216335196
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9010312260795711,
+          "slope": 0.015804390701454916,
+          "intercept": 0.04444287134726245
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8861534721476515,
+          "slope": 0.012937051666243093,
+          "intercept": 0.04102785689277241
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_10.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.4993340211158963,
+        "lambda_ci": [
+          -0.9000134785297722,
+          -0.20790331798325873
+        ],
+        "lambda_r2": 0.9355999324794424,
+        "mean_r2": 0.753674639105415
+      },
+      "mean_r2": 0.7208677031067964,
+      "lambda": -0.5683283559926844,
+      "lambda_ci": [
+        -0.8195982517594441,
+        -0.3613746306746459
+      ],
+      "lambda_r2": 0.9068521632491842,
+      "pooled_r2": 0.6355345312499585,
+      "pooled_slope": 0.049559526694790065,
+      "spacing_cv": 1.5117990812495354,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8427163685587177,
+          "slope": 0.09256361406660393,
+          "intercept": 0.21538206058967188
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.7439089483927448,
+          "slope": 0.06851687022313416,
+          "intercept": 0.21213856095917583
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.6092997909111622,
+          "slope": 0.04203544059623655,
+          "intercept": 0.20765767465035276
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6550097302204436,
+          "slope": 0.02725830972470027,
+          "intercept": 0.20454964171040757
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.3380374270310773,
+          "slope": 0.01181241858131292,
+          "intercept": 0.18181638909918624
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8727362931161862,
+          "slope": 0.03466018190562111,
+          "intercept": 0.1763003836346337
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8508551438135049,
+          "slope": 0.06945383077218271,
+          "intercept": 0.18530480094553123
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8543779228105345,
+          "slope": 0.050175547688529026,
+          "intercept": 0.1710482476999232
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_11.ln_1",
+      "mean_of_distances": {
+        "lambda": -0.5193645799414176,
+        "lambda_ci": [
+          -0.7041000192214821,
+          -0.3469435733014688
+        ],
+        "lambda_r2": 0.9549555932532441,
+        "mean_r2": 0.8094034874271974
+      },
+      "mean_r2": 0.8199369435910189,
+      "lambda": -0.4671983562250478,
+      "lambda_ci": [
+        -0.6223905428996735,
+        -0.23208995531575766
+      ],
+      "lambda_r2": 0.9403162896943674,
+      "pooled_r2": 0.7769353001381425,
+      "pooled_slope": 0.053232419618062674,
+      "spacing_cv": 1.0863917546371336,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9073882412747435,
+          "slope": 0.07663520406941794,
+          "intercept": 0.17353120434507602
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8316736491417343,
+          "slope": 0.06667203112055822,
+          "intercept": 0.1868063591903461
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7279307541090239,
+          "slope": 0.04886724966521512,
+          "intercept": 0.1928512344482726
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7485760986216623,
+          "slope": 0.03638505648319489,
+          "intercept": 0.19721520420654712
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.548404015301627,
+          "slope": 0.01834322330442128,
+          "intercept": 0.1745473114577714
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9795243681803162,
+          "slope": 0.05100399169491544,
+          "intercept": 0.18381495196438027
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9138728133998075,
+          "slope": 0.06790240869442862,
+          "intercept": 0.18210335146719395
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.902125608699236,
+          "slope": 0.060050191912350295,
+          "intercept": 0.17059502142750055
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_11.ln_2",
+      "mean_of_distances": {
+        "lambda": -0.5115955230830225,
+        "lambda_ci": [
+          -0.688719163884685,
+          -0.3456720959312555
+        ],
+        "lambda_r2": 0.9557310220562516,
+        "mean_r2": 0.794076323825689
+      },
+      "mean_r2": 0.8047006444029735,
+      "lambda": -0.45127671384551116,
+      "lambda_ci": [
+        -0.6310612014159287,
+        -0.2984081986843931
+      ],
+      "lambda_r2": 0.9444671095310848,
+      "pooled_r2": 0.7599306425432806,
+      "pooled_slope": 0.10224037845738398,
+      "spacing_cv": 1.1431748295445505,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9100759155331739,
+          "slope": 0.15403544689034324,
+          "intercept": 0.3489284098793236
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8366556259356084,
+          "slope": 0.13275446403441932,
+          "intercept": 0.37263119290252533
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.735852471276215,
+          "slope": 0.0951020097040476,
+          "intercept": 0.3770992710396345
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7302551769023715,
+          "slope": 0.06972680253290238,
+          "intercept": 0.3830987010259785
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.43633044438301705,
+          "slope": 0.029193927804263994,
+          "intercept": 0.3338427007527333
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9756285151533558,
+          "slope": 0.09178485710597048,
+          "intercept": 0.34927828042686
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9176812566549629,
+          "slope": 0.1329684562021661,
+          "intercept": 0.35718038316480166
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8951257493850837,
+          "slope": 0.11235706338495924,
+          "intercept": 0.3275785731341305
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_11.mlp.0",
+      "mean_of_distances": {
+        "lambda": -0.5197622453549162,
+        "lambda_ci": [
+          -0.8847210381911985,
+          -0.33396122332448597
+        ],
+        "lambda_r2": 0.9383830596709322,
+        "mean_r2": 0.6923922594565136
+      },
+      "mean_r2": 0.7442148673046937,
+      "lambda": -0.4153528864951342,
+      "lambda_ci": [
+        -0.7200448894117566,
+        -0.23820259083183012
+      ],
+      "lambda_r2": 0.9140140871984028,
+      "pooled_r2": 0.6974161278754372,
+      "pooled_slope": 0.15991081741537438,
+      "spacing_cv": 1.4164887897764133,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9036840732797842,
+          "slope": 0.2713122239557436,
+          "intercept": 0.5951157755053594
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8357709789503359,
+          "slope": 0.227508531213828,
+          "intercept": 0.6258462403919569
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7257287786301627,
+          "slope": 0.158090418273154,
+          "intercept": 0.6259682060639634
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.610691208763056,
+          "slope": 0.10580498915277561,
+          "intercept": 0.6249283042400328
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.26362429983311886,
+          "slope": 0.03567552530736013,
+          "intercept": 0.5371178089301222
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9001431639022324,
+          "slope": 0.12310832840473568,
+          "intercept": 0.4879829545456982
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8965223951360849,
+          "slope": 0.20591820477327963,
+          "intercept": 0.5162646894037991
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8175540399427738,
+          "slope": 0.1518683182421196,
+          "intercept": 0.4578304302734438
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_11.mlp.1",
+      "mean_of_distances": {
+        "lambda": -0.5925164293924334,
+        "lambda_ci": [
+          -0.9426774715920502,
+          -0.4178477295505272
+        ],
+        "lambda_r2": 0.9402499018516541,
+        "mean_r2": 0.6782911398082623
+      },
+      "mean_r2": 0.7234975792320499,
+      "lambda": -0.5334053575754036,
+      "lambda_ci": [
+        -0.8300218599734434,
+        -0.3518382114775082
+      ],
+      "lambda_r2": 0.9310130470755882,
+      "pooled_r2": 0.6522375927863702,
+      "pooled_slope": 0.012323076570350063,
+      "spacing_cv": 1.4361505147920348,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8733055863009136,
+          "slope": 0.022946291477986144,
+          "intercept": 0.05430743266649384
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8014009036223587,
+          "slope": 0.01810725637324156,
+          "intercept": 0.0554775605712079
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.6833717802059118,
+          "slope": 0.011567061504193323,
+          "intercept": 0.054194372215147356
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6072590510399714,
+          "slope": 0.007559797570740659,
+          "intercept": 0.05325238941279032
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.2163328464314771,
+          "slope": 0.0021995564620202004,
+          "intercept": 0.0453377681376602
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9110473083204,
+          "slope": 0.008510817664348417,
+          "intercept": 0.042519169231710875
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8933581209213552,
+          "slope": 0.016237233226403677,
+          "intercept": 0.045680909389467485
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8019050370140121,
+          "slope": 0.011456598283866618,
+          "intercept": 0.04210621753135348
+        }
+      ]
+    },
+    {
+      "layer": "encoder.layers.encoder_layer_11.mlp.3",
+      "mean_of_distances": {
+        "lambda": -0.6710841886015706,
+        "lambda_ci": [
+          -1.0304633502033416,
+          -0.47425645324258753
+        ],
+        "lambda_r2": 0.9440351776773506,
+        "mean_r2": 0.6714713158994196
+      },
+      "mean_r2": 0.6968558911518088,
+      "lambda": -0.6167051881147345,
+      "lambda_ci": [
+        -0.9300373377165502,
+        -0.42146575191897184
+      ],
+      "lambda_r2": 0.9170345417874144,
+      "pooled_r2": 0.6143595017980472,
+      "pooled_slope": 0.023135181697096167,
+      "spacing_cv": 1.5867276312040315,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8516900263697982,
+          "slope": 0.04556118034587149,
+          "intercept": 0.11305389698920255
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.7856790577482022,
+          "slope": 0.034921690877205355,
+          "intercept": 0.11455417103728933
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.6740174418828742,
+          "slope": 0.021070840761359694,
+          "intercept": 0.11021154524012947
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6339259970840403,
+          "slope": 0.014378218133958478,
+          "intercept": 0.10864524703266142
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.11938715881427109,
+          "slope": 0.0031332417098933643,
+          "intercept": 0.09214197165940681
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.880213185138669,
+          "slope": 0.01414630003541805,
+          "intercept": 0.0872036791693562
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8647713576857636,
+          "slope": 0.031295639491002676,
+          "intercept": 0.09694723406049226
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7651629044908517,
+          "slope": 0.020574342222060404,
+          "intercept": 0.08739283182014813
+        }
+      ]
+    },
+    {
+      "layer": "encoder.ln",
+      "mean_of_distances": {
+        "lambda": -0.5298531617017521,
+        "lambda_ci": [
+          -0.7092058405359429,
+          -0.3628794090197139
+        ],
+        "lambda_r2": 0.9583385111934561,
+        "mean_r2": 0.7871108973014527
+      },
+      "mean_r2": 0.7944253620078559,
+      "lambda": -0.48416549207532167,
+      "lambda_ci": [
+        -0.650800460035965,
+        -0.33716351152332436
+      ],
+      "lambda_r2": 0.9462292776627534,
+      "pooled_r2": 0.7503287662576474,
+      "pooled_slope": 0.12794997369545433,
+      "spacing_cv": 1.1805660335483328,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9052291422140133,
+          "slope": 0.19564759237778265,
+          "intercept": 0.44710271852273653
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.826912449631525,
+          "slope": 0.16657651750341687,
+          "intercept": 0.4750617570608446
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7293036459234872,
+          "slope": 0.11842086561607694,
+          "intercept": 0.4797293866130931
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7265780529838965,
+          "slope": 0.08656171869911054,
+          "intercept": 0.4872842394810867
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.39836751302815976,
+          "slope": 0.03463064833363009,
+          "intercept": 0.4254689162913357
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9744929775605351,
+          "slope": 0.116341265497768,
+          "intercept": 0.44769625918566697
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.904430120304391,
+          "slope": 0.16524518371147998,
+          "intercept": 0.4530432991563559
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8900889944168386,
+          "slope": 0.1401759978243704,
+          "intercept": 0.41682579422711374
+        }
+      ]
+    },
+    {
+      "layer": "heads.head",
+      "mean_of_distances": {
+        "lambda": -0.32526653005080064,
+        "lambda_ci": [
+          -0.6965442289455439,
+          -0.114744924644554
+        ],
+        "lambda_r2": 0.9373633075091286,
+        "mean_r2": 0.8520120301219885
+      },
+      "mean_r2": 0.8681307254062341,
+      "lambda": -0.372845286089436,
+      "lambda_ci": [
+        -0.6235219393917829,
+        -0.1484662325606132
+      ],
+      "lambda_r2": 0.9399099811584557,
+      "pooled_r2": 0.807156352887495,
+      "pooled_slope": 0.20888166155376509,
+      "spacing_cv": 0.9389161935633765,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9377089500105131,
+          "slope": 0.2349075754255401,
+          "intercept": 0.5354398855237363
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8789645228575796,
+          "slope": 0.21681126573575493,
+          "intercept": 0.5856305396582765
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7188683140601286,
+          "slope": 0.14944105171868835,
+          "intercept": 0.5795091754663565
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8985449762656061,
+          "slope": 0.1387111043329549,
+          "intercept": 0.6285281772227655
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8438957762939614,
+          "slope": 0.1229177801320548,
+          "intercept": 0.5873246559622638
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9690999451586307,
+          "slope": 0.23984622247345191,
+          "intercept": 0.6822791244519246
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8751899883094861,
+          "slope": 0.2991475819417657,
+          "intercept": 0.7698255003311787
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.822773330293967,
+          "slope": 0.2692707106699108,
+          "intercept": 0.732878089690589
+        }
+      ]
+    },
+    {
+      "layer": "logits",
+      "mean_of_distances": {
+        "lambda": -0.32526653005080064,
+        "lambda_ci": [
+          -0.6965442289455439,
+          -0.114744924644554
+        ],
+        "lambda_r2": 0.9373633075091286,
+        "mean_r2": 0.8520120301219885
+      },
+      "mean_r2": 0.8681307254062341,
+      "lambda": -0.372845286089436,
+      "lambda_ci": [
+        -0.6235219393917829,
+        -0.1484662325606132
+      ],
+      "lambda_r2": 0.9399099811584557,
+      "pooled_r2": 0.807156352887495,
+      "pooled_slope": 0.20888166155376509,
+      "spacing_cv": 0.9389161935633765,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9377089500105131,
+          "slope": 0.2349075754255401,
+          "intercept": 0.5354398855237363
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8789645228575796,
+          "slope": 0.21681126573575493,
+          "intercept": 0.5856305396582765
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7188683140601286,
+          "slope": 0.14944105171868835,
+          "intercept": 0.5795091754663565
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8985449762656061,
+          "slope": 0.1387111043329549,
+          "intercept": 0.6285281772227655
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8438957762939614,
+          "slope": 0.1229177801320548,
+          "intercept": 0.5873246559622638
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9690999451586307,
+          "slope": 0.23984622247345191,
+          "intercept": 0.6822791244519246
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8751899883094861,
+          "slope": 0.2991475819417657,
+          "intercept": 0.7698255003311787
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.822773330293967,
+          "slope": 0.2692707106699108,
+          "intercept": 0.732878089690589
+        }
+      ]
+    },
+    {
+      "layer": "prob",
+      "mean_of_distances": {
+        "lambda": -0.16379217034406648,
+        "lambda_ci": [
+          -0.37809839365857345,
+          0.05858701171140896
+        ],
+        "lambda_r2": 0.9359880562191034,
+        "mean_r2": 0.9056348732957636
+      },
+      "mean_r2": 0.9052240318304927,
+      "lambda": -0.1619735005021556,
+      "lambda_ci": [
+        -0.3841850509224456,
+        0.08247998015319932
+      ],
+      "lambda_r2": 0.9326800439512354,
+      "pooled_r2": 0.8550886219673764,
+      "pooled_slope": 0.0006100222841649727,
+      "spacing_cv": 1.0670441475128207,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9478748378693217,
+          "slope": 0.0004902738369152625,
+          "intercept": 0.0010500355334243448
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8598787714001983,
+          "slope": 0.0004377919278158594,
+          "intercept": 0.0011418635669182425
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8843439734700795,
+          "slope": 0.0004399936706805971,
+          "intercept": 0.00134185459617639
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9887687489668002,
+          "slope": 0.000588499393109993,
+          "intercept": 0.0017345819884444853
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9622540754074533,
+          "slope": 0.0006524464849677031,
+          "intercept": 0.001645805453842167
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.900178886712636,
+          "slope": 0.0008065746534896228,
+          "intercept": 0.001818023728719337
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7856099748693156,
+          "slope": 0.0007350744216378714,
+          "intercept": 0.0016475033043044636
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9128829859481361,
+          "slope": 0.0007295238847028751,
+          "intercept": 0.001600374259964309
+        }
+      ]
+    }
+  ]
+}
