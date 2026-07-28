@@ -245,9 +245,24 @@ Consequences for reading a profile:
 - **The test is repetition count, not shape.** A real response holds D when reps
   change; a floor falls as 1/√reps. Measured on raw pixels: median D(50)/D(250)
   = 2.237 against √5 = 2.236.
-- In VGG-19 only `features.0` is upstream of every nonlinearity. Deeper
-  convolutions sit after a ReLU, where `E[a(x)] ≠ a(gray)`, and carry real
-  signal — `features.19` holds its D across a 5× rep change.
+- **The floor covers a network's whole affine prefix**, however many modules
+  that spans — not just its first layer. In VGG-19 that happens to be one
+  module (`features.0`), which made "the first conv" a tempting shorthand, but
+  it is affineness that decides. Deeper layers sit after a nonlinearity, where
+  `E[a(x)] ≠ a(gray)`, and carry real signal — VGG-19's `features.19` holds its
+  D across a 5× rep change.
+- **BatchNorm extends the prefix; LayerNorm does not.** BN in eval mode applies
+  *fixed* running statistics, so it is affine in the input and composing it with
+  conv1 leaves the result affine. LayerNorm normalises by the input's own mean
+  and variance, so it is not affine and has no zero-population floor. Measured,
+  taps at or near the floor:
+
+  | net | on the floor |
+  |---|---|
+  | VGG-19, AlexNet | `features.0` |
+  | `vgg19_bn` | `features.0`, **`features.1`** (BN, 99.3% noise) |
+  | ResNet-50 | `conv1`, **`bn1`** (98.7%) |
+  | ViT-B/16 | `conv_proj` **only** — the first LayerNorm is not affine |
 - **The floor is on the contrast axis only.** `ḡ_f` stays spectrally
   concentrated at `f`, so an affine layer's *frequency* profile is still a real
   measurement of its filter bank even where its magnitude and its λ are not.
@@ -328,18 +343,31 @@ Controls to run: within-layer weight scrambling; comparison of `logits` vs
 
 ## Stronger tests to add
 
-**A per-tap reps sweep** is the cheapest and is now the most informative: one
-`--reps 1000` run per checkpoint, compared against the committed r250, says
-which of the 45 taps carry signal and which sit on the noise floor. It settles
-how much of Caffe's flat λ ≈ 1 conv stack is a locally-linear response and how
-much is an empty measurement — a question the shape of the curve cannot answer.
+~~**A per-tap reps sweep.**~~ **Done**, and it went *down* in reps rather than
+up: `--reps 50` against the committed r250 gives √5 = 2.24 discrimination for a
+fifth of the cost, where `--reps 1000` would have given √4 for four times it.
+Every architecture measured now ships an r50 companion. Result: outside the
+affine prefix the largest noise fraction is 3.4% (VGG-19), 1.8% (AlexNet), 5.1%
+(ResNet-50), so the flat λ ≈ 1 conv stacks are real responses, not empty taps.
 
-Then: fit and **hold out contrasts** to compare candidate laws — log, soft-log
-`α+β log(1+c/σ)`, power `α+β c^γ`, saturating `α+β c^n/(σ^n+c^n)`; bootstrap
-phase/orientation samples for CIs; repeat across init/scramble seeds; compare
-**logits vs softmax**; analyse individual units vs the pooled response; extend
-contrast below 1/128 to find where the apparent log breaks.
+Still to do: fit and **hold out contrasts** to compare candidate laws — log,
+soft-log `α+β log(1+c/σ)`, power `α+β c^γ`, saturating `α+β c^n/(σ^n+c^n)`;
+bootstrap phase/orientation samples for CIs; repeat across init/scramble seeds;
+analyse individual units vs the pooled response; extend contrast below 1/128 to
+find where the apparent log breaks.
 
-*(Distance-of-means vs mean-of-distances is done — both are now recorded on
-every run, see above. What is still missing is a **model** run carrying both;
-the only committed pair so far is raw pixels.)*
+Two the cross-architecture runs opened:
+
+- **Count ReLU sign flips** between gray and grating against `c`. This was the
+  direct test of the gate-flip reading, and ViT-B/16 has now largely answered
+  it the other way — λ runs +0.93 → −0.62 with no hard gates anywhere — so what
+  the count would now measure is how much of the *ReLU* nets' profile it
+  explains, not whether gating is the mechanism.
+- **A BatchNorm-safe scrambling control.** `--scramble` permutes every
+  `*weight*` tensor, which on a BN net desynchronises γ from
+  `running_mean`/`running_var` and decalibrates rather than degrades. Scramble
+  the running statistics alongside the weights, or leave both alone.
+
+*(Distance-of-means vs mean-of-distances is done and both are recorded on every
+run. The model pair that was missing here now exists on every run from
+2026-07-27 onward.)*
