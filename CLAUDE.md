@@ -413,6 +413,18 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     `lambda_r2` where it carried `logness`, `fit_quality`, `logness_r2diff`.
     **`logness` is gone from the code entirely**; notes written before this date
     quote it, and `result.json` is the authority where they disagree.
+- **λ moves more across frequency than across architecture** (2026-07-28). Every
+  λ in the docs is a **median over the 8 frequencies**. Per-frequency at `prob`:
+  median λ spans **0.43** across the six trained runs, while *within* a run λ
+  spans **0.49** (Caffe) to **1.75** (`vgg19_bn`), extremes disjoint on their
+  intervals in all six. Four show a mid-band (7–28 cyc/img) dip that is resolved
+  against both ends — `vgg19_bn` +0.54, AlexNet +0.42, ResNet-50 +0.41, IN1K
+  +0.22 — and two (Caffe VGG-19, ViT-B/16) run the other way with **no**
+  band-level separation, so read it as four resolved dips plus two nulls.
+  **It is not the training-recipe split**: ViT carries torchvision
+  `IMAGENET1K_V1` like the four that dip. One seed each, and `result.json` holds
+  only the median — per-frequency λ is `res.results[tap].power_fits` off the
+  surfaces. See `wiki/Results.md`.
 - **Always quote λ with its R².** λ locates a response only insofar as the
   family describes it, and this is exactly where the scrambled control bites:
   scrambled `IMAGENET1K_V1` returns a log-*looking* λ ≈ 0.17 while fitting at

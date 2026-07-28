@@ -50,6 +50,12 @@ Four things to read off it before the prose:
 
 Regenerate the whole table with `--load <dir>`; nothing here needs a model.
 
+Every λ above is a **median over eight spatial frequencies**, and that median
+hides more than the differences it is being used to compare: within a single run
+λ spans 0.49–1.75 across frequency against 0.43 between architectures. See
+[λ varies more across frequency than across
+architecture](#λ-varies-more-across-frequency-than-it-does-across-architecture).
+
 ## Where the log response appears along depth
 
 All 45 leaf modules, `--reps 250`, both checkpoints, trained and scrambled —
@@ -374,11 +380,11 @@ rather than two rulers.
 > statistic that is comparable across grids by construction rather than by
 > argument.
 
-## Beyond VGG-19: AlexNet and VGG-19+BN
+## Beyond VGG-19: AlexNet, VGG-19+BN, ResNet-50 and ViT-B/16
 
-The first runs on other architectures (2026-07-28, both `--layers all`, both
-with a scrambled control and a reps companion). Two findings, one of which
-constrains the live hypothesis directly.
+The first runs on other architectures (2026-07-28, all `--layers all`, each with
+a scrambled control and a reps companion). Several findings, two of which
+constrain the live hypothesis directly.
 
 ### The log response does not need depth
 
@@ -495,6 +501,79 @@ BatchNorm. They do not, because **BatchNorm in eval uses fixed running
 statistics and is therefore affine in the input, while LayerNorm normalises by
 the input's own mean and variance and is not.** Only affine prefixes have
 population D = 0.
+
+### λ varies more across frequency than it does across architecture
+
+Every λ on this page is a **median over the eight spatial frequencies**. Resolved
+per frequency at `prob`, all six trained runs (cyc/img across the top):
+
+| Run | 1 | 1.75 | 3.5 | 7 | 14 | 28 | 56 | 75 | median |
+|---|---|---|---|---|---|---|---|---|---|
+| VGG-19 (Caffe) | +0.13 | −0.10 | −0.01 | +0.24 | +0.13 | +0.25 | −0.04 | −0.24 | **+0.059** |
+| VGG-19 (IN1K) | +0.56 | +0.21 | −0.01 | +0.47 | −0.33 | −0.30 | +0.12 | +0.21 | **+0.165** |
+| AlexNet | +0.31 | +0.15 | −0.04 | −0.13 | −0.18 | −0.41 | +0.15 | +0.21 | **+0.053** |
+| VGG-19+BN | +0.52 | +0.22 | −0.18 | −0.53 | −1.23 | −0.66 | −0.20 | −0.34 | **−0.268** |
+| ResNet-50 | +0.22 | −0.18 | −0.40 | −0.50 | −0.27 | −0.44 | +0.04 | −0.02 | **−0.223** |
+| ViT-B/16 | −0.19 | −0.49 | −0.27 | −0.07 | +0.05 | −0.14 | −0.30 | −0.12 | **−0.162** |
+
+**The summarised-away axis is the larger one.** Median λ spans **0.43** across
+all six runs (−0.268 to +0.165). Within a *single* run λ spans **0.49**
+(Caffe) to **1.75** (`vgg19_bn`) across frequency — every run's own frequency
+spread exceeds the entire architecture comparison, and in all six the two
+extreme points' 95% intervals are disjoint. Architecture is the axis this
+section compares on; frequency is the bigger one.
+
+**Four of the six saturate most in the mid band.** Taking low = {1, 1.75},
+mid = {7, 14, 28}, high = {56, 75} — 3.5 cyc/img is the transition and is left
+out, and moving it into either neighbour leaves all six dip signs unchanged:
+
+| Run | low | mid | high | dip below **both** ends | mid-vs-end intervals disjoint? |
+|---|---|---|---|---|---|
+| VGG-19+BN | +0.37 | **−0.81** | −0.27 | **+0.54** | yes |
+| AlexNet | +0.23 | −0.24 | +0.18 | **+0.42** | yes |
+| ResNet-50 | +0.02 | −0.40 | +0.01 | **+0.41** | yes |
+| VGG-19 (IN1K) | +0.39 | −0.05 | +0.16 | **+0.22** | yes |
+| VGG-19 (Caffe) | +0.02 | +0.20 | −0.14 | −0.34 | no |
+| ViT-B/16 | −0.34 | −0.05 | −0.21 | −0.29 | no |
+
+The disjointness test is the mid band's most-saturating point against the
+most-linear end point, on 95% profile-F intervals — e.g. AlexNet's 28 cyc/img
+[−0.54, −0.28] against its 1 cyc/img [+0.15, +0.49].
+
+**The two exceptions run the same way as each other**, mid band more *linear*
+than the ends, and neither is resolved at band level — so the honest reading is
+four resolved dips and two runs with no resolved band-level structure, not four
+against two. Each of the two does have resolved structure somewhere: Caffe
+separates 28 cyc/img (+0.25) from 75 (−0.24), ViT separates 1.75 (−0.49) from
+14 (+0.05).
+
+**This is not the training-recipe split.** That was the obvious guess, given
+the ReLU sawtooth above, and it fails: **ViT-B/16 carries torchvision
+`IMAGENET1K_V1` weights** like the four that dip, and does not dip. Four of the
+five torchvision runs show it and the fifth does not, so the recipe does not
+sort these runs. No mechanism is offered here.
+
+Three caveats, and they are load-bearing:
+
+- **One seed each.** Single-seed *shapes* have misled twice in this repo
+  already — see the scrambled control below.
+- **Some points are barely determined.** `IMAGENET1K_V1` at 7 cyc/img is the
+  worst: interval width **1.57** at λ-R² 0.838, and it carries much of that
+  run's mid-band mean, which is why its dip is the weakest of the four.
+  `vgg19_bn` at 56 cyc/img is 1.06 wide; ViT at 56 reads λ-R² 0.838.
+- **Two of the four dips have no usable null.** `vgg19_bn` and `resnet50` — the
+  largest dip and the third — carry BatchNorm, and their scrambled controls are
+  invalid for the reason in the next subsection.
+
+**`result.json` does not carry this.** Its `per_frequency` block holds the
+log-fit `r2`/`slope`/`intercept`, not λ. Per-frequency λ comes off the committed
+surfaces, no model needed:
+
+```python
+from log_response.experiment import load_result
+res, _ = load_result("results/alexnet-r250-s0")
+[(p.lam, p.r2, p.lo, p.hi) for p in res.results["prob"].power_fits]
+```
 
 ### The scrambling control is not architecture-neutral
 
