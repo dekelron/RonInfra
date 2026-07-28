@@ -84,6 +84,14 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > disagree, `result.json` is right.** Read λ against `lambda_r2`, never alone.
 > See `wiki/Results.md` for what changed substantively.
 
+> **The per-frequency λ is recorded too, since 2026-07-28.** Each
+> `per_frequency` entry carries `lambda`, `lambda_ci` and `lambda_r2` next to
+> the log fit's `r2`/`slope`/`intercept`. The top-level `lambda` is the *median*
+> of those eight, and it discards more than the differences it tends to get
+> compared on — within one run λ spans up to 1.75 across frequency against 0.43
+> between architectures, so two runs with equal median λ can have quite
+> different responses. Again nothing was re-run; the surfaces already held it.
+
 Note that "best mean R²" is not `prob` for either r250 run — that is the finding,
 not a slip. Read the r250 rows with the spacing CV in their notes: the scrambled
 column reaches 0.76–0.92 with a CV of 3.5–4.1, so a high R² there is a line

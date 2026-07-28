@@ -378,14 +378,26 @@ def result_summary(result: ExperimentResult, metadata: dict | None = None) -> di
                 "pooled_r2": _finite(res.pooled.r2),
                 "pooled_slope": _finite(res.pooled.slope),
                 "spacing_cv": _finite(np.nanmean(cvs)),
+                # ``r2``/``slope``/``intercept`` are the log fit; ``lambda*`` is
+                # the power fit, same split as ``mean_r2`` vs ``lambda_r2``
+                # above. The eight lambdas are recorded rather than left to be
+                # re-derived because the headline ``lambda`` is their median,
+                # and it discards more variation than the differences it gets
+                # compared on -- within one run lambda spans up to 1.75 across
+                # frequency against 0.43 between architectures.
                 "per_frequency": [
                     {
                         "frequency": float(f),
                         "r2": _finite(fit.r2),
                         "slope": _finite(fit.slope),
                         "intercept": _finite(fit.intercept),
+                        "lambda": _finite(pf.lam),
+                        "lambda_ci": [_finite(pf.lo), _finite(pf.hi)],
+                        "lambda_r2": _finite(pf.r2),
                     }
-                    for f, fit in zip(result.config.frequencies_cpi, res.per_frequency)
+                    for f, fit, pf in zip(
+                        result.config.frequencies_cpi, res.per_frequency, res.power_fits
+                    )
                 ],
             }
         )

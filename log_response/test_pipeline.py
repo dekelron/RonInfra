@@ -72,6 +72,7 @@ from .experiment import (
     save_run_dir,
     load_result,
     save_figures,
+    result_summary,
 )
 from .provenance import git_provenance, package_versions
 
@@ -1241,6 +1242,45 @@ def test_weights_digest_is_stable_across_resaves():
             fh.write(b"not a checkpoint")
         info = file_fingerprint(text)
         assert info["sha256"] and info["weights_sha256"] is None and info["weights_note"]
+
+
+def test_result_json_records_the_lambdas_the_median_is_taken_over():
+    """The headline ``lambda`` is a median over frequency; the eight must persist.
+
+    They vary by more than the architecture differences the median gets
+    compared on, so a committed directory that states only the median cannot
+    support the comparison being read off it. ``result.json`` is the artifact
+    a reader has -- re-deriving these from the surfaces needs the fitter.
+    """
+    import json
+
+    model = SyntheticFrontEnd()
+    cfg = GratingConfig(size=64, contrasts=(0.05, 0.2, 0.6, 1.0), frequencies_cpi=(7.0, 14.0, 28.0))
+    result = run_experiment(model, cfg, repetitions=2, verbose=False)
+    report = json.loads(json.dumps(result_summary(result)))  # must survive a round trip
+
+    for entry in report["layers"]:
+        res = result.results[entry["layer"]]
+        per_freq = entry["per_frequency"]
+        assert len(per_freq) == len(cfg.frequencies_cpi)
+
+        recorded = [cell["lambda"] for cell in per_freq]
+        fitted = [pf.lam for pf in res.power_fits]
+        assert np.allclose(recorded, fitted, equal_nan=True), entry["layer"]
+
+        # The median of what is recorded must be the headline number, or the
+        # file contradicts itself.
+        assert np.isclose(float(np.nanmedian(recorded)), entry["lambda"]), entry["layer"]
+        assert np.isclose(
+            float(np.nanmean([cell["lambda_r2"] for cell in per_freq])), entry["lambda_r2"]
+        ), entry["layer"]
+
+        for cell, pf in zip(per_freq, res.power_fits):
+            lo, hi = cell["lambda_ci"]
+            assert np.isclose(lo, pf.lo) and np.isclose(hi, pf.hi)
+            assert lo <= cell["lambda"] <= hi, (entry["layer"], cell["frequency"])
+            # The log fit's r2 is a different statistic and keeps its own key.
+            assert "r2" in cell and "lambda_r2" in cell
 
 
 def _run_all():
