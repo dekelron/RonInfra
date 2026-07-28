@@ -1,0 +1,57 @@
+{
+  "code": {
+    "available": true,
+    "branch": "master",
+    "commit": "9101de3820ba8efda491cdc6053e7b625cba7827",
+    "dirty": false,
+    "dirty_files": null
+  },
+  "command": "run.py --model alexnet --reps 50 --seed 2 --save-run results/alexnet-r50-s2 --notes Seed sweep for the per-frequency lambda dip at prob: seed 2 of 3. Tests whether the mid-band (7-28 cyc/img) saturation survives a new image sample, which the r50/r250 pair at seed 0 could not. --figures out/ --layers all",
+  "created_utc": "2026-07-28T07:11:11Z",
+  "device": "cpu",
+  "environment": {
+    "cpu_count": 4,
+    "executable": "/opt/hostedtoolcache/Python/3.11.15/x64/bin/python",
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    "wall_seconds": 138.8
+  },
+  "layers": [
+    "features.0",
+    "features.1",
+    "features.2",
+    "features.3",
+    "features.4",
+    "features.5",
+    "features.6",
+    "features.7",
+    "features.8",
+    "features.9",
+    "features.10",
+    "features.11",
+    "features.12",
+    "avgpool",
+    "classifier.1",
+    "classifier.2",
+    "classifier.4",
+    "classifier.5",
+    "classifier.6",
+    "logits",
+    "prob"
+  ],
+  "model": "alexnet",
+  "notes": "Seed sweep for the per-frequency lambda dip at prob: seed 2 of 3. Tests whether the mid-band (7-28 cyc/img) saturation survives a new image sample, which the r50/r250 pair at seed 0 could not.",
+  "scramble": false,
+  "scramble_seed": 2,
+  "seed": 2,
+  "versions": {
+    "numpy": "2.4.6",
+    "python": "3.11.15",
+    "torch": "2.13.0+cpu",
+    "torchvision": "0.28.0+cpu"
+  },
+  "weights": {
+    "pretrained_verified": true,
+    "source": "torchvision alexnet IMAGENET1K_V1"
+  }
+}
