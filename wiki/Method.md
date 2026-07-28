@@ -209,6 +209,14 @@ CI   = { λ : RSS(λ) ≤ RSS_min·(1 + F(1, n−3, 0.95)/(n−3)) }   # profile
 | < 0 | saturating |
 | > 1 | accelerating |
 
+**That median is a real reduction, not a formality.** λ is fitted per frequency
+and then collapsed to one number per layer, and the eight values it collapses
+are not tightly clustered: at `prob`, λ spans 0.49 (Caffe VGG-19) to 1.75
+(`vgg19_bn`) across frequency, against 0.43 between architectures — the summary
+discards more variation than the comparisons it is used for resolve. Only the
+median reaches `result.json`; the per-frequency fits live on the surfaces, as
+`res.results[tap].power_fits`. See [Results](Results.md#λ-varies-more-across-frequency-than-it-does-across-architecture).
+
 One property the R²-of-a-log-fit does not have:
 
 - **An uninformative fit is visible.** Pure noise returns the entire search
@@ -340,6 +348,13 @@ Controls to run: within-layer weight scrambling; comparison of `logits` vs
   direction of the claim without making the causal reading any cleaner.
 * No individual unit computes a logarithm; the log-likeness is a property of the
   pooled response across units, not of any single unit.
+* **Every reported λ is a median over eight frequencies, and the response is not
+  frequency-flat.** Four of the six trained runs saturate most at 7–28 cyc/img
+  and rise toward linear at both ends, resolved against both ends by their
+  intervals. So a single λ names a layer's contrast response only in the same
+  loose sense that a median names a distribution, and two runs with equal median
+  λ can have different frequency structure. Untested how much of the
+  architecture differences on this page survive per frequency.
 
 ## Stronger tests to add
 
@@ -367,6 +382,11 @@ Two the cross-architecture runs opened:
   `*weight*` tensor, which on a BN net desynchronises γ from
   `running_mean`/`running_var` and decalibrates rather than degrades. Scramble
   the running statistics alongside the weights, or leave both alone.
+- **Re-run the cross-architecture comparison per frequency.** The λ medians
+  differ by less than λ varies across frequency *within* each run, so the
+  architecture ordering on this page has not been shown to hold at any single
+  frequency. Needs no new runs — the surfaces are committed — but it does need
+  `result.json` to carry the per-frequency λ, which it currently does not.
 
 *(Distance-of-means vs mean-of-distances is done and both are recorded on every
 run. The model pair that was missing here now exists on every run from

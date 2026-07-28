@@ -16,6 +16,6 @@ Docs live in [`wiki/`](wiki/):
 | Page | Contents |
 |------|----------|
 | [Running](wiki/Running.md) | Install, back-ends, flags, and per-environment tips (local / sandbox / GitHub runners). |
-| [Results](wiki/Results.md) | Measured numbers. The paper's `prob` R² reproduces at **0.980** on the checkpoint the paper used (Oxford/Caffe); torchvision's `IMAGENET1K_V1` gives a different profile. Across five architectures `prob` λ runs +0.05 to −0.27, and neither depth nor rectifiers turn out to be what produces the compression. |
+| [Results](wiki/Results.md) | Measured numbers. The paper's `prob` R² reproduces at **0.980** on the checkpoint the paper used (Oxford/Caffe); torchvision's `IMAGENET1K_V1` gives a different profile. Across five architectures `prob` λ runs +0.05 to −0.27, and neither depth nor rectifiers turn out to be what produces the compression — but λ moves *more* across spatial frequency within one net than it does between nets. |
 | [Method](wiki/Method.md)   | The exact procedure: inputs, metric, fit, caveats. |
 | [1701.04674](wiki/1701.04674-adaptation-as-readout.pdf) | The source paper (PDF): *Adaptation as Readout*, ICLR 2017 submission. |
