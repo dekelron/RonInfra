@@ -8,7 +8,19 @@ Reps companion to vgg19-bn-r250-s0: separates a real locally-linear response fro
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Reps companion to
+[`vgg19-bn-scramble-r250-s0`](../vgg19-bn-scramble-r250-s0/notes.md), and it
+confirms that run's reading that the λ there means nothing.
+
+`prob` λ goes **−2.794 → −1.258** across the rep change — a move of 1.5, where
+every other run in the repo moves by less than 0.1 — and the 95% interval opens
+to **[−3.00, +1.32]**, i.e. very nearly the entire search range. That is the
+property the λ statistic was adopted for: *pure noise returns the whole range
+rather than a confident number*. λ-R² is 0.487.
+
+So the scrambled BN control has no measurable contrast exponent at `prob`. See
+the parent run for why — the scramble decalibrates BatchNorm rather than
+degrading it, saturating the softmax.
 
 ## Reproduce
 

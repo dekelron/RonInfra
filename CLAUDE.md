@@ -311,15 +311,52 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   - **Corrected 2026-07-26.** The general form of this claim was committed
     earlier the same day, carried over from the retired metric's write-up
     without re-checking it per checkpoint. It was wrong for Caffe.
-- **Why λ ≈ 1 survives 33 layers — the live hypothesis.** The grating is a
-  *perturbation* `gray + c·g` about a fixed operating point, and a ReLU net is
-  piecewise linear, so while the perturbation does not flip ReLU gates,
-  `D = |J·(c·g)| = c·|J·g|` exactly — linear in contrast at any depth. On this
-  reading λ < 1 is the signature of gates actually switching with contrast, and
-  the log response is what emerges once they do. Caffe stays in that regime for
-  the whole conv stack; `IMAGENET1K_V1` leaves it gradually from mid-stack.
-  **Untested.** The direct check is to count ReLU sign flips between gray and
-  grating against `c`; that needs a forward pass, so it is an Actions job.
+  - **AlexNet reproduces it (2026-07-28): −0.218 / +0.216, 4/5 and 0/2.** So it
+    is not VGG-specific either. Both nets that show it carry **torchvision**
+    weights and the one that does not carries the original Oxford/Caffe
+    weights — the sawtooth tracks the training recipe, not the architecture.
+    Three runs, so this is a correlation, not a mechanism.
+
+- **The scrambling control is not architecture-neutral** (2026-07-28). It
+  permutes every `*weight*` tensor, which on a BatchNorm net permutes γ across
+  channels while `running_mean`/`running_var` stay put — each channel then gets
+  one channel's statistics and another's scale. That **decalibrates** rather
+  than degrades: scrambled `vgg19_bn` gives r(logits, prob) = **0.162** and
+  D_prob/D_logits = **1e-10**, where every other scrambled run in the repo sits
+  in the softmax's affine regime at r = 1.000000 and exactly 1/1000. Its `prob`
+  mean R² 0.214 and λ −2.794 (λ-R² 0.613, interval nearly the whole search
+  range at r50) are **not comparable** to VGG-19's 0.429 or AlexNet's 0.865 —
+  do not put them in the same table. A control for a normalised architecture
+  has to scramble the running statistics with the weights, or leave both alone.
+
+- **The metric's floor is a property of affineness, not of depth-one.** VGG-19
+  put only `features.0` on it, which made "the first conv" a tempting shorthand.
+  `vgg19_bn` puts **five** taps there and the second is `features.1`, a
+  **BatchNorm layer reading 99.3% noise** — BN in eval is affine, so composed
+  with conv1 it is still affine in the input and its population D is identically
+  zero. Any affine prefix of a network reads the floor, however many modules it
+  spans.
+- **Why λ ≈ 1 survives 33 layers — the live hypothesis, now constrained.** The
+  grating is a *perturbation* `gray + c·g` about a fixed operating point, and a
+  ReLU net is piecewise linear, so while the perturbation does not flip ReLU
+  gates, `D = |J·(c·g)| = c·|J·g|` exactly — linear in contrast at any depth. On
+  this reading λ < 1 is the signature of gates actually switching with contrast,
+  and the log response is what emerges once they do. Caffe stays in that regime
+  for the whole conv stack; `IMAGENET1K_V1` leaves it gradually from mid-stack.
+  The direct check is still to count ReLU sign flips between gray and grating
+  against `c`; that needs a forward pass, so it is an Actions job.
+  - **"Rectifications carry it" is now insufficient — measured 2026-07-28.**
+    `vgg19_bn` has VGG-19's topology, ReLU count, task and stimulus, and
+    BatchNorm in eval is a per-channel **affine** map that cannot add gates. Its
+    conv stack nonetheless sits at **λ = −0.071** (R² 0.971) against Caffe's
+    **+1.06** and IN1K's +0.69 — a shift of ~1.1, larger than the entire Caffe
+    depth profile, with zero rectifications added. So the controlling variable
+    is the **operating point** units sit at relative to their ReLU, not the
+    number of rectifiers passed. The perturbation reading survives; the
+    "rectifications, not depth" phrasing does not.
+  - **Depth was already ruled out independently**: AlexNet, 8 weight layers,
+    reaches `prob` λ **+0.053** at R² 0.985 and peaks at `prob` over all 21
+    taps.
   - ~~**A competing explanation has to be excluded first**~~ — **excluded.** An
     empty tap reads the same λ ≈ 1 at high fit quality, and 26 of the 37 Caffe
     conv taps sit within 0.15 of the noise-floor λ. The reps sweep (item 5) says

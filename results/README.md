@@ -13,8 +13,21 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > `mean_of_distances`. Earlier runs simply lack it and load unchanged; adding it
 > left every committed surface bit-identical.
 
+> **Runs from 2026-07-28 are the first that are not VGG-19.** `alexnet` and
+> `vgg19_bn`, both `--layers all`, both with their scrambled control and their
+> reps companion. Read them against the VGG-19 rows below: `prob` λ is +0.06
+> (Caffe) / +0.17 (IN1K) / **+0.05** (AlexNet) / **−0.27** (`vgg19_bn`).
+
 | Run | Model | Reps | Weights | Headline | Notes |
 |---|---|---|---|---|---|
+| [`alexnet-r250-s0`](alexnet-r250-s0/notes.md) | AlexNet, trained | 250 | `IMAGENET1K_V1` | `prob` **0.963**, λ **+0.053** | **The log law does not need depth.** 8 weight layers, and `prob` is the peak of 21 taps — the paper's structure, which among VGG runs only Caffe gave. |
+| [`alexnet-r50-s0`](alexnet-r50-s0/notes.md) | AlexNet, trained | 50 | `IMAGENET1K_V1` | 1/21 on the floor | Only `features.0` (2.240 ≈ √5); ≤1.8% noise everywhere else. Cleaner than VGG-19. |
+| [`alexnet-scramble-r250-s0`](alexnet-scramble-r250-s0/notes.md) | AlexNet, scrambled | 250 | `IMAGENET1K_V1` | `prob` 0.865, λ +0.015 | Control. λ is *closer to log* than trained — only R² (0.889 vs 0.985) separates them. Peak moves to `features.9`. |
+| [`alexnet-scramble-r50-s0`](alexnet-scramble-r50-s0/notes.md) | AlexNet, scrambled | 50 | `IMAGENET1K_V1` | `prob` 0.857 | Control companion. Rep-invariant, so the 0.098 gap is a property of the weights. |
+| [`vgg19-bn-r250-s0`](vgg19-bn-r250-s0/notes.md) | VGG-19+BN, trained | 250 | `IMAGENET1K_V1` | conv median λ **−0.071** | **BatchNorm moves the whole conv stack to the log law without adding a rectification.** Against Caffe's +1.06 and IN1K's +0.69. `prob` λ −0.268 — past log, saturating. |
+| [`vgg19-bn-r50-s0`](vgg19-bn-r50-s0/notes.md) | VGG-19+BN, trained | 50 | `IMAGENET1K_V1` | 5/61 on the floor | `features.1` is a **BatchNorm layer reading pure noise** (99.3%) — the floor is a property of affineness, not of being first. Headline taps ≤0.8%. |
+| [`vgg19-bn-scramble-r250-s0`](vgg19-bn-scramble-r250-s0/notes.md) | VGG-19+BN, scrambled | 250 | `IMAGENET1K_V1` | **not comparable** | The scramble decalibrates BN rather than degrading it: r(logits,prob) **0.162**, ratio 1e-10, softmax saturated. λ uninformative (R² 0.613). Do not table it against the others. |
+| [`vgg19-bn-scramble-r50-s0`](vgg19-bn-scramble-r50-s0/notes.md) | VGG-19+BN, scrambled | 50 | `IMAGENET1K_V1` | CI spans the search range | Confirms the above: λ moves 1.5 across the rep change and the interval opens to [−3.00, +1.32]. |
 | [`vgg19-r250-s0-alllayers-linear`](vgg19-r250-s0-alllayers-linear/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Grid control. Profile survives: mean \|Δλ\| 0.045, **44/44** steps agree in direction. |
 | [`vgg19-scramble-r250-s0-alllayers-linear`](vgg19-scramble-r250-s0-alllayers-linear/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Control for the above. Mean \|Δλ\| 0.024; read against its R² 0.72, which is what makes λ here uninformative. |
 | [`vgg19-r250-s0-alllayers-fixed`](vgg19-r250-s0-alllayers-fixed/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | all 45 taps | Depth profile. conv median +0.69, `prob` +0.165. (Its λ 0.922 at conv1_1 is the noise floor, not a measurement — see `data-r250-s0`.) |

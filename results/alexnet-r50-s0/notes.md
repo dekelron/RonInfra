@@ -8,7 +8,21 @@ Reps companion to alexnet-r250-s0: D(50)/D(250) against sqrt(5)=2.236 says which
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+**Only `features.0` is on the floor — 1 of 21.** Against
+[`alexnet-r250-s0`](../alexnet-r250-s0/notes.md):
+
+| tap | D(50)/D(250) | noise fraction | reading |
+|---|---|---|---|
+| `features.0` | **2.240** | 100% | the floor (√5 = 2.236) |
+| everything else | ≤ 1.022 | ≤ **1.8%** | signal |
+
+Cleaner than VGG-19, where `features.1`/`.2` were partial cases at 31% and 36%.
+AlexNet's conv1 has stride 4 and an 11×11 kernel, so the first ReLU is already
+well clear of the floor.
+
+λ at `prob` moves +0.053 → **+0.043** across the 5× rep change and mean R²
+0.963 → 0.959, i.e. the headline is rep-invariant to within its own CI. The
+declining conv profile is real, not an artifact of repetition count.
 
 ## Reproduce
 

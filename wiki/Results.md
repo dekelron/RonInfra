@@ -374,6 +374,97 @@ rather than two rulers.
 > statistic that is comparable across grids by construction rather than by
 > argument.
 
+## Beyond VGG-19: AlexNet and VGG-19+BN
+
+The first runs on other architectures (2026-07-28, both `--layers all`, both
+with a scrambled control and a reps companion). Two findings, one of which
+constrains the live hypothesis directly.
+
+### The log response does not need depth
+
+[`alexnet-r250-s0`](../results/alexnet-r250-s0/notes.md): `prob` λ = **+0.053**
+[−0.04, +0.16] at R² 0.985, mean R² **0.963**, and `prob` is the **peak of all
+21 taps**. AlexNet has 8 weight layers to VGG-19's 19, so whatever produces the
+log law is not 33 layers of composition.
+
+It also reproduces the paper's §5 *structure* on canonical torchvision weights,
+which among the VGG-19 runs only the converted Caffe checkpoint did — `prob`
+highest, early/middle layers much lower. `IMAGENET1K_V1` VGG-19 peaks at
+`classifier.4` instead.
+
+### BatchNorm moves the conv stack to the log law, adding no rectifications
+
+[`vgg19-bn-r250-s0`](../results/vgg19-bn-r250-s0/notes.md), against the two
+VGG-19 checkpoints — same topology, same ReLU count, same task, same stimulus:
+
+| | conv-stack median λ | `prob` λ |
+|---|---|---|
+| converted Caffe VGG-19 | **+1.06** (flatly linear, R² 0.999) | +0.059 |
+| `IMAGENET1K_V1` VGG-19 | +0.69 | +0.165 |
+| **`vgg19_bn`** | **−0.071** (R² 0.971) | **−0.268** |
+
+BatchNorm in eval mode is a per-channel **affine** map — it cannot add gates.
+Yet the conv stack goes from linear-in-contrast to sitting at the log law
+across 41 taps, a shift of ~1.1 in λ, larger than the entire depth profile of
+the Caffe checkpoint. At the output λ goes *past* log into saturating.
+
+So "the crossover to log is carried by rectifications" is not sufficient as
+stated. What BN changes is the **operating point** each unit sits at relative
+to its ReLU. The perturbation reading survives — that is still what λ ≈ 1
+means — but the controlling variable is where the units sit, not how many
+rectifiers they pass.
+
+### The sawtooth tracks the training recipe, not the architecture
+
+Per transition type on λ, trained runs, `features.*`:
+
+| | conv → ReLU | ReLU → conv |
+|---|---|---|
+| `IMAGENET1K_V1` VGG-19 | −0.155 | +0.166 |
+| **AlexNet** (torchvision) | **−0.218** | **+0.216** |
+| converted Caffe VGG-19 | +0.023 | −0.015 |
+| `vgg19_bn` (BN → ReLU) | +0.071 | −0.153 |
+
+Both nets carrying torchvision weights show it; the one carrying the original
+Oxford/Caffe weights does not. A correlation across three runs, not a
+mechanism — and per rule 4 the disagreement stands rather than being resolved.
+
+### The floor is a property of affineness, not of being the first layer
+
+[`vgg19-bn-r50-s0`](../results/vgg19-bn-r50-s0/notes.md) puts **five** taps on
+or near the noise floor where VGG-19 had one, and the second is `features.1` —
+a **BatchNorm layer reading 99.3% noise**. BN in eval is affine, so composed
+with conv1 it is still affine in the input and its population D is identically
+zero. Everything from `features.12` on is under 13% noise and the headline taps
+under 1%, so the λ values above are real measurements.
+
+### The scrambling control is not architecture-neutral
+
+The one methodological finding, and it limits the tool rather than the nets.
+`--scramble` permutes every `*weight*` tensor; on a BN net that permutes γ
+across channels while leaving `running_mean`/`running_var` in place, so each
+channel is normalised by one channel's statistics and rescaled by another's.
+That **decalibrates** the network instead of degrading it:
+
+| | r(logits, prob) | median D_prob/D_logits |
+|---|---|---|
+| scrambled VGG-19, either checkpoint | 1.000000 | 1/1000 |
+| scrambled AlexNet | 1.000000 | 1/1000 |
+| **scrambled `vgg19_bn`** | **0.162** | **1.1e-10** |
+
+Every other scrambled run sits in the softmax's affine regime. Here the logits
+are large enough to saturate it to one-hot. `prob` mean R² 0.214 and λ −2.794
+at λ-R² 0.613 — the family does not describe it, the λ is uninformative, and
+[the r50 companion](../results/vgg19-bn-scramble-r50-s0/notes.md) confirms it
+by returning nearly the entire search range as its interval. **Do not table
+0.214 against VGG-19's 0.429 or AlexNet's 0.865.** A control for a normalised
+architecture has to leave the normalisation statistics consistent with the
+weights it scrambles.
+
+Incidentally, scrambled AlexNet reproduces the VGG-19 softmax finding exactly:
+r(logits, prob) = 1.000000 at ratio 1/1000, against 0.977 trained. The
+softmax's contribution requires trained, confident logits; it is not automatic.
+
 ## VGG-19, full grid on `IMAGENET1K_V1`
 
 > **This is not the paper's checkpoint.** §8.1 of the paper used MatConvNet's
