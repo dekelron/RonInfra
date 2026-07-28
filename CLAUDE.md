@@ -317,25 +317,36 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     weights — the sawtooth tracks the training recipe, not the architecture.
     Three runs, so this is a correlation, not a mechanism.
 
-- **The scrambling control is not architecture-neutral** (2026-07-28). It
-  permutes every `*weight*` tensor, which on a BatchNorm net permutes γ across
-  channels while `running_mean`/`running_var` stay put — each channel then gets
-  one channel's statistics and another's scale. That **decalibrates** rather
-  than degrades: scrambled `vgg19_bn` gives r(logits, prob) = **0.162** and
-  D_prob/D_logits = **1e-10**, where every other scrambled run in the repo sits
-  in the softmax's affine regime at r = 1.000000 and exactly 1/1000. Its `prob`
-  mean R² 0.214 and λ −2.794 (λ-R² 0.613, interval nearly the whole search
-  range at r50) are **not comparable** to VGG-19's 0.429 or AlexNet's 0.865 —
-  do not put them in the same table. A control for a normalised architecture
-  has to scramble the running statistics with the weights, or leave both alone.
+- **The scrambling control breaks on nets with running statistics** (2026-07-28,
+  sharpened the same day). It permutes every `*weight*` tensor, which on a
+  BatchNorm net permutes γ across channels while `running_mean`/`running_var`
+  stay put — each channel then gets one channel's statistics and another's
+  scale. That **decalibrates** rather than degrades, saturating the softmax to
+  one-hot:
 
-- **The metric's floor is a property of affineness, not of depth-one.** VGG-19
-  put only `features.0` on it, which made "the first conv" a tempting shorthand.
-  `vgg19_bn` puts **five** taps there and the second is `features.1`, a
-  **BatchNorm layer reading 99.3% noise** — BN in eval is affine, so composed
-  with conv1 it is still affine in the input and its population D is identically
-  zero. Any affine prefix of a network reads the floor, however many modules it
-  spans.
+  | scrambled | running stats? | r(logits, prob) | D_prob/D_logits |
+  |---|---|---|---|
+  | VGG-19 (either ckpt), AlexNet | no | 1.000000 | 1/1000 |
+  | **ViT-B/16** (LayerNorm) | **no** | 0.999975 | 1/1000 |
+  | **`vgg19_bn`** | **yes** | **0.162** | **1.1e-10** |
+  | **`resnet50`** | **yes** | **0.673** | **1.7e-10** |
+
+  The split is **not** "normalised vs not" — ViT is normalised throughout and
+  scrambles cleanly, because LayerNorm has no buffers to desynchronise. The BN
+  pair's numbers (`vgg19_bn` 0.214, `resnet50` 0.658) are **not comparable** to
+  VGG-19's 0.429, AlexNet's 0.865 or ViT's 0.797; both r50 companions return
+  most or all of the search range as their λ interval. Fix, if a BN control is
+  wanted: scramble the running statistics with the weights, or leave both alone.
+
+- **The metric's floor is a property of affineness, not of depth-one** — and
+  BatchNorm counts while LayerNorm does not. VGG-19 put only `features.0` on it,
+  which made "the first conv" a tempting shorthand. `vgg19_bn` puts `features.1`
+  there too (a **BatchNorm layer at 99.3% noise**) and `resnet50` puts `bn1`
+  there, because BN in eval uses fixed running statistics and is therefore
+  affine in the input. **ViT-B/16 stops at `conv_proj`**: LayerNorm normalises
+  by the input's own mean and variance, so it is not affine and has no
+  zero-population floor. Predicting otherwise for ViT was wrong; the rule is
+  affineness, exactly.
 - **Why λ ≈ 1 survives 33 layers — the live hypothesis, now constrained.** The
   grating is a *perturbation* `gray + c·g` about a fixed operating point, and a
   ReLU net is piecewise linear, so while the perturbation does not flip ReLU
@@ -357,6 +368,16 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   - **Depth was already ruled out independently**: AlexNet, 8 weight layers,
     reaches `prob` λ **+0.053** at R² 0.985 and peaks at `prob` over all 21
     taps.
+  - **And rectifiers are not needed at all — ViT-B/16, 2026-07-28.** No ReLU
+    anywhere (GELU is smooth, no hard gate), and λ still runs **+0.926** at
+    `conv_proj` to **−0.617** mid-encoder, −0.162 at `prob` (R² 0.933). Gate
+    flipping cannot be the mechanism because there are no gates. What survives
+    across all four architectures is the **operating point** reading.
+  - **Skip connections do not preserve linearity either.** ResNet-50 was run to
+    test whether the identity path keeps an affine component alive deep — it
+    does not: `layer3`/`layer4` median λ **−0.262** with **0/85** taps within
+    0.15 of λ = 1, and no deep tap on the floor (max 5.1% noise outside the
+    first three modules).
   - ~~**A competing explanation has to be excluded first**~~ — **excluded.** An
     empty tap reads the same λ ≈ 1 at high fit quality, and 26 of the 37 Caffe
     conv taps sit within 0.15 of the noise-floor λ. The reps sweep (item 5) says

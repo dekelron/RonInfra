@@ -438,6 +438,64 @@ with conv1 it is still affine in the input and its population D is identically
 zero. Everything from `features.12` on is under 13% noise and the headline taps
 under 1%, so the λ values above are real measurements.
 
+### The compression does not need a rectifier at all
+
+[`vit-b-16-r250-s0`](../results/vit-b-16-r250-s0/notes.md) is the sharpest test
+available of the gate-flip reading, and it fails it. ViT-B/16 has **no ReLU
+anywhere** — GELU is smooth, so there are no hard gates to switch — and λ
+travels from **+0.926** at the patch embedding to **−0.617** mid-encoder,
+landing at −0.162 at `prob` (R² 0.933).
+
+Put beside `vgg19_bn`, where an affine normalisation moved the conv stack by
+~1.1 in λ while adding no rectifications, the surviving reading is that what
+sets λ is the **operating point** units sit at relative to whatever
+nonlinearity is present — not the count of rectifiers, and not their hardness.
+
+### Skip connections do not hold the response linear
+
+[`resnet50-r250-s0`](../results/resnet50-r250-s0/notes.md) was launched to test
+a specific prediction: that the identity path keeps an affine component alive
+deep into the network, so λ ≈ 1 would persist there *and* those taps would read
+the noise floor. Both halves are false.
+
+| | median λ | within 0.15 of λ = 1 |
+|---|---|---|
+| `layer1`/`layer2` (67 taps) | +0.729 | — |
+| `layer3`/`layer4` (85 taps) | **−0.262** | **0%** |
+
+Not one deep tap sits near λ = 1, and outside the first three modules the
+largest noise fraction anywhere is 5.1%. The profile declines smoothly with
+depth, like every other architecture measured.
+
+### The reuse fix was load-bearing, not hygiene
+
+The best tap in ResNet-50 — mean R² **0.957**, the highest of all 160 — is
+`layer2.3.relu@2`, the *second* firing of a shared ReLU module. Before the hook
+fix in `f9ab386` that activation did not exist in any profile: `self._acts[name]`
+kept only the last firing. Across all 32 reuse slots, median
+|λ(base) − λ(@n)| = **0.167** and max **0.554**, so the discarded activations
+were substantively different from the survivors rather than near-duplicates.
+
+### The floor tracks affineness exactly — BatchNorm yes, LayerNorm no
+
+Four architectures now, and the taps on the metric's noise floor are precisely
+the affine prefix in each:
+
+| net | on the floor | why it stops there |
+|---|---|---|
+| VGG-19 | `features.0` | conv1 only; ReLU next |
+| AlexNet | `features.0` | conv1 only |
+| `vgg19_bn` | `features.0`, **`features.1`** | BN in eval is affine |
+| ResNet-50 | `conv1`, **`bn1`** | same |
+| ViT-B/16 | `conv_proj` **only** | **LayerNorm is not affine** |
+
+The ViT case was a failed prediction worth recording: the expectation was that
+`conv_proj` plus the first LayerNorm would both read the floor, by analogy with
+BatchNorm. They do not, because **BatchNorm in eval uses fixed running
+statistics and is therefore affine in the input, while LayerNorm normalises by
+the input's own mean and variance and is not.** Only affine prefixes have
+population D = 0.
+
 ### The scrambling control is not architecture-neutral
 
 The one methodological finding, and it limits the tool rather than the nets.
@@ -446,20 +504,28 @@ across channels while leaving `running_mean`/`running_var` in place, so each
 channel is normalised by one channel's statistics and rescaled by another's.
 That **decalibrates** the network instead of degrading it:
 
-| | r(logits, prob) | median D_prob/D_logits |
-|---|---|---|
-| scrambled VGG-19, either checkpoint | 1.000000 | 1/1000 |
-| scrambled AlexNet | 1.000000 | 1/1000 |
-| **scrambled `vgg19_bn`** | **0.162** | **1.1e-10** |
+| | running stats? | r(logits, prob) | median D_prob/D_logits |
+|---|---|---|---|
+| scrambled VGG-19, either checkpoint | no | 1.000000 | 1/1000 |
+| scrambled AlexNet | no | 1.000000 | 1/1000 |
+| scrambled **ViT-B/16** (LayerNorm) | **no** | 0.999975 | 1/1000 |
+| scrambled **`vgg19_bn`** | **yes** | **0.162** | **1.1e-10** |
+| scrambled **`resnet50`** | **yes** | **0.673** | **1.7e-10** |
 
-Every other scrambled run sits in the softmax's affine regime. Here the logits
-are large enough to saturate it to one-hot. `prob` mean R² 0.214 and λ −2.794
-at λ-R² 0.613 — the family does not describe it, the λ is uninformative, and
-[the r50 companion](../results/vgg19-bn-scramble-r50-s0/notes.md) confirms it
-by returning nearly the entire search range as its interval. **Do not table
-0.214 against VGG-19's 0.429 or AlexNet's 0.865.** A control for a normalised
-architecture has to leave the normalisation statistics consistent with the
-weights it scrambles.
+The split is exact and it is not "normalised vs not": **ViT-B/16 is normalised
+throughout and scrambles cleanly**, because LayerNorm carries no running
+statistics for the permutation to desynchronise. The two that break are the two
+with BatchNorm buffers.
+
+On the broken pair the logits grow large enough to saturate the softmax to
+one-hot, ten orders of magnitude below the affine-regime ratio. `vgg19_bn`
+gives `prob` mean R² 0.214 and λ −2.794 at λ-R² 0.613; `resnet50` gives 0.658
+and λ −0.122 at λ-R² 0.692. Both r50 companions return most or all of the
+search range as their interval. **Do not table either against VGG-19's 0.429,
+AlexNet's 0.865 or ViT's 0.797.**
+
+The fix, when someone wants a BatchNorm control: scramble `running_mean` and
+`running_var` with the weights, or leave both alone.
 
 Incidentally, scrambled AlexNet reproduces the VGG-19 softmax finding exactly:
 r(logits, prob) = 1.000000 at ratio 1/1000, against 0.977 trained. The

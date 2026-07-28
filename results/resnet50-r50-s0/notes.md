@@ -8,7 +8,25 @@ Reps companion to resnet50-r250-s0. Load-bearing here rather than routine: the w
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Reps companion to [`resnet50-r250-s0`](../resnet50-r250-s0/notes.md).
+
+| tap | D(50)/D(250) | noise fraction |
+|---|---|---|
+| `conv1` | 2.218 | **98.5%** |
+| `bn1` (BatchNorm) | 2.220 | **98.7%** |
+| `relu` | 1.834 | 67.5% |
+| everything else (157 taps) | ≤ 1.063 | ≤ **5.1%** |
+| `logits`, `prob` | ≈ 1.000 | ≈ **0%** |
+
+Three taps on or near the floor, and the first two are the affine prefix —
+`conv1` followed by `bn1`, both reading essentially pure 1/√reps noise. This is
+the third architecture to show it and the second to show a **BatchNorm layer**
+on the floor, after `vgg19_bn`'s `features.1`.
+
+Everything else carries signal to within 5.1%, which is what kills the
+residual-stream hypothesis the parent run was testing: if the identity path
+kept an affine component alive, deep taps would fall with repetition count.
+None do. λ at `prob` is −0.223 at both rep counts.
 
 ## Reproduce
 

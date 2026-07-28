@@ -8,7 +8,15 @@ Reps companion to resnet50-r250-s0. Load-bearing here rather than routine: the w
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Confirms [the parent run](../resnet50-scramble-r250-s0/notes.md) is measuring
+nothing at `prob`: λ moves −0.122 → **+0.028** across the rep change and the
+95% interval opens to **[−3.00, +4.00]** — the entire search range, at λ-R²
+0.460. That is the property λ was adopted for; pure noise says so instead of
+returning a confident number.
+
+The scramble decalibrates BatchNorm rather than degrading the weights. Do not
+quote a trained-minus-scrambled gap for this architecture until the control
+scrambles the running statistics alongside the weights.
 
 ## Reproduce
 

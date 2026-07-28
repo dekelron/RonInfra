@@ -13,13 +13,30 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > `mean_of_distances`. Earlier runs simply lack it and load unchanged; adding it
 > left every committed surface bit-identical.
 
-> **Runs from 2026-07-28 are the first that are not VGG-19.** `alexnet` and
-> `vgg19_bn`, both `--layers all`, both with their scrambled control and their
-> reps companion. Read them against the VGG-19 rows below: `prob` λ is +0.06
-> (Caffe) / +0.17 (IN1K) / **+0.05** (AlexNet) / **−0.27** (`vgg19_bn`).
+> **Runs from 2026-07-28 are the first that are not VGG-19.** `alexnet`,
+> `vgg19_bn`, `resnet50` and `vit_b_16` — all `--layers all`, each with its
+> scrambled control and its reps companion. `prob` λ across the six
+> architecture/checkpoint combinations now measured:
+>
+> | +0.05 | +0.06 | +0.17 | −0.16 | −0.22 | −0.27 |
+> |---|---|---|---|---|---|
+> | AlexNet | VGG-19 Caffe | VGG-19 IN1K | ViT-B/16 | ResNet-50 | `vgg19_bn` |
+>
+> **Two of the four scrambled controls are invalid.** `vgg19_bn` and `resnet50`
+> carry BatchNorm; `--scramble` permutes γ while the running statistics stay
+> put, which decalibrates rather than degrades. Their numbers are recorded and
+> explicitly not comparable — see either notes file.
 
 | Run | Model | Reps | Weights | Headline | Notes |
 |---|---|---|---|---|---|
+| [`resnet50-r250-s0`](resnet50-r250-s0/notes.md) | ResNet-50, trained | 250 | `IMAGENET1K_V1` | peak **0.957 at `layer2.3.relu@2`** | The peak tap is a **reuse slot** — an activation the old hook discarded. `prob` λ −0.223. Residual-stream prediction **falsified**: 0% of deep taps near λ=1. |
+| [`resnet50-r50-s0`](resnet50-r50-s0/notes.md) | ResNet-50, trained | 50 | `IMAGENET1K_V1` | 3/160 on the floor | `conv1` + `bn1` (the affine prefix) at 98.5/98.7% noise; ≤5.1% everywhere else. |
+| [`resnet50-scramble-r250-s0`](resnet50-scramble-r250-s0/notes.md) | ResNet-50, scrambled | 250 | `IMAGENET1K_V1` | **not comparable** | Same BatchNorm decalibration as `vgg19_bn`: r(logits,prob) 0.673, ratio 1.7e-10, λ-R² 0.692. |
+| [`resnet50-scramble-r50-s0`](resnet50-scramble-r50-s0/notes.md) | ResNet-50, scrambled | 50 | `IMAGENET1K_V1` | CI = whole search range | λ moves to +0.028 with interval [−3.00, +4.00]. Confirms the above measures nothing. |
+| [`vit-b-16-r250-s0`](vit-b-16-r250-s0/notes.md) | ViT-B/16, trained | 250 | `IMAGENET1K_V1` | `prob` λ **−0.162** | **No ReLU anywhere** — GELU, LayerNorm — and λ still runs +0.93 → −0.62 mid-encoder. The gate-flip reading cannot be the mechanism. |
+| [`vit-b-16-r50-s0`](vit-b-16-r50-s0/notes.md) | ViT-B/16, trained | 50 | `IMAGENET1K_V1` | 1/65 on the floor | Only `conv_proj`. The floor does **not** cross the first LayerNorm — LN is not affine in the input, BN in eval is. |
+| [`vit-b-16-scramble-r250-s0`](vit-b-16-scramble-r250-s0/notes.md) | ViT-B/16, scrambled | 250 | `IMAGENET1K_V1` | `prob` λ **+0.711**, R² 0.981 | A **clean** control: r(logits,prob) 0.999975, ratio 1/1000. LayerNorm has no running statistics, so the scramble behaves. |
+| [`vit-b-16-scramble-r50-s0`](vit-b-16-scramble-r50-s0/notes.md) | ViT-B/16, scrambled | 50 | `IMAGENET1K_V1` | λ +0.714 | Reproducible to three decimals — the contrast with the two BN controls. |
 | [`alexnet-r250-s0`](alexnet-r250-s0/notes.md) | AlexNet, trained | 250 | `IMAGENET1K_V1` | `prob` **0.963**, λ **+0.053** | **The log law does not need depth.** 8 weight layers, and `prob` is the peak of 21 taps — the paper's structure, which among VGG runs only Caffe gave. |
 | [`alexnet-r50-s0`](alexnet-r50-s0/notes.md) | AlexNet, trained | 50 | `IMAGENET1K_V1` | 1/21 on the floor | Only `features.0` (2.240 ≈ √5); ≤1.8% noise everywhere else. Cleaner than VGG-19. |
 | [`alexnet-scramble-r250-s0`](alexnet-scramble-r250-s0/notes.md) | AlexNet, scrambled | 250 | `IMAGENET1K_V1` | `prob` 0.865, λ +0.015 | Control. λ is *closer to log* than trained — only R² (0.889 vs 0.985) separates them. Peak moves to `features.9`. |

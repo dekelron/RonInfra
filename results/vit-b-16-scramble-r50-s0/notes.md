@@ -8,7 +8,17 @@ Reps companion to vit_b_16-r250-s0. ViT's affine prefix is conv_proj plus the fi
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Reps companion to
+[`vit-b-16-scramble-r250-s0`](../vit-b-16-scramble-r250-s0/notes.md), and
+unusually for a scrambled run it is stable: `prob` λ +0.711 → **+0.714** at
+λ-R² 0.981 both times, mean R² 0.797 → 0.796.
+
+That stability is the contrast worth keeping. The scrambled BatchNorm controls
+(`vgg19_bn`, `resnet50`) move by 1.5 and 0.15 respectively across the same rep
+change with intervals spanning most or all of the search range; this one is
+reproducible to three decimals. A scrambled control *can* be a well-determined
+measurement — it is the running-statistics decalibration, not scrambling as
+such, that makes the other two unreadable.
 
 ## Reproduce
 
