@@ -8,7 +8,29 @@ Seed sweep for the per-frequency lambda structure at prob: seed 2 of 3, paper's 
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+**The mid-band structure reproduces on a new image sample.** Per-frequency λ
+at `prob`:
+
+| 1 | 1.75 | 3.5 | 7 | 14 | 28 | 56 | 75 |
+|---|---|---|---|---|---|---|---|
+| +0.13 | -0.11 | -0.02 | +0.26 | +0.14 | +0.23 | +0.01 | -0.28 |
+
+Bands: low (1, 1.75) **+0.01**, mid (7–28) **+0.21**,
+high (56, 75) **-0.14** — so this run peaks in the mid band,
+**0.35** above both ends. λ at `prob` = +0.069 at λ-R² 0.990,
+mean R² 0.977.
+
+Across the whole VGG-19 (Caffe) series (4 runs, 3 seeds) the band contrast is
+**-0.335 ± 0.025**, every run the same sign, and the effect is **14×** its own
+seed-to-seed sd. This run is one member of that; the series conclusion is in
+[`wiki/Results.md`](../../wiki/Results.md#λ-varies-more-across-frequency-than-it-does-across-architecture).
+
+Why it was run: at seed 0 the 95% profile-F intervals resolved this band
+structure for four of the six series and not for the other two, and a single
+seed cannot distinguish "no structure" from "a loose interval". The sweep
+settles it — **all six reproduce**, and the interval is 2.9–7.1× more
+conservative than the measured across-seed sd. The mid band here is
+the most linear part of the range, not the least.
 
 ## Reproduce
 

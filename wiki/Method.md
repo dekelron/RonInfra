@@ -349,12 +349,19 @@ Controls to run: within-layer weight scrambling; comparison of `logits` vs
 * No individual unit computes a logarithm; the log-likeness is a property of the
   pooled response across units, not of any single unit.
 * **Every reported λ is a median over eight frequencies, and the response is not
-  frequency-flat.** Four of the six trained runs saturate most at 7–28 cyc/img
-  and rise toward linear at both ends, resolved against both ends by their
-  intervals. So a single λ names a layer's contrast response only in the same
-  loose sense that a median names a distribution, and two runs with equal median
-  λ can have different frequency structure. Untested how much of the
+  frequency-flat.** Four of the six trained series saturate most at 7–28 cyc/img
+  and two peak there instead; all six reproduce across seeds at 9–30× their own
+  seed-to-seed sd. So a single λ names a layer's contrast response only in the
+  same loose sense that a median names a distribution, and two runs with equal
+  median λ can have different frequency structure. Untested how much of the
   architecture differences on this page survive per frequency.
+* **The profile-F interval is not the right test for whether a frequency
+  profile is real.** It asks how tightly the 14 contrast points pin λ within one
+  run; whether the shape survives redrawing the images is a separate question,
+  and the interval is 2.9–7.1× more conservative than the measured across-seed
+  sd. Two series whose band structure the interval leaves unresolved reproduce
+  perfectly across three seeds. Use replication for reproducibility and the
+  interval for what the contrast grid determines.
 
 ## Stronger tests to add
 

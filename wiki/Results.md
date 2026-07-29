@@ -541,33 +541,75 @@ most-linear end point, on 95% profile-F intervals — e.g. AlexNet's 28 cyc/img
 [−0.54, −0.28] against its 1 cyc/img [+0.15, +0.49].
 
 **The two exceptions run the same way as each other**, mid band more *linear*
-than the ends, and neither is resolved at band level — so the honest reading is
-four resolved dips and two runs with no resolved band-level structure, not four
-against two. Each of the two does have resolved structure somewhere: Caffe
-separates 28 cyc/img (+0.25) from 75 (−0.24), ViT separates 1.75 (−0.49) from
-14 (+0.05).
+than the ends. Neither is resolved by the interval test — but that test turns
+out to be the wrong yardstick, which the seed sweep below settles.
 
-**This is not the training-recipe split.** That was the obvious guess, given
-the ReLU sawtooth above, and it fails: **ViT-B/16 carries torchvision
-`IMAGENET1K_V1` weights** like the four that dip, and does not dip. Four of the
-five torchvision runs show it and the fifth does not, so the recipe does not
-sort these runs. No mechanism is offered here.
+#### Every one of the six reproduces — measured, 24 runs
 
-Three caveats, and they are load-bearing:
+Three seeds per series at `--reps 50`, against the committed seed-0 runs. This
+was run because the interval test called two of the six unresolved, and a single
+seed could not say whether that meant *no structure* or *a loose interval*.
+It means the latter:
 
-- **One seed each.** Single-seed *shapes* have misled twice in this repo
-  already — see the scrambled control below.
-- **Some points are barely determined.** `IMAGENET1K_V1` at 7 cyc/img is the
-  worst: interval width **1.57** at λ-R² 0.838, and it carries much of that
-  run's mid-band mean, which is why its dip is the weakest of the four.
-  `vgg19_bn` at 56 cyc/img is 1.06 wide; ViT at 56 reads λ-R² 0.838.
-- **Two of the four dips have no usable null.** `vgg19_bn` and `resnet50` — the
-  largest dip and the third — carry BatchNorm, and their scrambled controls are
-  invalid for the reason in the next subsection.
+| series | n | mean dip | sd | range | \|dip\|/sd | interval test |
+|---|---|---|---|---|---|---|
+| VGG-19+BN | 4 | **+0.533** | 0.036 | [+0.50, +0.58] | 14.9 | 4/4 |
+| AlexNet | 4 | **+0.409** | 0.021 | [+0.38, +0.42] | 19.1 | 4/4 |
+| ResNet-50 | 4 | **+0.404** | 0.014 | [+0.39, +0.42] | 29.9 | 4/4 |
+| VGG-19 (IN1K) | 4 | **+0.198** | 0.022 | [+0.17, +0.22] | 9.0 | 4/4 |
+| VGG-19 (Caffe) | 4 | **−0.335** | 0.025 | [−0.35, −0.30] | 13.6 | 0/4 |
+| ViT-B/16 | 4 | **−0.284** | 0.022 | [−0.31, −0.26] | 13.0 | 0/4 |
 
-**`result.json` does not carry this.** Its `per_frequency` block holds the
-log-fit `r2`/`slope`/`intercept`, not λ. Per-frequency λ comes off the committed
-surfaces, no model needed:
+**All six are sign-consistent across every run, and the weakest effect is 9×
+its own seed-to-seed sd.** So there are not four findings and two nulls: there
+are six reproducible frequency profiles, four dipping in the mid band and two
+peaking there. Reading the interval column as "four real, two absent" was
+wrong.
+
+**Why the two tests disagree, and which one answers this question.** They
+measure different things. The profile-F interval asks how tightly 14 contrast
+points pin λ *within one run*; the seed spread asks how much λ moves when the
+images are redrawn. The first is far more conservative here — per-frequency,
+mean CI half-width exceeds the across-seed sd by 2.9× (Caffe) to 7.1× (ViT):
+
+| | max per-frequency sd | mean CI half-width | ratio |
+|---|---|---|---|
+| ViT-B/16 | 0.034 | 0.244 | **7.1×** |
+| VGG-19+BN | 0.053 | 0.257 | 4.9× |
+| ResNet-50 | 0.042 | 0.189 | 4.4× |
+| VGG-19 (IN1K) | 0.066 | 0.271 | 4.1× |
+| AlexNet | 0.038 | 0.128 | 3.4× |
+| VGG-19 (Caffe) | 0.033 | 0.095 | 2.9× |
+
+The two tests are not in conflict — the unresolved pair simply have the smaller
+effects (0.28–0.34 against 0.40–0.53), so the interval test tracks effect size,
+just far more conservatively. **For "is this frequency profile real", prefer
+seed replication.** Reserve the interval for what it answers: how well the
+contrast grid determines λ in a single run.
+
+**This is not the training-recipe split.** That was the obvious guess given the
+ReLU sawtooth above, and it fails: **ViT-B/16 carries torchvision
+`IMAGENET1K_V1`** like the four that dip, and inverts. Four of the five
+torchvision series dip and the fifth does not, so the recipe does not sort
+them. No mechanism is offered here.
+
+Two caveats that survive the sweep:
+
+- **Some individual points remain barely determined**, even where the series
+  mean is solid. `IMAGENET1K_V1` at 7 cyc/img is the worst — interval width
+  1.57 / 1.55 / 1.35 across its three runs at λ-R² 0.838 — and it carries much
+  of that series' mid-band mean, which is why its dip is the smallest of the
+  four. The *point* is reproducible (+0.47, +0.48, +0.36); it is the interval
+  that is uninformative.
+- **The BatchNorm pair still has no scrambled null.** `vgg19_bn` and `resnet50`
+  decalibrate under `--scramble` for the reason in the next subsection. The
+  seed spread now gives them a null of a different kind — both clear it by
+  15× and 30× — but that bounds sampling noise, not the contribution of
+  learned structure.
+
+Per-frequency λ is in each `result.json` under `per_frequency[].lambda`
+(with `lambda_ci`, `lambda_r2`); the layer-level `lambda` is their median. Off
+the surfaces directly:
 
 ```python
 from log_response.experiment import load_result

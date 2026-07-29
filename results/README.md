@@ -45,6 +45,18 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`vgg19-bn-r50-s0`](vgg19-bn-r50-s0/notes.md) | VGG-19+BN, trained | 50 | `IMAGENET1K_V1` | 5/61 on the floor | `features.1` is a **BatchNorm layer reading pure noise** (99.3%) — the floor is a property of affineness, not of being first. Headline taps ≤0.8%. |
 | [`vgg19-bn-scramble-r250-s0`](vgg19-bn-scramble-r250-s0/notes.md) | VGG-19+BN, scrambled | 250 | `IMAGENET1K_V1` | **not comparable** | The scramble decalibrates BN rather than degrading it: r(logits,prob) **0.162**, ratio 1e-10, softmax saturated. λ uninformative (R² 0.613). Do not table it against the others. |
 | [`vgg19-bn-scramble-r50-s0`](vgg19-bn-scramble-r50-s0/notes.md) | VGG-19+BN, scrambled | 50 | `IMAGENET1K_V1` | CI spans the search range | Confirms the above: λ moves 1.5 across the rep change and the interval opens to [−3.00, +1.32]. |
+| [`alexnet-r50-s1`](alexnet-r50-s1/notes.md) | AlexNet, trained | 50 | `IMAGENET1K_V1` | band contrast **+0.38** | Seed 1 of the per-frequency sweep. Mid band dips 0.38 vs both ends; `prob` λ +0.029 at R² 0.983. Series +0.409 ± 0.021, same sign in all 4. |
+| [`alexnet-r50-s2`](alexnet-r50-s2/notes.md) | AlexNet, trained | 50 | `IMAGENET1K_V1` | band contrast **+0.42** | Seed 2 of the per-frequency sweep. Mid band dips 0.42 vs both ends; `prob` λ +0.050 at R² 0.984. Series +0.409 ± 0.021, same sign in all 4. |
+| [`vgg19-bn-r50-s1`](vgg19-bn-r50-s1/notes.md) | VGG-19+BN, trained | 50 | `IMAGENET1K_V1` | band contrast **+0.58** | Seed 1 of the per-frequency sweep. Mid band dips 0.58 vs both ends; `prob` λ -0.268 at R² 0.950. Series +0.533 ± 0.036, same sign in all 4. |
+| [`vgg19-bn-r50-s2`](vgg19-bn-r50-s2/notes.md) | VGG-19+BN, trained | 50 | `IMAGENET1K_V1` | band contrast **+0.52** | Seed 2 of the per-frequency sweep. Mid band dips 0.52 vs both ends; `prob` λ -0.315 at R² 0.950. Series +0.533 ± 0.036, same sign in all 4. |
+| [`resnet50-r50-s1`](resnet50-r50-s1/notes.md) | ResNet-50, trained | 50 | `IMAGENET1K_V1` | band contrast **+0.39** | Seed 1 of the per-frequency sweep. Mid band dips 0.39 vs both ends; `prob` λ -0.230 at R² 0.969. Series +0.404 ± 0.014, same sign in all 4. |
+| [`resnet50-r50-s2`](resnet50-r50-s2/notes.md) | ResNet-50, trained | 50 | `IMAGENET1K_V1` | band contrast **+0.39** | Seed 2 of the per-frequency sweep. Mid band dips 0.39 vs both ends; `prob` λ -0.215 at R² 0.964. Series +0.404 ± 0.014, same sign in all 4. |
+| [`vit-b-16-r50-s1`](vit-b-16-r50-s1/notes.md) | ViT-B/16, trained | 50 | `IMAGENET1K_V1` | band contrast **-0.28** | Seed 1 of the per-frequency sweep. Mid band peaks 0.28 vs both ends; `prob` λ -0.159 at R² 0.928. Series −0.284 ± 0.022, same sign in all 4. |
+| [`vit-b-16-r50-s2`](vit-b-16-r50-s2/notes.md) | ViT-B/16, trained | 50 | `IMAGENET1K_V1` | band contrast **-0.31** | Seed 2 of the per-frequency sweep. Mid band peaks 0.31 vs both ends; `prob` λ -0.169 at R² 0.930. Series −0.284 ± 0.022, same sign in all 4. |
+| [`vgg19-r50-s1-alllayers-in1k`](vgg19-r50-s1-alllayers-in1k/notes.md) | VGG-19, trained | 50 | `IMAGENET1K_V1` | band contrast **+0.21** | Seed 1 of the per-frequency sweep. Mid band dips 0.21 vs both ends; `prob` λ +0.147 at R² 0.953. Series +0.198 ± 0.022, same sign in all 4. |
+| [`vgg19-r50-s2-alllayers-in1k`](vgg19-r50-s2-alllayers-in1k/notes.md) | VGG-19, trained | 50 | `IMAGENET1K_V1` | band contrast **+0.20** | Seed 2 of the per-frequency sweep. Mid band dips 0.20 vs both ends; `prob` λ +0.167 at R² 0.945. Series +0.198 ± 0.022, same sign in all 4. |
+| [`vgg19-r50-s1-alllayers-caffe`](vgg19-r50-s1-alllayers-caffe/notes.md) | VGG-19, trained | 50 | converted Caffe | band contrast **-0.30** | Seed 1 of the per-frequency sweep. Mid band peaks 0.30 vs both ends; `prob` λ +0.079 at R² 0.990. Series −0.335 ± 0.025, same sign in all 4. |
+| [`vgg19-r50-s2-alllayers-caffe`](vgg19-r50-s2-alllayers-caffe/notes.md) | VGG-19, trained | 50 | converted Caffe | band contrast **-0.35** | Seed 2 of the per-frequency sweep. Mid band peaks 0.35 vs both ends; `prob` λ +0.069 at R² 0.990. Series −0.335 ± 0.025, same sign in all 4. |
 | [`vgg19-r250-s0-alllayers-linear`](vgg19-r250-s0-alllayers-linear/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Grid control. Profile survives: mean \|Δλ\| 0.045, **44/44** steps agree in direction. |
 | [`vgg19-scramble-r250-s0-alllayers-linear`](vgg19-scramble-r250-s0-alllayers-linear/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Control for the above. Mean \|Δλ\| 0.024; read against its R² 0.72, which is what makes λ here uninformative. |
 | [`vgg19-r250-s0-alllayers-fixed`](vgg19-r250-s0-alllayers-fixed/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | all 45 taps | Depth profile. conv median +0.69, `prob` +0.165. (Its λ 0.922 at conv1_1 is the noise floor, not a measurement — see `data-r250-s0`.) |
@@ -83,6 +95,22 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > `fit_quality` and `logness_r2diff`. **When a note and its `result.json`
 > disagree, `result.json` is right.** Read λ against `lambda_r2`, never alone.
 > See `wiki/Results.md` for what changed substantively.
+
+> **`result.json` gained per-frequency λ on 2026-07-28, and 16 directories had
+> a stale interval repaired.** The layer-level `lambda` is a **median over the
+> eight frequencies**, and it discards more variation than the comparisons it
+> gets used for — so `per_frequency[]` now carries `lambda`, `lambda_ci` and
+> `lambda_r2` beside the log-fit `r2`/`slope`/`intercept` it already held.
+>
+> The repair: 16 directories carried `lambda_ci` endpoints read off the λ search
+> grid rather than bisected, by an intermediate fitter that was never shipped —
+> every endpoint an exact multiple of 0.025, and **29 intervals excluding their
+> own point estimate**, some collapsed to zero width (`features.1` on the Caffe
+> run read λ +1.2045 with CI [+1.200, +1.200]). All 360 affected intervals were
+> too *narrow*. Regenerated from the committed surfaces: **λ point estimates are
+> unchanged** (worst drift 7e-5 relative, on a λ of 2e-5), `result.npz` is
+> byte-identical everywhere, and the numbers in `wiki/Results.md` were already
+> the corrected ones because they came from live re-fits.
 
 > **The per-frequency λ is recorded too, since 2026-07-28.** Each
 > `per_frequency` entry carries `lambda`, `lambda_ci` and `lambda_r2` next to

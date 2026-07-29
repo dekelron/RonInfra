@@ -415,16 +415,21 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     quote it, and `result.json` is the authority where they disagree.
 - **λ moves more across frequency than across architecture** (2026-07-28). Every
   λ in the docs is a **median over the 8 frequencies**. Per-frequency at `prob`:
-  median λ spans **0.43** across the six trained runs, while *within* a run λ
-  spans **0.49** (Caffe) to **1.75** (`vgg19_bn`), extremes disjoint on their
-  intervals in all six. Four show a mid-band (7–28 cyc/img) dip that is resolved
-  against both ends — `vgg19_bn` +0.54, AlexNet +0.42, ResNet-50 +0.41, IN1K
-  +0.22 — and two (Caffe VGG-19, ViT-B/16) run the other way with **no**
-  band-level separation, so read it as four resolved dips plus two nulls.
+  median λ spans **0.43** across the six trained series, while *within* a run λ
+  spans **0.49** (Caffe) to **1.75** (`vgg19_bn`). Four dip in the mid band
+  (7–28 cyc/img) and two peak there. **Seed-swept, 24 runs, 3 seeds each**:
+  every series is sign-consistent and the weakest effect is **9× its own
+  seed-to-seed sd** — `vgg19_bn` +0.533±0.036, AlexNet +0.409±0.021, ResNet-50
+  +0.404±0.014, IN1K +0.198±0.022, Caffe **−0.335**±0.025, ViT **−0.284**±0.022.
   **It is not the training-recipe split**: ViT carries torchvision
-  `IMAGENET1K_V1` like the four that dip. One seed each, and `result.json` holds
-  only the median — per-frequency λ is `res.results[tap].power_fits` off the
-  surfaces. See `wiki/Results.md`.
+  `IMAGENET1K_V1` like the four that dip. Per-frequency λ is now in
+  `result.json` under `per_frequency[].lambda`. See `wiki/Results.md`.
+  - **Corrected the same day.** Committed first as "four resolved dips plus two
+    nulls", on the 95% profile-F intervals alone. Both "nulls" reproduce
+    cleanly; the interval was simply the wrong test. **For "is this frequency
+    profile real", prefer seed replication** — per-frequency, the mean CI
+    half-width exceeds the across-seed sd by **2.9× to 7.1×**. The interval
+    answers a different question: how well 14 contrast points pin λ in one run.
 - **Always quote λ with its R².** λ locates a response only insofar as the
   family describes it, and this is exactly where the scrambled control bites:
   scrambled `IMAGENET1K_V1` returns a log-*looking* λ ≈ 0.17 while fitting at
