@@ -579,7 +579,19 @@ class TimmModel(_TorchBackend):
         }
 
     def _default_layers(self) -> list[str]:
+        """The classifier head, which timm names for us.
+
+        ``named_modules()`` is registration order, so its last entry is merely
+        the module registered last -- usually the head, but nothing guarantees
+        it. ``pretrained_cfg['classifier']`` is the checkpoint's own statement
+        of which module that is; fall back to the old behaviour when a config
+        omits it. ``logits``/``prob`` are appended in ``represent()`` either
+        way, so the headline taps do not depend on this.
+        """
         names = list(dict(self.net.named_modules()))
+        head = (getattr(self.net, "pretrained_cfg", {}) or {}).get("classifier")
+        if isinstance(head, str) and head in names:
+            return [head]
         return [names[-1]]
 
     def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
