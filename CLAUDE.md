@@ -430,6 +430,26 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     profile real", prefer seed replication** — per-frequency, the mean CI
     half-width exceeds the across-seed sd by **2.9× to 7.1×**. The interval
     answers a different question: how well 14 contrast points pin λ in one run.
+  - **The dip does not generalise — 17 more architectures, 2026-07-29.** A
+    contributed 23-run screen gives **5 monotone** in frequency (no band shape
+    at all: ConvNeXt-T/S, Swin-T, Swin-V2-T, GoogLeNet, ρ −0.76 to −0.90),
+    9 dipping, 3 peaking, band contrast −1.53 to +0.62. The clean mid-band dip
+    belongs to the six seed-swept series, **not to ImageNet-trained nets
+    generally**. One seed each.
+  - **But frequency structure needs trained weights, and now has a null.** The
+    screen's six scrambled controls are all on BN-free nets, so all six are
+    valid. λ's range across frequency is **3.4×–20.8× larger trained than
+    scrambled, 6/6 pairs**; scrambled is nearly flat (0.07–0.26) against
+    trained 0.89–2.62. The *shape* is architecture-dependent; the *existence*
+    of the structure is a property of learning.
+- **λ pinned at a search bound is not a measurement** (2026-07-29). `fit.py`
+  searches λ over [−3, 4]; a fit that hits the edge returns the bound as its
+  point estimate, and it reads like a value. `regnet_y_400mf` at 7 cyc/img and
+  `mobilenet_v3_large` at 75 both return exactly −3.000. **Drop such cells
+  before averaging**: RegNet-Y's band contrast is **+1.10 with the pinned cell
+  and +0.05 without** — the whole effect was the bound. This is the
+  point-estimate analogue of the interval-spans-the-range case, which the code
+  already reports honestly; the point estimate does not.
 - **Always quote λ with its R².** λ locates a response only insofar as the
   family describes it, and this is exactly where the scrambled control bites:
   scrambled `IMAGENET1K_V1` returns a log-*looking* λ ≈ 0.17 while fitting at

@@ -607,6 +607,70 @@ Two caveats that survive the sweep:
   15× and 30× — but that bounds sampling noise, not the contribution of
   learned structure.
 
+#### The mid-band dip does not generalise across architectures
+
+A 23-run screen (2026-07-29, contributed; `--reps 50`, seed 0, `--layers all`,
+grids identical to every run above) adds **17 more trained architectures** —
+ConvNeXt-T/S, Swin-T, Swin-V2-T, MaxViT-T, ViT-B/32, DenseNet-121, ResNeXt-50,
+GoogLeNet, SqueezeNet 1.1, EfficientNet-B0, MobileNet-V2/V3-L, MNASNet-1.0,
+ShuffleNet-V2, RegNet-X/Y-400MF. It does not extend the dip; it bounds it:
+
+| | count |
+|---|---|
+| **monotone** in frequency — no band shape at all | **5** |
+| band-shaped, dipping in the mid band | 9 |
+| band-shaped, peaking in the mid band | 3 |
+
+Band contrast among the band-shaped runs spans −1.53 to +0.62 (median +0.24).
+So the clean mid-band dip is a property of the six seed-swept series, **not of
+ImageNet-trained vision networks generally.** ConvNeXt-S, ConvNeXt-T, Swin-T,
+Swin-V2-T and GoogLeNet simply decline in λ across frequency (Spearman ρ −0.76
+to −0.90); calling that a "dip" would be the summary statistic inventing a
+shape.
+
+**Two cells hit the λ search bound and are not measurements.** `regnet_y_400mf`
+at 7 cyc/img and `mobilenet_v3_large` at 75 read λ exactly −3.000, the edge of
+the search range. All bands above are computed with such cells dropped, which
+matters: RegNet-Y's band contrast reads **+1.10 with the pinned cell and +0.05
+without it** — the entire apparent effect was the bound. A pinned λ is the
+point-estimate analogue of the interval-spans-the-range case, and the same rule
+applies: it is not a value.
+
+#### But the frequency structure itself needs trained weights — 6 matched pairs
+
+The screen's most useful contribution is a null this section previously lacked.
+It ships six scrambled controls, on exactly the six architectures where
+scrambling is valid (LayerNorm or no normalisation — never BatchNorm, per the
+next subsection). Measuring λ's full range across frequency, a shape-free
+amplitude that does not presume a dip:
+
+| net | trained | scrambled | ratio |
+|---|---|---|---|
+| Swin-V2-T | 2.62 | 0.22 | **12.2×** |
+| ConvNeXt-T | 2.54 | 0.19 | **13.1×** |
+| ConvNeXt-S | 1.40 | 0.07 | **20.8×** |
+| Swin-T | 1.28 | 0.12 | 10.4× |
+| ViT-B/32 | 1.05 | 0.13 | 8.0× |
+| SqueezeNet 1.1 | 0.89 | 0.26 | 3.4× |
+
+**Scrambled λ is nearly flat in frequency in all six** (range 0.07–0.26) while
+the trained nets span 0.89–2.62 — a gap of 3.4× to 20.8×, in the same direction
+in **6/6** pairs. On band contrast the same holds: mean |contrast| 0.291
+trained against 0.067 scrambled.
+
+So the specific *shape* is architecture-dependent and does not generalise, but
+**the existence of frequency structure in λ is a property of learned weights**,
+not of architecture or of the metric. That is the cleanest trained-vs-scrambled
+separation on the frequency axis the repo has, and it is what the BatchNorm
+caveat above blocked for `vgg19_bn` and `resnet50`.
+
+Two limits on the screen, both real: **one seed per run** — the six series above
+needed 3–4 runs each before their shapes could be trusted, and these have not
+had that — and the two Swin controls sit at r(`logits`,`prob`) 0.9918/0.9926
+rather than the 0.9998+ of the other four. That is still three orders of
+magnitude better behaved than the BatchNorm failures (0.162/0.673 at ratio
+1e-10) and well inside the affine regime, but it is not as clean.
+
 Per-frequency λ is in each `result.json` under `per_frequency[].lambda`
 (with `lambda_ci`, `lambda_r2`); the layer-level `lambda` is their median. Off
 the surfaces directly:

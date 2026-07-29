@@ -57,6 +57,29 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`vgg19-r50-s2-alllayers-in1k`](vgg19-r50-s2-alllayers-in1k/notes.md) | VGG-19, trained | 50 | `IMAGENET1K_V1` | band contrast **+0.20** | Seed 2 of the per-frequency sweep. Mid band dips 0.20 vs both ends; `prob` λ +0.167 at R² 0.945. Series +0.198 ± 0.022, same sign in all 4. |
 | [`vgg19-r50-s1-alllayers-caffe`](vgg19-r50-s1-alllayers-caffe/notes.md) | VGG-19, trained | 50 | converted Caffe | band contrast **-0.30** | Seed 1 of the per-frequency sweep. Mid band peaks 0.30 vs both ends; `prob` λ +0.079 at R² 0.990. Series −0.335 ± 0.025, same sign in all 4. |
 | [`vgg19-r50-s2-alllayers-caffe`](vgg19-r50-s2-alllayers-caffe/notes.md) | VGG-19, trained | 50 | converted Caffe | band contrast **-0.35** | Seed 2 of the per-frequency sweep. Mid band peaks 0.35 vs both ends; `prob` λ +0.069 at R² 0.990. Series −0.335 ± 0.025, same sign in all 4. |
+| [`convnext-small-r50-s0`](convnext-small-r50-s0/notes.md) | convnext-small, trained | 50 | `IMAGENET1K_V1` | **monotone** | Architecture screen. **monotone** in frequency (ρ -0.90); λ range 1.40, `prob` λ +0.025 at R² 0.926. |
+| [`convnext-small-scramble-r50-s0`](convnext-small-scramble-r50-s0/notes.md) | convnext-small, scrambled | 50 | `IMAGENET1K_V1` | λ range **0.07** | **Valid control** (r(logits,prob) 0.9998). λ range across frequency **0.07** against trained 1.40 — **20.8×** flatter. The frequency structure needs trained weights. |
+| [`convnext-tiny-r50-s0`](convnext-tiny-r50-s0/notes.md) | convnext-tiny, trained | 50 | `IMAGENET1K_V1` | **monotone** | Architecture screen. **monotone** in frequency (ρ -0.76); λ range 2.54, `prob` λ -0.481 at R² 0.903. |
+| [`convnext-tiny-scramble-r50-s0`](convnext-tiny-scramble-r50-s0/notes.md) | convnext-tiny, scrambled | 50 | `IMAGENET1K_V1` | λ range **0.19** | **Valid control** (r(logits,prob) 0.9998). λ range across frequency **0.19** against trained 2.54 — **13.1×** flatter. The frequency structure needs trained weights. |
+| [`densenet121-r50-s0`](densenet121-r50-s0/notes.md) | densenet121, trained | 50 | `IMAGENET1K_V1` | band **-0.17** | Architecture screen. mid band peaks 0.17 (ρ -0.69); λ range 0.80, `prob` λ -0.125 at R² 0.978. |
+| [`efficientnet-b0-r50-s0`](efficientnet-b0-r50-s0/notes.md) | efficientnet-b0, trained | 50 | `IMAGENET1K_V1` | band **+0.26** | Architecture screen. mid band dips 0.26 (ρ -0.05); λ range 1.87, `prob` λ -0.096 at R² 0.932. |
+| [`googlenet-r50-s0`](googlenet-r50-s0/notes.md) | googlenet, trained | 50 | `IMAGENET1K_V1` | **monotone** | Architecture screen. **monotone** in frequency (ρ -0.76); λ range 0.55, `prob` λ -0.418 at R² 0.973. |
+| [`maxvit-t-r50-s0`](maxvit-t-r50-s0/notes.md) | maxvit-t, trained | 50 | `IMAGENET1K_V1` | band **+0.32** | Architecture screen. mid band dips 0.32 (ρ -0.60); λ range 1.32, `prob` λ -0.273 at R² 0.968. |
+| [`mnasnet1-0-r50-s0`](mnasnet1-0-r50-s0/notes.md) | mnasnet1-0, trained | 50 | `IMAGENET1K_V1` | band **+0.03** | Architecture screen. mid band dips 0.03 (ρ -0.17); λ range 0.55, `prob` λ +0.019 at R² 0.945. |
+| [`mobilenet-v2-r50-s0`](mobilenet-v2-r50-s0/notes.md) | mobilenet-v2, trained | 50 | `IMAGENET1K_V1` | band **+0.45** | Architecture screen. mid band dips 0.45 (ρ -0.02); λ range 0.79, `prob` λ +0.060 at R² 0.963. |
+| [`mobilenet-v3-large-r50-s0`](mobilenet-v3-large-r50-s0/notes.md) | mobilenet-v3-large, trained | 50 | `IMAGENET1K_V1` | band **-1.53** | Architecture screen. mid band peaks 1.53 (ρ -0.68); λ range 2.17, `prob` λ -0.818 at R² 0.881. λ **pinned at the −3 bound** at one frequency; excluded from the bands. |
+| [`regnet-x-400mf-r50-s0`](regnet-x-400mf-r50-s0/notes.md) | regnet-x-400mf, trained | 50 | `IMAGENET1K_V1` | band **+0.62** | Architecture screen. mid band dips 0.62 (ρ +0.24); λ range 1.44, `prob` λ +0.192 at R² 0.968. |
+| [`regnet-y-400mf-r50-s0`](regnet-y-400mf-r50-s0/notes.md) | regnet-y-400mf, trained | 50 | `IMAGENET1K_V1` | band **+0.05** | Architecture screen. mid band dips 0.05 (ρ +0.18); λ range 0.76, `prob` λ +0.148 at R² 0.948. λ **pinned at the −3 bound** at one frequency; excluded from the bands. |
+| [`resnext50-32x4d-r50-s0`](resnext50-32x4d-r50-s0/notes.md) | resnext50-32x4d, trained | 50 | `IMAGENET1K_V1` | band **-0.36** | Architecture screen. mid band peaks 0.36 (ρ -0.57); λ range 0.67, `prob` λ -0.271 at R² 0.958. |
+| [`shufflenet-v2-x1-0-r50-s0`](shufflenet-v2-x1-0-r50-s0/notes.md) | shufflenet-v2-x1-0, trained | 50 | `IMAGENET1K_V1` | band **+0.50** | Architecture screen. mid band dips 0.50 (ρ +0.17); λ range 0.87, `prob` λ +0.010 at R² 0.977. |
+| [`squeezenet1-1-r50-s0`](squeezenet1-1-r50-s0/notes.md) | squeezenet1-1, trained | 50 | `IMAGENET1K_V1` | band **+0.31** | Architecture screen. mid band dips 0.31 (ρ -0.33); λ range 0.89, `prob` λ -0.003 at R² 0.975. |
+| [`squeezenet1-1-scramble-r50-s0`](squeezenet1-1-scramble-r50-s0/notes.md) | squeezenet1-1, scrambled | 50 | `IMAGENET1K_V1` | λ range **0.26** | **Valid control** (r(logits,prob) 0.9999). λ range across frequency **0.26** against trained 0.89 — **3.4×** flatter. The frequency structure needs trained weights. |
+| [`swin-t-r50-s0`](swin-t-r50-s0/notes.md) | swin-t, trained | 50 | `IMAGENET1K_V1` | **monotone** | Architecture screen. **monotone** in frequency (ρ -0.76); λ range 1.28, `prob` λ +0.109 at R² 0.911. |
+| [`swin-t-scramble-r50-s0`](swin-t-scramble-r50-s0/notes.md) | swin-t, scrambled | 50 | `IMAGENET1K_V1` | λ range **0.12** | **Valid control** (r(logits,prob) 0.9918). λ range across frequency **0.12** against trained 1.28 — **10.4×** flatter. The frequency structure needs trained weights. |
+| [`swin-v2-t-r50-s0`](swin-v2-t-r50-s0/notes.md) | swin-v2-t, trained | 50 | `IMAGENET1K_V1` | **monotone** | Architecture screen. **monotone** in frequency (ρ -0.81); λ range 2.62, `prob` λ +0.121 at R² 0.940. |
+| [`swin-v2-t-scramble-r50-s0`](swin-v2-t-scramble-r50-s0/notes.md) | swin-v2-t, scrambled | 50 | `IMAGENET1K_V1` | λ range **0.22** | **Valid control** (r(logits,prob) 0.9926). λ range across frequency **0.22** against trained 2.62 — **12.2×** flatter. The frequency structure needs trained weights. |
+| [`vit-b-32-r50-s0`](vit-b-32-r50-s0/notes.md) | vit-b-32, trained | 50 | `IMAGENET1K_V1` | band **+0.21** | Architecture screen. mid band dips 0.21 (ρ +0.29); λ range 1.05, `prob` λ -0.546 at R² 0.927. |
+| [`vit-b-32-scramble-r50-s0`](vit-b-32-scramble-r50-s0/notes.md) | vit-b-32, scrambled | 50 | `IMAGENET1K_V1` | λ range **0.13** | **Valid control** (r(logits,prob) 0.9999). λ range across frequency **0.13** against trained 1.05 — **8.0×** flatter. The frequency structure needs trained weights. |
 | [`vgg19-r250-s0-alllayers-linear`](vgg19-r250-s0-alllayers-linear/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Grid control. Profile survives: mean \|Δλ\| 0.045, **44/44** steps agree in direction. |
 | [`vgg19-scramble-r250-s0-alllayers-linear`](vgg19-scramble-r250-s0-alllayers-linear/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Control for the above. Mean \|Δλ\| 0.024; read against its R² 0.72, which is what makes λ here uninformative. |
 | [`vgg19-r250-s0-alllayers-fixed`](vgg19-r250-s0-alllayers-fixed/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | all 45 taps | Depth profile. conv median +0.69, `prob` +0.165. (Its λ 0.922 at conv1_1 is the noise floor, not a measurement — see `data-r250-s0`.) |
@@ -131,6 +154,25 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > Regenerated from the surfaces: λ point estimates moved by at most 7.4e-5
 > relative, no `result.npz` was touched, and the prose was unaffected because
 > `wiki/Results.md` had been quoting live re-fits all along.
+
+> **A contributed 23-run architecture screen landed on 2026-07-29** (17 trained
+> nets + 6 scrambled controls, `--reps 50`, seed 0, all layers). It was verified
+> before merging: all 331 bundled checksums pass, the packaged source snapshot is
+> **byte-identical to `baa2fa5`** across every tracked non-results file, all 23
+> carry `pretrained_verified: true`, the grids match every other run here, and the
+> affine-prefix tap reads λ 0.93–0.97 on each — the noise floor, which is how a
+> new architecture's pipeline announces that it works.
+>
+> Two things to carry from it. **The mid-band dip does not generalise**: 5 of the
+> 17 are monotone in frequency with no band shape at all. And **λ pinned at the
+> −3 search bound is not a measurement** — two runs have such a cell, and
+> dropping it moves RegNet-Y's band contrast from +1.10 to +0.05. Every band
+> number in these rows excludes pinned cells.
+>
+> The six controls are the screen's real contribution: they sit on BN-free nets,
+> so all six are valid, and λ's range across frequency is **3.4–20.8× larger
+> trained than scrambled in 6/6 pairs**. See `wiki/Results.md`.
+
 
 Note that "best mean R²" is not `prob` for either r250 run — that is the finding,
 not a slip. Read the r250 rows with the spacing CV in their notes: the scrambled
