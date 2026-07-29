@@ -372,7 +372,8 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     anywhere (GELU is smooth, no hard gate), and λ still runs **+0.926** at
     `conv_proj` to **−0.617** mid-encoder, −0.162 at `prob` (R² 0.933). Gate
     flipping cannot be the mechanism because there are no gates. What survives
-    across all four architectures is the **operating point** reading.
+    across all **22** architectures now measured is the **operating point**
+    reading.
   - **Skip connections do not preserve linearity either.** ResNet-50 was run to
     test whether the identity path keeps an affine component alive deep — it
     does not: `layer3`/`layer4` median λ **−0.262** with **0/85** taps within
