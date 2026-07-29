@@ -1,12 +1,18 @@
 # Core analysis pipeline (offline synthetic verification + fitting + figures)
 numpy
 matplotlib
+scipy  # cross-architecture correlation report
 
 # Real ImageNet-CNN back-end (TorchvisionModel). Pretrained weights are fetched
 # by torchvision from download.pytorch.org, or pass a local state_dict via
 # --weights if that host is unreachable.
 torch
 torchvision
+
+# Tagged ImageNet classifiers not available in torchvision (TimmModel).
+timm
+huggingface_hub
+safetensors
 
 # CLIP back-end (CLIPModel). Weights are fetched by open_clip from the HF hub /
 # OpenAI mirrors; pass --weights with a local open_clip checkpoint if blocked.

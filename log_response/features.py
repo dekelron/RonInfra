@@ -9,13 +9,16 @@ Here we:
 * flatten each layer's activation and take the mean absolute difference from the
   reference activation.
 
-Three model back-ends are provided:
+The main model back-ends are:
 
 * ``TorchvisionModel`` -- a real ImageNet-trained CNN (vgg19, resnet50, ...).
   Pretrained weights normally come from torchvision's hub. In network-restricted
   environments that host may be blocked; pass ``weights_path`` to load a local
   ``state_dict`` you fetched elsewhere. Without trained weights the log response
   does not emerge (it is a *consequence of training*), so a warning is emitted.
+* ``TimmModel`` -- a tagged ImageNet classifier from ``timm``. This adds
+  unusual families not exposed by torchvision while preserving the same
+  1000-way ``logits`` and ``prob`` terminal taps.
 * ``CLIPModel`` -- a CLIP image tower via ``open_clip``. CLIP has no class
   probabilities, so the terminal layers are rebuilt from the contrastive head:
   the image embedding, similarities against a fixed text prompt set, and their
@@ -172,6 +175,15 @@ def parse_clip_spec(spec: str) -> tuple[str, str]:
     arch = parts[1] if len(parts) > 1 and parts[1] else "ViT-B-32"
     tag = parts[2] if len(parts) > 2 and parts[2] else "openai"
     return arch, tag
+
+
+def parse_timm_spec(spec: str) -> str:
+    """Parse ``timm:MODEL_NAME`` while preserving its checkpoint tag."""
+    if not spec.startswith("timm:") or len(spec) <= 5:
+        raise ValueError(
+            f"not a timm model spec: {spec!r} (expected timm:MODEL_NAME)"
+        )
+    return spec[5:]
 
 
 def load_prompts(path: str) -> list[str]:
@@ -430,6 +442,157 @@ class TorchvisionModel(_TorchBackend):
         # isolates how much of the compression is the softmax (see wiki/Method.md).
         acts["logits"] = logits.cpu().numpy()
         acts["prob"] = self.torch.softmax(logits, dim=1).cpu().numpy()
+        return acts
+
+
+# --------------------------------------------------------------------------- #
+# Real timm ImageNet classifier back-end
+# --------------------------------------------------------------------------- #
+class TimmModel(_TorchBackend):
+    """A tagged pretrained ``timm`` ImageNet classifier.
+
+    ``shared-imagenet`` preprocessing sends the same normalized pixel tensor
+    into every architecture and is the primary RonInfra comparison. ``native``
+    uses the checkpoint recipe and is intended as a sensitivity check.
+
+    The standard weight scramble is refused for networks with BatchNorm running
+    statistics: permuting weights while leaving those buffers attached to their
+    old channels is not a valid control.
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        layers: list[str] | None = None,
+        weights_path: str | None = None,
+        pretrained: bool = True,
+        device: str = "cpu",
+        scramble: bool = False,
+        scramble_seed: int = 0,
+        allow_random_init: bool = False,
+        preprocessing: str = "shared-imagenet",
+    ):
+        import torch
+        import timm
+
+        if preprocessing not in ("shared-imagenet", "native"):
+            raise ValueError(
+                "preprocessing must be 'shared-imagenet' or 'native'"
+            )
+
+        self.torch = torch
+        self.device = torch.device(device)
+        self.arch = model_name
+        self.weights_ok = False
+        self.weights_source = "random init"
+        loaded_trained = False
+
+        try:
+            self.net = timm.create_model(
+                model_name,
+                pretrained=pretrained and weights_path is None,
+                checkpoint_path=weights_path or "",
+            )
+            loaded_trained = bool(pretrained or weights_path is not None)
+        except Exception as exc:
+            if not allow_random_init:
+                raise RuntimeError(
+                    f"could not load timm pretrained weights for {model_name!r} "
+                    f"({exc}). Falling back to random initialization would make "
+                    "the architecture comparison meaningless."
+                ) from exc
+            warnings.warn(
+                f"could not load timm pretrained weights ({exc}); falling back "
+                "to random init as explicitly requested.",
+                RuntimeWarning,
+            )
+            self.net = timm.create_model(model_name, pretrained=False)
+
+        cfg = dict(getattr(self.net, "pretrained_cfg", {}) or {})
+        if loaded_trained:
+            self.weights_ok = True
+            source_bits = [f"timm {timm.__version__}", model_name]
+            if cfg.get("hf_hub_id"):
+                source_bits.append(f"hf_hub_id={cfg['hf_hub_id']}")
+            if cfg.get("tag"):
+                source_bits.append(f"tag={cfg['tag']}")
+            if weights_path:
+                source_bits.append(f"local checkpoint={weights_path}")
+            self.weights_source = "; ".join(source_bits)
+        elif not allow_random_init:
+            raise RuntimeError(
+                f"{model_name!r} requested without pretrained weights or a "
+                "checkpoint. Set allow_random_init=True only for a deliberate "
+                "untrained control."
+            )
+
+        native_mean = tuple(cfg.get("mean") or IMAGENET_MEAN)
+        native_std = tuple(cfg.get("std") or IMAGENET_STD)
+        if preprocessing == "native":
+            self._norm_mean, self._norm_std = native_mean, native_std
+        else:
+            self._norm_mean, self._norm_std = IMAGENET_MEAN, IMAGENET_STD
+
+        input_shape = tuple(cfg.get("input_size") or (3, 224, 224))
+        self.input_size = int(input_shape[-1])
+        self.preprocessing = preprocessing
+
+        bn_count = sum(
+            isinstance(module, torch.nn.modules.batchnorm._BatchNorm)
+            for module in self.net.modules()
+        )
+        if scramble and bn_count:
+            raise RuntimeError(
+                f"refusing the standard scramble for {model_name!r}: it has "
+                f"{bn_count} BatchNorm modules with stored running statistics. "
+                "A weight-only permutation would leave those buffers misaligned."
+            )
+        if scramble:
+            self._scramble_within_layers(scramble_seed)
+
+        self.net.eval().to(self.device)
+        self.layers = self._resolve_layers(layers) or self._default_layers()
+        self._init_hooks()
+        self._register(self.layers)
+
+        self.model_metadata = {
+            "backend": "timm",
+            "model_name": model_name,
+            "parameter_count": int(sum(p.numel() for p in self.net.parameters())),
+            "num_classes": int(cfg.get("num_classes") or 1000),
+            "input_size": list(input_shape),
+            "preprocessing_policy": preprocessing,
+            "applied_mean": list(self._norm_mean),
+            "applied_std": list(self._norm_std),
+            "native_mean": list(native_mean),
+            "native_std": list(native_std),
+            "native_crop_pct": cfg.get("crop_pct"),
+            "native_interpolation": cfg.get("interpolation"),
+            "hf_hub_id": cfg.get("hf_hub_id"),
+            "checkpoint_url": cfg.get("url"),
+            "checkpoint_tag": cfg.get("tag"),
+            "architecture": cfg.get("architecture"),
+            "classifier": cfg.get("classifier"),
+            "first_conv": cfg.get("first_conv"),
+            "batchnorm_modules": int(bn_count),
+            "standard_scramble_valid": not bool(bn_count),
+        }
+
+    def _default_layers(self) -> list[str]:
+        names = list(dict(self.net.named_modules()))
+        return [names[-1]]
+
+    def represent(self, image: np.ndarray) -> dict[str, np.ndarray]:
+        self._reset()
+        with self.torch.no_grad():
+            logits = self.net(self._preprocess(image))
+        if isinstance(logits, (tuple, list)):
+            logits = logits[0]
+        acts = {k: v.copy() for k, v in self._acts.items()}
+        acts["logits"] = logits.detach().float().cpu().numpy()
+        acts["prob"] = (
+            self.torch.softmax(logits, dim=1).detach().float().cpu().numpy()
+        )
         return acts
 
 

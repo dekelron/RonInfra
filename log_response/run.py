@@ -22,6 +22,14 @@ per model::
     python -m log_response.run --model resnet152 --weights r152.pth --figures out/
     python -m log_response.run --model vit_b_16 --layers encoder.layers.encoder_layer_5,encoder.ln
 
+Unusual ImageNet classifiers from timm retain the same 1000-way logits/prob
+measurement. Shared ImageNet normalization is the strict cross-model default;
+``native`` is a recorded preprocessing sensitivity check::
+
+    python -m log_response.run --model timm:poolformer_s12.sail_in1k --layers all
+    python -m log_response.run --model timm:gmlp_s16_224.ra3_in1k --layers all \
+        --preprocessing native
+
 CLIP (needs open_clip_torch; 'prob' is a zero-shot softmax over a fixed prompt
 set -- see CLIPModel)::
 
@@ -70,11 +78,13 @@ from .features import (
     RawPixelModel,
     SAMModel,
     SyntheticFrontEnd,
+    TimmModel,
     TorchvisionModel,
     load_prompts,
     parse_clip_spec,
     parse_hf_spec,
     parse_sam_spec,
+    parse_timm_spec,
 )
 from .experiment import (
     run_experiment,
@@ -163,6 +173,8 @@ def build_metadata(args, model, result, wall_seconds: float) -> dict:
         metadata["instruction"] = model.instruction
     if isinstance(model, SAMModel):
         metadata["mask_decoder"] = model.mask_decoder
+    if getattr(model, "model_metadata", None):
+        metadata["model_details"] = model.model_metadata
     return metadata
 
 
@@ -177,6 +189,7 @@ def build_model(args):
             (args.instruction, "--instruction"),
             (args.dtype, "--dtype"),
             (args.mask_decoder, "--mask-decoder"),
+            (args.preprocessing != "shared-imagenet", "--preprocessing"),
         ):
             if value:
                 raise SystemExit(f"{flag} does not apply to the {args.model} back-end")
@@ -184,6 +197,7 @@ def build_model(args):
     is_clip = args.model == "clip" or args.model.startswith("clip:")
     is_hf = args.model.startswith("hf:")
     is_sam = args.model == "sam" or args.model.startswith("sam:")
+    is_timm = args.model.startswith("timm:")
     if args.prompts and not is_clip:
         raise SystemExit("--prompts only applies to the CLIP back-end")
     if args.instruction and not is_hf:
@@ -192,6 +206,8 @@ def build_model(args):
         raise SystemExit("--dtype only applies to the hf: and sam: back-ends")
     if args.mask_decoder and not is_sam:
         raise SystemExit("--mask-decoder only applies to the sam: back-end")
+    if args.preprocessing != "shared-imagenet" and not is_timm:
+        raise SystemExit("--preprocessing only applies to the timm: back-end")
     if is_clip:
         arch, tag = parse_clip_spec(args.model)
         return CLIPModel(
@@ -224,6 +240,18 @@ def build_model(args):
             scramble=args.scramble,
             scramble_seed=_scramble_seed(args),
         )
+    if is_timm:
+        return TimmModel(
+            model_name=parse_timm_spec(args.model),
+            layers=layers,
+            weights_path=args.weights,
+            pretrained=args.weights is None,
+            device=args.device,
+            scramble=args.scramble,
+            scramble_seed=_scramble_seed(args),
+            allow_random_init=args.allow_random_init,
+            preprocessing=args.preprocessing,
+        )
     return TorchvisionModel(
         arch=args.model,
         layers=layers,
@@ -244,7 +272,8 @@ def main(argv=None):
         help="'synthetic' (offline), 'data' (raw image pixels -- the paper's "
         "'data' row, and the metric's 1/sqrt(reps) noise floor), a torchvision "
         "arch name (vgg19, resnet152, "
-        "...), 'clip[:ARCH[:PRETRAINED]]' (e.g. clip:ViT-B-32, "
+        "...), 'timm:MODEL_NAME' for a tagged timm ImageNet classifier, "
+        "'clip[:ARCH[:PRETRAINED]]' (e.g. clip:ViT-B-32, "
         "clip:ViT-B-32:laion2b_s34b_b79k), 'hf:MODEL_ID' for a generative "
         "VLM (e.g. hf:llava-hf/llava-1.5-7b-hf), or 'sam[:MODEL_ID]' for a "
         "Segment Anything encoder (default facebook/sam-vit-base)",
@@ -253,7 +282,15 @@ def main(argv=None):
         "--weights",
         default=None,
         help="local weights: a torchvision state_dict path, an open_clip "
-        "checkpoint (clip:), or a local model directory (hf:)",
+        "checkpoint (clip:), timm checkpoint, or a local model directory (hf:)",
+    )
+    p.add_argument(
+        "--preprocessing",
+        default="shared-imagenet",
+        choices=["shared-imagenet", "native"],
+        help="timm only: shared ImageNet mean/std for the strict architecture "
+        "comparison (default), or the checkpoint's native mean/std for a "
+        "preprocessing sensitivity run",
     )
     p.add_argument(
         "--layers",

@@ -64,7 +64,15 @@ def git_provenance(repo: str | None = None) -> dict:
 def package_versions() -> dict:
     """Versions of the packages that can change the numbers."""
     versions = {"python": platform.python_version()}
-    for name in ("numpy", "torch", "torchvision", "transformers", "open_clip"):
+    for name in (
+        "numpy",
+        "torch",
+        "torchvision",
+        "timm",
+        "huggingface_hub",
+        "transformers",
+        "open_clip",
+    ):
         try:
             module = __import__(name)
         except ImportError:

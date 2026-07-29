@@ -80,6 +80,16 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`swin-v2-t-scramble-r50-s0`](swin-v2-t-scramble-r50-s0/notes.md) | swin-v2-t, scrambled | 50 | `IMAGENET1K_V1` | λ range **0.22** | **Valid control** (r(logits,prob) 0.9926). λ range across frequency **0.22** against trained 2.62 — **12.2×** flatter. The frequency structure needs trained weights. |
 | [`vit-b-32-r50-s0`](vit-b-32-r50-s0/notes.md) | vit-b-32, trained | 50 | `IMAGENET1K_V1` | band **+0.21** | Architecture screen. mid band dips 0.21 (ρ +0.29); λ range 1.05, `prob` λ -0.546 at R² 0.927. |
 | [`vit-b-32-scramble-r50-s0`](vit-b-32-scramble-r50-s0/notes.md) | vit-b-32, scrambled | 50 | `IMAGENET1K_V1` | λ range **0.13** | **Valid control** (r(logits,prob) 0.9999). λ range across frequency **0.13** against trained 1.05 — **8.0×** flatter. The frequency structure needs trained weights. |
+| [`focalnet-tiny-srf-r50-s0`](focalnet-tiny-srf-r50-s0/notes.md) | focalnet-tiny-srf, trained | 50 | timm `focalnet-tiny-srf` | `prob` λ **+0.420** | Focal modulation in place of attention. λ-R² 0.941, band -0.22 (ρ -0.79). |
+| [`focalnet-tiny-srf-scramble-r50-s0`](focalnet-tiny-srf-scramble-r50-s0/notes.md) | focalnet-tiny-srf, scrambled | 50 | timm `focalnet-tiny-srf` | **usable** | r(logits,prob) 0.947 at ratio 1.4e-3. Same reading as PoolFormer: usable, not pristine. |
+| [`gmlp-s16-r50-s0`](gmlp-s16-r50-s0/notes.md) | gmlp-s16, trained | 50 | timm `gmlp-s16` | `prob` λ **-0.250** | **mlp only** — no attention and no convolution beyond the patch embedding. λ-R² 0.934, band -0.71 (ρ +0.29). |
+| [`gmlp-s16-native-r50-s0`](gmlp-s16-native-r50-s0/notes.md) | gmlp-s16-native, trained | 50 | timm `gmlp-s16-native` | `prob` λ **-0.346** | The gmlp run again under the checkpoint's own normalisation, as a preprocessing sensitivity check. λ-R² 0.936, band -0.05 (ρ +0.60). |
+| [`gmlp-s16-scramble-r50-s0`](gmlp-s16-scramble-r50-s0/notes.md) | gmlp-s16, scrambled | 50 | timm `gmlp-s16` | **clean** | r(logits,prob) 0.992 at ratio 8.7e-4 — the softmax stays in its affine regime. |
+| [`poolformer-s12-r50-s0`](poolformer-s12-r50-s0/notes.md) | poolformer-s12, trained | 50 | timm `poolformer-s12` | `prob` λ **-0.034** | **pooling** in place of attention (the metaformer control). λ-R² 0.889, band +0.48 (ρ -0.74). |
+| [`poolformer-s12-scramble-r50-s0`](poolformer-s12-scramble-r50-s0/notes.md) | poolformer-s12, scrambled | 50 | timm `poolformer-s12` | **usable** | r(logits,prob) 0.968 at ratio 7.1e-4. Logit magnitudes are sane (~2), so the softmax is not saturating, but this is visibly less clean than a LayerNorm control (0.9998). |
+| [`resmlp-12-r50-s0`](resmlp-12-r50-s0/notes.md) | resmlp-12, trained | 50 | timm `resmlp-12` | `prob` λ **-0.315** | **mlp only**, with a learned per-channel affine in place of layernorm. λ-R² 0.892, band +0.40 (ρ +0.55). |
+| [`resmlp-12-scramble-r50-s0`](resmlp-12-scramble-r50-s0/notes.md) | resmlp-12, scrambled | 50 | timm `resmlp-12` | **BROKEN** | r(logits,prob) **0.590** at ratio 1.3e-4, max |D_logits| **2409** against ~2 for the others, and **42 of 114 taps pinned at the λ = +4 bound** (trained companion: 0). ResMLP replaces LayerNorm with a learned per-channel Affine, which does not renormalise by the input, so nothing absorbs the permuted scales and the logits explode. **Do not table this against any other control.** |
+| [`xcit-nano-12-p16-r50-s0`](xcit-nano-12-p16-r50-s0/notes.md) | xcit-nano-12-p16, trained | 50 | timm `xcit-nano-12-p16` | `prob` λ **-0.469** | Cross-covariance attention (over channels, not tokens). λ-R² 0.745, band -0.57 (ρ -0.14). |
 | [`vgg19-r250-s0-alllayers-linear`](vgg19-r250-s0-alllayers-linear/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Grid control. Profile survives: mean \|Δλ\| 0.045, **44/44** steps agree in direction. |
 | [`vgg19-scramble-r250-s0-alllayers-linear`](vgg19-scramble-r250-s0-alllayers-linear/notes.md) | VGG-19, scrambled | 250 | `IMAGENET1K_V1` | 45 taps, linear grid | Control for the above. Mean \|Δλ\| 0.024; read against its R² 0.72, which is what makes λ here uninformative. |
 | [`vgg19-r250-s0-alllayers-fixed`](vgg19-r250-s0-alllayers-fixed/notes.md) | VGG-19, trained | 250 | `IMAGENET1K_V1` | all 45 taps | Depth profile. conv median +0.69, `prob` +0.165. (Its λ 0.922 at conv1_1 is the noise floor, not a measurement — see `data-r250-s0`.) |
@@ -172,6 +182,24 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > The six controls are the screen's real contribution: they sit on BN-free nets,
 > so all six are valid, and λ's range across frequency is **3.4–20.8× larger
 > trained than scrambled in 6/6 pairs**. See `wiki/Results.md`.
+
+
+> **A 10-run unusual-architecture screen landed on 2026-07-29**, via a new
+> `timm:` back-end: gMLP, ResMLP, PoolFormer, FocalNet, XCiT — families that
+> replace attention, or drop both attention and convolution. All 384 bundled
+> checksums pass, all ten are `pretrained_verified`, all run at 224x224 on the
+> repo's exact grids, and each reads λ 0.94–0.96 at its first tap (the noise
+> floor). `run.json` records `commit: null` with reason "git not available or
+> not a repository" — honest, but these ten cannot be pinned to a code revision
+> the way the Actions runs can.
+>
+> **One of the four controls is broken, and BatchNorm is not why.**
+> `resmlp-12-scramble` explodes: max |D_logits| **2409** against ~2 elsewhere,
+> r(logits,prob) **0.590**, and **42 of 114 taps pinned at the λ = +4 bound**.
+> ResMLP has *no* BatchNorm — it uses a learned per-channel Affine instead of
+> LayerNorm, which never renormalises by the input, so nothing absorbs the
+> permuted scales. The repo's rule ("valid where there are no BatchNorm running
+> statistics") does not catch this. See `wiki/Results.md`.
 
 
 Note that "best mean R²" is not `prob` for either r250 run — that is the finding,

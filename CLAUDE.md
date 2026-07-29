@@ -443,6 +443,33 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     scrambled, 6/6 pairs**; scrambled is nearly flat (0.07–0.26) against
     trained 0.89–2.62. The *shape* is architecture-dependent; the *existence*
     of the structure is a property of learning.
+- **The compression needs neither convolution nor attention** (2026-07-29,
+  `timm:` back-end). gMLP-S16 and ResMLP-12 are token/channel-mixing **MLPs** on
+  a patch embedding — no conv past the stem, no attention anywhere — and reach
+  `prob` λ **−0.250** (R² 0.934) and **−0.315** (R² 0.892). With ViT (no
+  rectifiers) and AlexNet (no depth), the operating-point reading is the only
+  survivor. PoolFormer-S12 −0.034; **FocalNet-T +0.420, the highest λ of all 29
+  combinations**; XCiT-nano −0.469 but at **λ-R² 0.745, the worst fit in the
+  repo** — quote it with the R² or not at all. One seed each.
+- **"No BatchNorm" is not sufficient for a valid scramble** (2026-07-29,
+  corrects the rule below). `resmlp-12-scramble` has **zero** BN modules and is
+  broken anyway: max |D_logits| **2409** against ~2 elsewhere, r(logits,prob)
+  **0.590**, and **42/114 taps pinned at the λ=+4 bound** (trained companion:
+  0). ResMLP uses a learned per-channel **Affine** instead of LayerNorm, which
+  never renormalises by the input, so nothing absorbs the permuted scales. The
+  real rule is **renormalisation**: the scramble is safe only where the net
+  rescales by statistics of the *current input*. LayerNorm yes; BatchNorm-eval
+  no (fixed buffers); learned Affine no (fixed learned scale). `TimmModel`
+  refuses on BN, which is right but would not have caught this.
+- **Preprocessing moves per-frequency λ far more than it moves the median**
+  (2026-07-29). `gmlp-s16` run twice, differing only in input normalisation
+  (shared ImageNet 0.485/0.229 vs native 0.5/0.5): `prob` λ moves just **0.096**
+  but per-frequency **mean |Δλ| = 0.320, max 0.707**, signs disagree at some
+  frequencies, and band contrast goes −0.71 → −0.05. That is comparable to the
+  mid-band dips (0.20–0.53) and ~10× their seed-to-seed sd. The seed sweep shows
+  the dips survive **redrawing the images**; nothing yet shows they survive **the
+  normalisation**. All seed-swept series used shared constants, so none of them
+  is invalidated. One architecture, one comparison — a flag, not a result.
 - **Some taps are not functions of the input at all** (2026-07-29, found while
   plotting depth profiles). Swin-V2-T's `features.*.attn.cpb_mlp.*` — the
   continuous position-bias MLP — takes *relative-position coordinates*, not the

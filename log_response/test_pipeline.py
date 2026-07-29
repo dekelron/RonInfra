@@ -65,6 +65,7 @@ from .features import (
     parse_clip_spec,
     parse_hf_spec,
     parse_sam_spec,
+    parse_timm_spec,
 )
 from .experiment import (
     run_experiment,
@@ -397,6 +398,18 @@ def test_parse_clip_spec():
             raise AssertionError(f"expected ValueError for {bad!r}")
 
 
+def test_parse_timm_spec_preserves_checkpoint_tag():
+    name = "gmlp_s16_224.ra3_in1k"
+    assert parse_timm_spec(f"timm:{name}") == name
+    for bad in ("gmlp_s16_224.ra3_in1k", "timm:"):
+        try:
+            parse_timm_spec(bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"expected ValueError for {bad!r}")
+
+
 def test_default_prompts_wellformed():
     assert len(DEFAULT_PROMPTS) >= 16  # enough classes for a meaningful softmax
     assert len(set(DEFAULT_PROMPTS)) == len(DEFAULT_PROMPTS)  # no duplicates
@@ -684,6 +697,69 @@ def test_layers_all_resolves_on_the_non_torchvision_backends():
     md = SAMModel(model=model, processor=processor, layers=["all"], mask_decoder=True)
     assert any(n.startswith("mask_decoder") for n in md.layers), md.layers
     md.close()
+
+
+def test_timm_refuses_random_init_by_default():
+    """The trap, for the timm back-end: untrained must fail loudly.
+
+    The log response only exists in a trained net, so a back-end that quietly
+    falls back to random init reports meaningless numbers that look real once
+    saved. ``TorchvisionModel`` is pinned below; this is the same guard for
+    ``TimmModel``, which the screening patch added without one.
+    """
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import timm  # noqa: F401
+    except ImportError:
+        raise unittest.SkipTest("torch/timm not installed")
+    from .features import TimmModel
+
+    try:
+        TimmModel("resnet18", pretrained=False)
+    except RuntimeError as exc:
+        assert "allow_random_init" in str(exc) or "random" in str(exc).lower()
+    else:
+        raise AssertionError("expected RuntimeError for an untrained timm net")
+
+    # The deliberate opt-in still works and stamps the run as unverified.
+    model = TimmModel("resnet18", pretrained=False, allow_random_init=True)
+    assert model.weights_ok is False
+    assert "random" in model.weights_source.lower()
+
+
+def test_timm_refuses_the_standard_scramble_on_batchnorm_nets():
+    """A weight-only permutation is not a control on a net with BN buffers.
+
+    ``--scramble`` permutes every ``*weight*`` tensor; on a BatchNorm net that
+    moves gamma across channels while ``running_mean``/``running_var`` stay put,
+    so each channel gets one channel's statistics and another's scale. That
+    decalibrates rather than degrades -- measured, it saturates the softmax ten
+    orders of magnitude below the affine regime. The back-end must refuse.
+    """
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import timm  # noqa: F401
+    except ImportError:
+        raise unittest.SkipTest("torch/timm not installed")
+    from .features import TimmModel
+
+    try:
+        TimmModel("resnet18", pretrained=False, allow_random_init=True,
+                  scramble=True)
+    except RuntimeError as exc:
+        assert "BatchNorm" in str(exc), str(exc)
+    else:
+        raise AssertionError("expected the BatchNorm scramble refusal")
+
+    # A BN-free net scrambles normally -- the refusal must not be blanket.
+    model = TimmModel("vit_tiny_patch16_224", pretrained=False,
+                      allow_random_init=True, scramble=True)
+    assert model.model_metadata["batchnorm_modules"] == 0
+    assert model.model_metadata["standard_scramble_valid"] is True
 
 
 def test_torchvision_refuses_random_init_by_default():

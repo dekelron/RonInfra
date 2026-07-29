@@ -681,6 +681,58 @@ res, _ = load_result("results/alexnet-r250-s0")
 [(p.lam, p.r2, p.lo, p.hi) for p in res.results["prob"].power_fits]
 ```
 
+### Beyond convolution and attention
+
+A 10-run screen (2026-07-29, contributed, `timm:` back-end) reaches families
+torchvision does not carry — and two of them drop the mechanisms every earlier
+run had:
+
+| net | what it removes | `prob` λ | λ-R² |
+|---|---|---|---|
+| **gMLP-S16** | **attention *and* convolution** (MLP only) | **−0.250** | 0.934 |
+| **ResMLP-12** | **attention *and* convolution** (MLP only) | **−0.315** | 0.892 |
+| PoolFormer-S12 | attention → pooling | −0.034 | 0.889 |
+| FocalNet-T (SRF) | attention → focal modulation | **+0.420** | 0.941 |
+| XCiT-nano-12-p16 | token attention → cross-covariance | −0.469 | **0.745** |
+
+**The compression survives with neither convolution nor attention.** gMLP and
+ResMLP are token-mixing and channel-mixing MLPs on a patch embedding — no
+convolution past the stem, no attention anywhere — and both land past the log
+law at −0.25 and −0.32. That closes the same door ViT closed for rectifiers: it
+is not conv, not attention, not depth, not rectification. The operating-point
+reading is what remains.
+
+Two cautions. **FocalNet is the only net measured anywhere that sits well
+*above* the log law** (+0.420, the highest of all 29 combinations) — read it as
+one single-seed run, not a family property. And **XCiT's λ-R² is 0.745, the
+worst fit in the repo**, so its −0.469 locates very little; quote it with the
+R² or not at all.
+
+#### Preprocessing moves the frequency structure more than it moves λ
+
+`gmlp-s16` was run twice, identical but for the input normalisation — the
+shared ImageNet constants (0.485/0.229) against the checkpoint's own
+(0.5/0.5). Nothing else differs:
+
+| | `prob` λ | band contrast | ρ vs frequency |
+|---|---|---|---|
+| shared ImageNet | −0.250 | −0.71 | +0.29 |
+| native | −0.346 | −0.05 | +0.60 |
+
+The headline λ barely moves (**Δ 0.096**). The per-frequency structure does:
+**mean |Δλ| = 0.320 across the eight frequencies, max 0.707**, the signs
+disagree at some frequencies, and the band statistic all but vanishes. For
+scale, 0.320 is comparable to the mid-band dips established above (0.20–0.53)
+and an order of magnitude above their seed-to-seed sd (0.014–0.042).
+
+So the seed sweep and this are answering different questions, and both are
+needed: the dips are robust to **redrawing the images**, and are *not yet*
+shown robust to **the input normalisation**. Every seed-swept series used the
+shared constants, so nothing above is invalidated — but a frequency profile
+should not be quoted as a property of an architecture until it has been
+re-measured under its own recipe. One architecture, one comparison; this is a
+flag, not a result.
+
 ### The scrambling control is not architecture-neutral
 
 The one methodological finding, and it limits the tool rather than the nets.
@@ -711,6 +763,33 @@ AlexNet's 0.865 or ViT's 0.797.**
 
 The fix, when someone wants a BatchNorm control: scramble `running_mean` and
 `running_var` with the weights, or leave both alone.
+
+**Corrected 2026-07-29 — "no BatchNorm" is necessary but not sufficient.**
+`resmlp-12-scramble` has **zero** BatchNorm modules and its control is still
+broken, worse than PoolFormer's or FocalNet's:
+
+| scrambled | BN modules | max \|D_logits\| | ratio | r(logits, prob) |
+|---|---|---|---|---|
+| ViT-B/16 (LayerNorm) | 0 | ~2 | 1.0e-3 | 0.999975 |
+| gMLP-S16 (LayerNorm) | 0 | 2.03 | 8.7e-4 | 0.992 |
+| PoolFormer-S12 | 0 | 2.14 | 7.1e-4 | 0.968 |
+| FocalNet-T | 0 | 1.91 | 1.4e-3 | 0.947 |
+| **ResMLP-12** | **0** | **2409** | **1.3e-4** | **0.590** |
+| `vgg19_bn` | many | — | 1.1e-10 | 0.162 |
+
+ResMLP replaces LayerNorm with a learned per-channel **Affine** (`αx + β`).
+Unlike LayerNorm it does not renormalise by the input's own statistics, so when
+the permutation moves α across channels there is nothing to absorb the
+mismatch: activations compound and the logits reach 2409 against ~2 elsewhere.
+**42 of its 114 taps pin at the λ = +4 search bound**; its trained companion
+pins none.
+
+The rule that actually holds is about **renormalisation, not BatchNorm**: the
+standard scramble is safe only where the network rescales by statistics
+computed from the current input. LayerNorm does; BatchNorm in eval does not
+(fixed buffers); a learned Affine does not (fixed learned scale). The
+`TimmModel` back-end refuses the scramble on BatchNorm nets, which is right but
+would not have caught ResMLP.
 
 Incidentally, scrambled AlexNet reproduces the VGG-19 softmax finding exactly:
 r(logits, prob) = 1.000000 at ratio 1/1000, against 0.977 trained. The
