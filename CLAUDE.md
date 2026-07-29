@@ -443,6 +443,16 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     scrambled, 6/6 pairs**; scrambled is nearly flat (0.07–0.26) against
     trained 0.89–2.62. The *shape* is architecture-dependent; the *existence*
     of the structure is a property of learning.
+- **Some taps are not functions of the input at all** (2026-07-29, found while
+  plotting depth profiles). Swin-V2-T's `features.*.attn.cpb_mlp.*` — the
+  continuous position-bias MLP — takes *relative-position coordinates*, not the
+  image, so its `D` surface is **exactly zero at every cell**. The fitter
+  answers a constant: λ = −2.95 (near the bound) with `lambda_r2` = **nan**.
+  **36 of Swin-V2-T's 136 taps (26%) are these**, in both the trained and the
+  scrambled run. They are worse than the noise floor — that is a real layer
+  measured at zero SNR, this is a module the image never reaches. Filter on
+  `lambda_r2` being non-finite before any depth profile or cross-tap average.
+  No other committed run has one.
 - **λ pinned at a search bound is not a measurement** (2026-07-29). `fit.py`
   searches λ over [−3, 4]; a fit that hits the edge returns the bound as its
   point estimate, and it reads like a value. `regnet_y_400mf` at 7 cyc/img and

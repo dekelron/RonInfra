@@ -355,6 +355,15 @@ Controls to run: within-layer weight scrambling; comparison of `logits` vs
   same loose sense that a median names a distribution, and two runs with equal
   median λ can have different frequency structure. Untested how much of the
   architecture differences on this page survive per frequency.
+* **A hooked module is not necessarily a function of the input.** The noise
+  floor below covers layers that *are* driven by the image but whose population
+  `D` is zero; a separate case is a module the image never reaches at all.
+  Swin-V2-T's `attn.cpb_mlp.*` maps relative-position coordinates to a bias
+  table, so its `D` surface is **exactly zero everywhere** and λ is the fitter
+  answering a constant (−2.95, with `lambda_r2` = nan). That is 36 of its 136
+  taps. `--layers all` hooks leaf modules, and not every leaf is on the image's
+  path — **filter on `lambda_r2` being finite** before averaging across taps or
+  drawing a depth profile.
 * **The profile-F interval is not the right test for whether a frequency
   profile is real.** It asks how tightly the 14 contrast points pin λ within one
   run; whether the shape survives redrawing the images is a separate question,
