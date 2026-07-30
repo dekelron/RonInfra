@@ -47,6 +47,13 @@ on:
           native 384 and tiles it anyres, measured at 62 s per forward pass on a
           4-core runner, which puts the standard grid 7.4x over the job cap."
         default: ""
+      dtype:
+        description: "Torch dtype for the hf:/sam: back-ends (float32, bfloat16,
+          float16, auto; blank = the checkpoint's own). Worth setting explicitly:
+          llava-interleave ships bfloat16, and a runner without AVX512-BF16
+          emulates it, so the checkpoint's default is not automatically the
+          fastest choice on CPU."
+        default: ""
       notes:
         description: "One-line description, stored in run.json and notes.md"
         default: ""
@@ -100,6 +107,7 @@ jobs:
       CONTRASTS: ${{ inputs.contrasts }}
       LAYERS: ${{ inputs.layers }}
       SIZE: ${{ inputs.size }}
+      DTYPE: ${{ inputs.dtype }}
       NOTES: ${{ inputs.notes }}
       SLUG_SUFFIX: ${{ inputs.slug_suffix }}
       SCRAMBLE: ${{ matrix.scramble }}
@@ -229,6 +237,7 @@ jobs:
           if [ -n "$CONTRASTS" ]; then args+=(--contrasts "$CONTRASTS"); fi
           if [ -n "$LAYERS" ]; then args+=(--layers "$LAYERS"); fi
           if [ -n "$SIZE" ]; then args+=(--size "$SIZE"); fi
+          if [ -n "$DTYPE" ]; then args+=(--dtype "$DTYPE"); fi
           if [ "$SCRAMBLE" = "true" ]; then args+=(--scramble); fi
           if [ -n "$SCRAMBLE_SEED" ]; then args+=(--scramble-seed "$SCRAMBLE_SEED"); fi
 
