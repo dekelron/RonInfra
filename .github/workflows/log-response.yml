@@ -39,6 +39,14 @@ on:
       layers:
         description: "Comma-separated module names to tap (blank = per-arch default)"
         default: ""
+      size:
+        description: "Grating size in pixels (blank = the back-end's native input
+          size). Frequencies are in cycles per *image*, so this does not change
+          the stimulus -- it changes how finely it is sampled, and on the VLM
+          back-end how much work a forward pass is: llava-interleave reports a
+          native 384 and tiles it anyres, measured at 62 s per forward pass on a
+          4-core runner, which puts the standard grid 7.4x over the job cap."
+        default: ""
       notes:
         description: "One-line description, stored in run.json and notes.md"
         default: ""
@@ -91,6 +99,7 @@ jobs:
       FREQUENCIES: ${{ inputs.frequencies }}
       CONTRASTS: ${{ inputs.contrasts }}
       LAYERS: ${{ inputs.layers }}
+      SIZE: ${{ inputs.size }}
       NOTES: ${{ inputs.notes }}
       SLUG_SUFFIX: ${{ inputs.slug_suffix }}
       SCRAMBLE: ${{ matrix.scramble }}
@@ -219,6 +228,7 @@ jobs:
           if [ -n "$FREQUENCIES" ]; then args+=(--frequencies "$FREQUENCIES"); fi
           if [ -n "$CONTRASTS" ]; then args+=(--contrasts "$CONTRASTS"); fi
           if [ -n "$LAYERS" ]; then args+=(--layers "$LAYERS"); fi
+          if [ -n "$SIZE" ]; then args+=(--size "$SIZE"); fi
           if [ "$SCRAMBLE" = "true" ]; then args+=(--scramble); fi
           if [ -n "$SCRAMBLE_SEED" ]; then args+=(--scramble-seed "$SCRAMBLE_SEED"); fi
 
