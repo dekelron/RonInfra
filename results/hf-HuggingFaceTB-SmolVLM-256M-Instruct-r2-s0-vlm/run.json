@@ -1,0 +1,62 @@
+{
+  "code": {
+    "available": true,
+    "branch": "master",
+    "commit": "2ac15b5c2b0866ecf9589e2cc6f17325bd814018",
+    "dirty": false,
+    "dirty_files": null
+  },
+  "command": "run.py --model hf:HuggingFaceTB/SmolVLM-256M-Instruct --reps 2 --seed 0 --save-run results/hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-vlm --notes First VLM measurement. The training objective is the one axis the other 27 architectures never vary - all are ImageNet classifiers with a 1000-way softmax, and convolution, attention, depth, rectifiers, normalisation and skip connections have each been varied and excluded already. SmolVLM-256M is generative: language-modelling objective, SigLIP tower, no classification head, so prob is the softmax over a 49280-token vocabulary and the TV bound is 2/V rather than 2/1000. Comparable to the other runs on lambda, which is dimensionless; NOT comparable on the magnitude of D_prob. Standard 8x14 grid, so reps is the only deviation from the corpus. dtype float32 is deliberate and is worth 4.2x: the checkpoint ships bfloat16, which these runners emulate, measured at 130 s per forward pass against 31.1 s in float32. reps=2 is the price of fitting the full grid at that rate - 225 passes, 117 min expected against a 330 min cap, still inside it at the documented 2x runner variance. reps=2 is far below the corpus's 50, so treat single-tap lambdas as provisional and read the lambda vs lambda_mod gap as the per-tap check on whether the primary metric is reporting its own noise. Two previous full-grid attempts were cancelled at the cap, sized from an unrepresentative 7-pass probe. --figures out/ --dtype float32",
+  "created_utc": "2026-07-30T20:05:29Z",
+  "device": "cpu",
+  "environment": {
+    "cpu_count": 4,
+    "executable": "/opt/hostedtoolcache/Python/3.11.15/x64/bin/python",
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    "wall_seconds": 3353.4
+  },
+  "instruction": "Describe this image.",
+  "layers": [
+    "model.vision_model.encoder.layers.11",
+    "model.text_model.layers.14",
+    "model.text_model.layers.29",
+    "logits",
+    "prob"
+  ],
+  "model": "hf:HuggingFaceTB/SmolVLM-256M-Instruct",
+  "model_details": {
+    "backend": "hf-vlm",
+    "batchnorm_free": true,
+    "batchnorm_modules": 0,
+    "chat_template_used": true,
+    "conditioning_text": "<|im_start|>User:<image>Describe this image.<end_of_utterance>\nAssistant:",
+    "dtype": "torch.float32",
+    "input_size": 336,
+    "instruction": "Describe this image.",
+    "model_id": "HuggingFaceTB/SmolVLM-256M-Instruct",
+    "model_type": "idefics3",
+    "normalisation_census": {
+      "LayerNorm": 25,
+      "LlamaRMSNorm": 61
+    },
+    "parameter_count": 256484928,
+    "vocab_size": 49280
+  },
+  "notes": "First VLM measurement. The training objective is the one axis the other 27 architectures never vary - all are ImageNet classifiers with a 1000-way softmax, and convolution, attention, depth, rectifiers, normalisation and skip connections have each been varied and excluded already. SmolVLM-256M is generative: language-modelling objective, SigLIP tower, no classification head, so prob is the softmax over a 49280-token vocabulary and the TV bound is 2/V rather than 2/1000. Comparable to the other runs on lambda, which is dimensionless; NOT comparable on the magnitude of D_prob. Standard 8x14 grid, so reps is the only deviation from the corpus. dtype float32 is deliberate and is worth 4.2x: the checkpoint ships bfloat16, which these runners emulate, measured at 130 s per forward pass against 31.1 s in float32. reps=2 is the price of fitting the full grid at that rate - 225 passes, 117 min expected against a 330 min cap, still inside it at the documented 2x runner variance. reps=2 is far below the corpus's 50, so treat single-tap lambdas as provisional and read the lambda vs lambda_mod gap as the per-tap check on whether the primary metric is reporting its own noise. Two previous full-grid attempts were cancelled at the cap, sized from an unrepresentative 7-pass probe.",
+  "scramble": false,
+  "scramble_seed": 0,
+  "seed": 0,
+  "versions": {
+    "huggingface_hub": "1.26.0",
+    "numpy": "2.4.6",
+    "python": "3.11.15",
+    "torch": "2.13.0+cpu",
+    "torchvision": "0.28.0+cpu",
+    "transformers": "5.14.1"
+  },
+  "weights": {
+    "pretrained_verified": true,
+    "source": "transformers HuggingFaceTB/SmolVLM-256M-Instruct"
+  }
+}
