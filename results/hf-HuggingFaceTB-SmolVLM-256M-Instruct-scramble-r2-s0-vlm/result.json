@@ -1,0 +1,695 @@
+{
+  "metadata": {
+    "model": "hf:HuggingFaceTB/SmolVLM-256M-Instruct",
+    "scramble": true,
+    "seed": 0,
+    "scramble_seed": 0,
+    "device": "cpu",
+    "layers": [
+      "model.vision_model.encoder.layers.11",
+      "model.text_model.layers.14",
+      "model.text_model.layers.29",
+      "logits",
+      "prob"
+    ],
+    "weights": {
+      "pretrained_verified": true,
+      "source": "transformers HuggingFaceTB/SmolVLM-256M-Instruct"
+    },
+    "command": "run.py --model hf:HuggingFaceTB/SmolVLM-256M-Instruct --reps 2 --seed 0 --save-run results/hf-HuggingFaceTB-SmolVLM-256M-Instruct-scramble-r2-s0-vlm --notes First VLM measurement. The training objective is the one axis the other 27 architectures never vary - all are ImageNet classifiers with a 1000-way softmax, and convolution, attention, depth, rectifiers, normalisation and skip connections have each been varied and excluded already. SmolVLM-256M is generative: language-modelling objective, SigLIP tower, no classification head, so prob is the softmax over a 49280-token vocabulary and the TV bound is 2/V rather than 2/1000. Comparable to the other runs on lambda, which is dimensionless; NOT comparable on the magnitude of D_prob. Standard 8x14 grid, so reps is the only deviation from the corpus. dtype float32 is deliberate and is worth 4.2x: the checkpoint ships bfloat16, which these runners emulate, measured at 130 s per forward pass against 31.1 s in float32. reps=2 is the price of fitting the full grid at that rate - 225 passes, 117 min expected against a 330 min cap, still inside it at the documented 2x runner variance. reps=2 is far below the corpus's 50, so treat single-tap lambdas as provisional and read the lambda vs lambda_mod gap as the per-tap check on whether the primary metric is reporting its own noise. Two previous full-grid attempts were cancelled at the cap, sized from an unrepresentative 7-pass probe. --figures out/ --dtype float32 --scramble",
+    "code": {
+      "available": true,
+      "commit": "2ac15b5c2b0866ecf9589e2cc6f17325bd814018",
+      "branch": "master",
+      "dirty": false,
+      "dirty_files": null
+    },
+    "versions": {
+      "python": "3.11.15",
+      "numpy": "2.4.6",
+      "torch": "2.13.0+cpu",
+      "torchvision": "0.28.0+cpu",
+      "huggingface_hub": "1.26.0",
+      "transformers": "5.14.1"
+    },
+    "environment": {
+      "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+      "machine": "x86_64",
+      "cpu_count": 4,
+      "executable": "/opt/hostedtoolcache/Python/3.11.15/x64/bin/python",
+      "wall_seconds": 5301.9
+    },
+    "created_utc": "2026-07-30T20:40:31Z",
+    "notes": "First VLM measurement. The training objective is the one axis the other 27 architectures never vary - all are ImageNet classifiers with a 1000-way softmax, and convolution, attention, depth, rectifiers, normalisation and skip connections have each been varied and excluded already. SmolVLM-256M is generative: language-modelling objective, SigLIP tower, no classification head, so prob is the softmax over a 49280-token vocabulary and the TV bound is 2/V rather than 2/1000. Comparable to the other runs on lambda, which is dimensionless; NOT comparable on the magnitude of D_prob. Standard 8x14 grid, so reps is the only deviation from the corpus. dtype float32 is deliberate and is worth 4.2x: the checkpoint ships bfloat16, which these runners emulate, measured at 130 s per forward pass against 31.1 s in float32. reps=2 is the price of fitting the full grid at that rate - 225 passes, 117 min expected against a 330 min cap, still inside it at the documented 2x runner variance. reps=2 is far below the corpus's 50, so treat single-tap lambdas as provisional and read the lambda vs lambda_mod gap as the per-tap check on whether the primary metric is reporting its own noise. Two previous full-grid attempts were cancelled at the cap, sized from an unrepresentative 7-pass probe.",
+    "instruction": "Describe this image.",
+    "model_details": {
+      "backend": "hf-vlm",
+      "model_id": "HuggingFaceTB/SmolVLM-256M-Instruct",
+      "model_type": "idefics3",
+      "parameter_count": 256484928,
+      "vocab_size": 49280,
+      "instruction": "Describe this image.",
+      "conditioning_text": "<|im_start|>User:<image>Describe this image.<end_of_utterance>\nAssistant:",
+      "chat_template_used": true,
+      "input_size": 336,
+      "dtype": "torch.float32",
+      "normalisation_census": {
+        "LayerNorm": 25,
+        "LlamaRMSNorm": 61
+      },
+      "batchnorm_modules": 0,
+      "batchnorm_free": true
+    }
+  },
+  "repetitions": 2,
+  "size": 336,
+  "mean": 0.5,
+  "contrasts": [
+    0.0078125,
+    0.015625,
+    0.0234375,
+    0.03125,
+    0.046875,
+    0.0625,
+    0.0859375,
+    0.125,
+    0.1796875,
+    0.2578125,
+    0.359375,
+    0.5,
+    0.71875,
+    1.0
+  ],
+  "frequencies": [
+    1.0,
+    1.75,
+    3.5,
+    7.0,
+    14.0,
+    28.0,
+    56.0,
+    75.0
+  ],
+  "layers": [
+    {
+      "layer": "model.vision_model.encoder.layers.11",
+      "mean_of_distances": {
+        "lambda": 0.5086694128213225,
+        "lambda_ci": [
+          0.39294142828202827,
+          0.6317174205424271
+        ],
+        "lambda_r2": 0.9884016544570093,
+        "mean_r2": 0.8919928698019262
+      },
+      "mean_r2": 0.8665270641202604,
+      "lambda": 0.560404590612847,
+      "lambda_ci": [
+        0.4344861323934704,
+        0.6988463867613754
+      ],
+      "lambda_r2": 0.9836429124805757,
+      "pooled_r2": 0.8663701991900826,
+      "pooled_slope": 1.2647363165973058,
+      "spacing_cv": 0.8041689457200243,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9093405667150433,
+          "slope": 1.3661594860373103,
+          "intercept": 2.361347467236686,
+          "lambda": 0.3393023267747843,
+          "lambda_ci": [
+            0.16084498192301222,
+            0.5335089131525441
+          ],
+          "lambda_r2": 0.9656480668961333
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8889114414158725,
+          "slope": 1.2904582575339523,
+          "intercept": 2.1999294188280882,
+          "lambda": 0.4653321165739719,
+          "lambda_ci": [
+            0.3248445874407666,
+            0.6173769711460946
+          ],
+          "lambda_r2": 0.9823091098200414
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8595832332608546,
+          "slope": 1.2343021863408472,
+          "intercept": 2.0454752783430385,
+          "lambda": 0.5619866023402934,
+          "lambda_ci": [
+            0.44237867592875424,
+            0.6905495135557524
+          ],
+          "lambda_r2": 0.9884545143753222
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.857173536813304,
+          "slope": 1.2615268227074508,
+          "intercept": 2.081003108601862,
+          "lambda": 0.5588225788854005,
+          "lambda_ci": [
+            0.42659358885818655,
+            0.7019553085168462
+          ],
+          "lambda_r2": 0.9856290005998415
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8610567109242969,
+          "slope": 1.2611145050330907,
+          "intercept": 2.0834562035884723,
+          "lambda": 0.5368778681363077,
+          "lambda_ci": [
+            0.39125497974901946,
+            0.6957374650059047
+          ],
+          "lambda_r2": 0.9819575727268038
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8530909993706425,
+          "slope": 1.240678812024403,
+          "intercept": 2.046327599641924,
+          "lambda": 0.5751387018308993,
+          "lambda_ci": [
+            0.44863132259871985,
+            0.7117113611392274
+          ],
+          "lambda_r2": 0.9871727748413572
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8505861671014618,
+          "slope": 1.2330048095866488,
+          "intercept": 2.0377678696561246,
+          "lambda": 0.589139517955754,
+          "lambda_ci": [
+            0.4686358104624845,
+            0.7188535463793566
+          ],
+          "lambda_r2": 0.9886983828672594
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8524738573606073,
+          "slope": 1.2306456535147474,
+          "intercept": 2.0350057499373464,
+          "lambda": 0.5864289868737796,
+          "lambda_ci": [
+            0.468928897035097,
+            0.712688961065894
+          ],
+          "lambda_r2": 0.9892738777178468
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.14",
+      "mean_of_distances": {
+        "lambda": 0.4813764643114935,
+        "lambda_ci": [
+          0.3397555258027967,
+          0.6331997363435058
+        ],
+        "lambda_r2": 0.9827290097618289,
+        "mean_r2": 0.8900922047018552
+      },
+      "mean_r2": 0.8669354206060851,
+      "lambda": 0.5242894577150705,
+      "lambda_ci": [
+        0.36788454153471833,
+        0.6955312608320159
+      ],
+      "lambda_r2": 0.9777792069361549,
+      "pooled_r2": 0.8659837133672253,
+      "pooled_slope": 4.150580938517864,
+      "spacing_cv": 0.8101473356539212,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9004477124980941,
+          "slope": 4.494326297647788,
+          "intercept": 7.729024981419248,
+          "lambda": 0.3611756104245837,
+          "lambda_ci": [
+            0.17670128742496938,
+            0.563013666282655
+          ],
+          "lambda_r2": 0.9637178955495158
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8878370610091972,
+          "slope": 4.3058556659936515,
+          "intercept": 7.287879812669703,
+          "lambda": 0.45471953507669477,
+          "lambda_ci": [
+            0.30808958495627636,
+            0.6136349781346988
+          ],
+          "lambda_r2": 0.9798978360810346
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8589965572064864,
+          "slope": 4.197669795658505,
+          "intercept": 6.922230438646688,
+          "lambda": 0.5314134621625936,
+          "lambda_ci": [
+            0.3780654705869402,
+            0.6991149016404112
+          ],
+          "lambda_r2": 0.9794402660557625
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8591806729825316,
+          "slope": 4.238052400993703,
+          "intercept": 6.976036331818735,
+          "lambda": 0.5283627075575337,
+          "lambda_ci": [
+            0.37267491722623547,
+            0.698802423301788
+          ],
+          "lambda_r2": 0.9786746844184953
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8643367005691696,
+          "slope": 4.198125145766815,
+          "intercept": 6.93590335436609,
+          "lambda": 0.506898357152353,
+          "lambda_ci": [
+            0.3448667463048356,
+            0.684777059049809
+          ],
+          "lambda_r2": 0.9762464567407374
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.861506820751425,
+          "slope": 3.9912454813417972,
+          "intercept": 6.598714772968083,
+          "lambda": 0.5202162078726075,
+          "lambda_ci": [
+            0.3630941658432012,
+            0.6922600983622438
+          ],
+          "lambda_r2": 0.9780564480758744
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8520282033772866,
+          "slope": 3.883340295985761,
+          "intercept": 6.40948205867613,
+          "lambda": 0.5552034020024051,
+          "lambda_ci": [
+            0.40045597355266105,
+            0.7248650728932897
+          ],
+          "lambda_r2": 0.9798440828031382
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8511496364544908,
+          "slope": 3.896032424754901,
+          "intercept": 6.422250928851356,
+          "lambda": 0.5785523237177392,
+          "lambda_ci": [
+            0.4478685543737071,
+            0.720053773605321
+          ],
+          "lambda_r2": 0.9863559857646819
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.29",
+      "mean_of_distances": {
+        "lambda": 0.5232316701096253,
+        "lambda_ci": [
+          0.3599868857869075,
+          0.7008911671490548
+        ],
+        "lambda_r2": 0.9761832143621061,
+        "mean_r2": 0.8712894928746162
+      },
+      "mean_r2": 0.8496592388487096,
+      "lambda": 0.5493391520972839,
+      "lambda_ci": [
+        0.3712162558844028,
+        0.7449262906445384
+      ],
+      "lambda_r2": 0.9709046407227879,
+      "pooled_r2": 0.8473921773840289,
+      "pooled_slope": 8.91594169635543,
+      "spacing_cv": 0.9093835772730059,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8819750646269515,
+          "slope": 9.476440615870267,
+          "intercept": 16.29624295913181,
+          "lambda": 0.37241881571007346,
+          "lambda_ci": [
+            0.15500441891499195,
+            0.6144623791328079
+          ],
+          "lambda_r2": 0.9492327308729493
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8828490350860058,
+          "slope": 9.310999146978622,
+          "intercept": 15.661027627420847,
+          "lambda": 0.4378222641716898,
+          "lambda_ci": [
+            0.26679203068418267,
+            0.6251835408688866
+          ],
+          "lambda_r2": 0.9711565339390118
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8422576809195097,
+          "slope": 9.312680221668224,
+          "intercept": 15.15966637211998,
+          "lambda": 0.552980727448446,
+          "lambda_ci": [
+            0.37400064219456963,
+            0.7518219235772412
+          ],
+          "lambda_r2": 0.9719499890676531
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8429276193813274,
+          "slope": 9.417279981375765,
+          "intercept": 15.2720011637405,
+          "lambda": 0.5596954449113473,
+          "lambda_ci": [
+            0.38991971648831514,
+            0.7474926716034584
+          ],
+          "lambda_r2": 0.9751033418383342
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8479012087027511,
+          "slope": 9.172893623669905,
+          "intercept": 14.930767893824298,
+          "lambda": 0.541007976301386,
+          "lambda_ci": [
+            0.36764221885637394,
+            0.7329582800826988
+          ],
+          "lambda_r2": 0.9733819741104437
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8450582384397691,
+          "slope": 8.6537751832317,
+          "intercept": 14.090795591533755,
+          "lambda": 0.5456975767461218,
+          "lambda_ci": [
+            0.368431869574236,
+            0.7423599096856184
+          ],
+          "lambda_r2": 0.9722444615720335
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8275641641283762,
+          "slope": 8.014317022097977,
+          "intercept": 13.01571883793275,
+          "lambda": 0.590075936435014,
+          "lambda_ci": [
+            0.39783760180534855,
+            0.806058772563151
+          ],
+          "lambda_r2": 0.9692450929998143
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8267408995049859,
+          "slope": 7.969147775951,
+          "intercept": 12.917369512256293,
+          "lambda": 0.6395635658611679,
+          "lambda_ci": [
+            0.4977460630506647,
+            0.7945834367406146
+          ],
+          "lambda_r2": 0.9849230013820632
+        }
+      ]
+    },
+    {
+      "layer": "logits",
+      "mean_of_distances": {
+        "lambda": 0.6286499368877552,
+        "lambda_ci": [
+          0.4446258135999997,
+          0.8316267373067643
+        ],
+        "lambda_r2": 0.9710033362669754,
+        "mean_r2": 0.823946991114896
+      },
+      "mean_r2": 0.8144358751184042,
+      "lambda": 0.6317308206512458,
+      "lambda_ci": [
+        0.45323321072449857,
+        0.8336391157246672
+      ],
+      "lambda_r2": 0.9698722150373071,
+      "pooled_r2": 0.8125013259292841,
+      "pooled_slope": 1.3916596135748998,
+      "spacing_cv": 0.9548884936646047,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8553328908023992,
+          "slope": 1.4760054421896196,
+          "intercept": 2.438518052414694,
+          "lambda": 0.47173093187581794,
+          "lambda_ci": [
+            0.2639685236974507,
+            0.7049117441766222
+          ],
+          "lambda_r2": 0.9574175820216146
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8420696463895211,
+          "slope": 1.456563944780053,
+          "intercept": 2.3549746825111346,
+          "lambda": 0.5592649106114204,
+          "lambda_ci": [
+            0.38764934317014144,
+            0.7493576248642138
+          ],
+          "lambda_r2": 0.9744635916630441
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8135576186342612,
+          "slope": 1.4748392665868433,
+          "intercept": 2.3286388700811385,
+          "lambda": 0.6328401203549346,
+          "lambda_ci": [
+            0.4542892471020038,
+            0.8324092419011755
+          ],
+          "lambda_r2": 0.9744330579447957
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8106392272766652,
+          "slope": 1.4708469867480778,
+          "intercept": 2.3131056260209344,
+          "lambda": 0.6417370202582658,
+          "lambda_ci": [
+            0.46479456638596994,
+            0.8394497752023098
+          ],
+          "lambda_r2": 0.9751580455431784
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8142125025563758,
+          "slope": 1.4257766807720433,
+          "intercept": 2.248359563351596,
+          "lambda": 0.6306215209475567,
+          "lambda_ci": [
+            0.4525915647703498,
+            0.8295483741444991
+          ],
+          "lambda_r2": 0.9744875539602342
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8127990118033281,
+          "slope": 1.3359095182398268,
+          "intercept": 2.105387831304891,
+          "lambda": 0.618288657877511,
+          "lambda_ci": [
+            0.4258914002897678,
+            0.8348689895481589
+          ],
+          "lambda_r2": 0.9692784074272788
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.7818967694465224,
+          "slope": 1.2546878453323285,
+          "intercept": 1.95835770563166,
+          "lambda": 0.6804995354015634,
+          "lambda_ci": [
+            0.45387485667864735,
+            0.9425258116215103
+          ],
+          "lambda_r2": 0.9602365835148378
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7849793340381609,
+          "slope": 1.2386472239504094,
+          "intercept": 1.9345027709639029,
+          "lambda": 0.7075257163144296,
+          "lambda_ci": [
+            0.5173927401146066,
+            0.9223795582050827
+          ],
+          "lambda_r2": 0.973502898223473
+        }
+      ]
+    },
+    {
+      "layer": "prob",
+      "mean_of_distances": {
+        "lambda": 0.7974991942421904,
+        "lambda_ci": [
+          0.522844257840128,
+          1.0790307161241277
+        ],
+        "lambda_r2": 0.9354590780340993,
+        "mean_r2": 0.7531447370270056
+      },
+      "mean_r2": 0.7231720226822327,
+      "lambda": 0.9379871381109924,
+      "lambda_ci": [
+        0.5893607590268648,
+        1.2791600889789916
+      ],
+      "lambda_r2": 0.9267919012622495,
+      "pooled_r2": 0.7205333593673295,
+      "pooled_slope": 1.61409464813581e-05,
+      "spacing_cv": 2.395717755738198,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8834927111731807,
+          "slope": 2.027589218186823e-05,
+          "intercept": 3.530245143056525e-05,
+          "lambda": 0.3189752233219841,
+          "lambda_ci": [
+            0.0776006925012746,
+            0.5878234825178468
+          ],
+          "lambda_r2": 0.9343966247547378
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8516240694517939,
+          "slope": 1.8467348745593708e-05,
+          "intercept": 3.05281675886836e-05,
+          "lambda": 0.4420527148001396,
+          "lambda_ci": [
+            0.19884641379937307,
+            0.7194999069647035
+          ],
+          "lambda_r2": 0.940803463686987
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7037091097221899,
+          "slope": 1.488961837487989e-05,
+          "intercept": 2.3103160699470866e-05,
+          "lambda": 1.0433056568883967,
+          "lambda_ci": [
+            0.8871162927819272,
+            1.216959829894766
+          ],
+          "lambda_r2": 0.9899397295092818
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.6678631875311927,
+          "slope": 1.511386670288169e-05,
+          "intercept": 2.3195324414995976e-05,
+          "lambda": 1.152022390606657,
+          "lambda_ci": [
+            0.9042255568522419,
+            1.445347987206977
+          ],
+          "lambda_r2": 0.9776550806653646
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.6850959835120491,
+          "slope": 1.5092478271911003e-05,
+          "intercept": 2.3142497378803098e-05,
+          "lambda": 1.0811180412823729,
+          "lambda_ci": [
+            0.8582265071556865,
+            1.3413603480632172
+          ],
+          "lambda_r2": 0.9800633762844814
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.6730898765966051,
+          "slope": 1.583790585242519e-05,
+          "intercept": 2.4215136603370814e-05,
+          "lambda": 0.9956383067329128,
+          "lambda_ci": [
+            0.7002337566152033,
+            1.3552948443066573
+          ],
+          "lambda_r2": 0.9548178792751959
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.6675083298781241,
+          "slope": 1.6492039645365354e-05,
+          "intercept": 2.5276049486471503e-05,
+          "lambda": 0.8803359694890721,
+          "lambda_ci": [
+            0.47848776143852645,
+            1.413331183120773
+          ],
+          "lambda_r2": 0.9015509281011307
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.6529929135927263,
+          "slope": 1.2958422075939775e-05,
+          "intercept": 2.0657553170639234e-05,
+          "lambda": 0.45354977825356585,
+          "lambda_ci": [
+            -0.0892711639297448,
+            1.152238797807989
+          ],
+          "lambda_r2": 0.7351081278208169
+        }
+      ]
+    }
+  ]
+}
