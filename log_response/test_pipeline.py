@@ -565,6 +565,50 @@ def test_vlm_backend_tiny_offline():
     m.close()
 
 
+def test_vlm_records_the_vocabulary_the_prob_bound_depends_on():
+    """``prob``'s ceiling is 2/V, so a run is uninterpretable without V.
+
+    Every other back-end has a 1000-way softmax and the bound is a constant;
+    here it is a property of the checkpoint, so it has to be recorded. Pinned
+    against the actual width of the ``logits`` tap rather than against the
+    config, because a padded vocabulary makes those two differ and the tap is
+    what the metric sees.
+    """
+    import json
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import transformers  # noqa: F401
+    except ImportError:
+        raise unittest.SkipTest("torch/transformers not installed")
+
+    from .features import HFVLMModel
+
+    model, processor = _tiny_llava()
+    m = HFVLMModel(model=model, processor=processor)
+    meta = m.model_metadata
+
+    acts = m.represent(to_rgb(make_grating(0.5, 7, size=m.input_size)))
+    assert meta["vocab_size"] == acts["logits"].shape[-1]
+    assert float(acts["prob"].max()) <= 1.0
+
+    # The measurement is conditional on this exact string; the instruction
+    # alone does not reconstruct it once a chat template is involved.
+    assert meta["instruction"] in meta["conditioning_text"]
+    assert meta["backend"] == "hf-vlm"
+    assert meta["parameter_count"] > 0
+    # A LLaVA stack has no BatchNorm and plenty of LayerNorm. Both halves are
+    # asserted because BN-free alone does not make the scramble valid -- the
+    # census is what supports that judgement.
+    assert meta["batchnorm_modules"] == 0
+    assert meta["batchnorm_free"] is True
+    assert sum(meta["normalisation_census"].values()) > 0
+    assert any("Norm" in kind for kind in meta["normalisation_census"])
+    json.dumps(meta)  # must survive the trip into run.json
+    m.close()
+
+
 def test_parse_sam_spec():
     assert parse_sam_spec("sam") == "facebook/sam-vit-base"
     assert parse_sam_spec("sam:facebook/sam-vit-huge") == "facebook/sam-vit-huge"

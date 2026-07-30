@@ -867,11 +867,102 @@ class HFVLMModel(_TorchBackend):
         self._init_hooks()
         self._register(self.layers)
 
+        # Three of these are load-bearing rather than decorative. ``vocab_size``
+        # sets the metric's ceiling -- the TV bound at ``prob`` is 2/V, not the
+        # 2/1000 of every classifier run, so a D_prob is uninterpretable without
+        # it. ``conditioning_text`` is the exact string the measurement is
+        # conditional on, template and all; ``instruction`` alone does not
+        # reconstruct it. ``normalisation_census`` is the evidence a later
+        # scrambled control's validity has to be argued from.
+        census, bn_count = self._normalisation_census()
+        self.model_metadata = {
+            "backend": "hf-vlm",
+            "model_id": model_id,
+            "model_type": getattr(self.net.config, "model_type", None),
+            "parameter_count": int(sum(p.numel() for p in self.net.parameters())),
+            "vocab_size": self._infer_vocab_size(),
+            "instruction": self.instruction,
+            "conditioning_text": self._text,
+            "chat_template_used": self._used_chat_template,
+            "input_size": int(self.input_size),
+            "dtype": str(next(self.net.parameters()).dtype),
+            "normalisation_census": census,
+            "batchnorm_modules": int(bn_count),
+            # Deliberately *not* called ``standard_scramble_valid``. The rule is
+            # renormalisation by the current input, and BN-free is only the
+            # necessary half of it: resmlp-12 has zero BN and its scramble broke
+            # anyway, on a learned per-channel Affine that never renormalises.
+            # A census supports the judgement; a boolean would pre-empt it.
+            "batchnorm_free": not bn_count,
+        }
+
+    def _normalisation_census(self) -> tuple[dict[str, int], int]:
+        """Census of normalisation modules by class name, plus the BN count.
+
+        Whether the weight scramble *degrades* a net (usable control) or
+        *decalibrates* it (broken control) turns on whether it renormalises by
+        statistics of the current input: LayerNorm/RMSNorm/GroupNorm recompute
+        theirs per forward, BatchNorm in eval reads fixed buffers instead.
+        Reported as counts per class name rather than as a verdict, because the
+        class name is what identifies the behaviour and the set of scale-only
+        modules cannot be enumerated in advance -- resmlp-12's ``Affine`` is
+        not norm-like at all and would not appear here. An empty or all-
+        renormalising census is therefore evidence, not proof.
+        """
+        from torch import nn
+
+        renormalising = (nn.LayerNorm, nn.GroupNorm, nn.InstanceNorm1d,
+                         nn.InstanceNorm2d, nn.InstanceNorm3d)
+        census: dict[str, int] = {}
+        bn = 0
+        for module in self.net.modules():
+            name = type(module).__name__
+            if isinstance(module, nn.modules.batchnorm._BatchNorm):
+                bn += 1
+                census[name] = census.get(name, 0) + 1
+            elif isinstance(module, renormalising) or "Norm" in name:
+                # Third-party RMSNorm/Qwen2RMSNorm land here by name; they
+                # divide by the current input's own RMS, so they renormalise.
+                census[name] = census.get(name, 0) + 1
+        return census, bn
+
+    def _infer_vocab_size(self) -> int | None:
+        """Width of the ``logits``/``prob`` taps, i.e. V in the 2/V bound.
+
+        The output embedding is the authority: a checkpoint may pad its vocab up
+        to a multiple of 64 for kernel alignment, in which case ``logits`` is
+        wider than ``config.vocab_size`` and the bound goes with the wider one.
+        Fall back through the configs for a model whose head is tied or absent.
+        """
+        head = None
+        if hasattr(self.net, "get_output_embeddings"):
+            try:
+                head = self.net.get_output_embeddings()
+            except Exception:  # a config this method does not handle
+                head = None
+        width = getattr(head, "out_features", None)
+        if isinstance(width, int):
+            return width
+        cfg = self.net.config
+        for holder in (getattr(cfg, "text_config", None), cfg):
+            size = getattr(holder, "vocab_size", None)
+            if isinstance(size, int):
+                return size
+        return None
+
     def _build_text(self) -> str:
-        """The full conditioning text: chat template if available, else raw."""
+        """The full conditioning text: chat template if available, else raw.
+
+        Also records ``_used_chat_template``, since this is where that is
+        decided and ``model_metadata`` has to report it -- the same instruction
+        conditions a different measurement with and without a template.
+        """
         proc = self.processor
         tok = getattr(proc, "tokenizer", None)
-        if getattr(proc, "chat_template", None) or getattr(tok, "chat_template", None):
+        self._used_chat_template = bool(
+            getattr(proc, "chat_template", None) or getattr(tok, "chat_template", None)
+        )
+        if self._used_chat_template:
             messages = [
                 {
                     "role": "user",
