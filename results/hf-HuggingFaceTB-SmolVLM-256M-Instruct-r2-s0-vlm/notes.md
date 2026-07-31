@@ -50,10 +50,15 @@ hidden taps, which is why those are quoted and `prob` (gap 0.005 but λ-R²
 within one run; they answer "do these two runs differ given their own contrast
 sampling", **not** "does this reproduce across seeds".
 
-**dtype is load-bearing.** The checkpoint ships bfloat16 and these runners
-emulate it: 130 s per forward pass in bf16 against 31.1 s in float32, a 4.2×
-penalty for accepting the checkpoint's own default. Two earlier full-grid
-attempts were cancelled at the 330 min cap before this was found.
+**On dtype — the run's own `--notes` string overstates this.** It says float32
+"is worth 4.2x". That compared this run's dtype against a 14-cell *probe* on a
+different runner, so it isolated nothing. What is measured: this run did 225
+passes in 3 353 s = **14.9 s/pass**, while the cancelled bfloat16 full-grid
+attempt ran at 130 s/pass — but a bfloat16 probe ran at 14.6 and a float32 probe
+at 31.1, i.e. within-dtype spreads of 8.9× and 2.1×. Runner variance covers the
+gap on its own, so the dtype effect is **not established**; see
+[`wiki/Results.md`](../../wiki/Results.md#vlm-forward-pass-cost-varies-9-and-why-is-unresolved).
+The `--notes` text is left as recorded because it is provenance.
 
 ## Reproduce
 

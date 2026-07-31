@@ -760,28 +760,47 @@ falls monotonically with frequency; scrambled is flat:
 generative objective behaves like the classifiers on this axis too.
 
 **Caveats, which are heavy.** **reps = 2**, 25× below the corpus's 50 — the cost
-of fitting the full 8×14 grid at 31.1 s per forward pass on a 4-core runner. One
-seed, one instruction (`'Describe this image.'`; the chat-templated string is in
-`run.json`). The intervals are profile-F **within one run**: they test whether
-these two runs differ given their own contrast sampling, not whether the result
-reproduces across seeds. The λ vs λ_mod gap stays ≤ 0.072 at the three hidden
-taps, which is why those are quoted.
+of fitting the full 8×14 grid on a 4-core runner. One seed, one instruction
+(`'Describe this image.'`; the chat-templated string is in `run.json`). The
+intervals are profile-F **within one run**: they test whether these two runs
+differ given their own contrast sampling, not whether the result reproduces
+across seeds. The λ vs λ_mod gap stays ≤ 0.072 at the three hidden taps, which
+is why those are quoted.
 
-#### The checkpoint's own dtype cost 4.2× — measured
+#### VLM forward-pass cost varies ~9×, and why is unresolved
 
-Worth recording because it nearly sank the measurement. SmolVLM ships
-**bfloat16**, and GitHub's runners emulate bf16 without AVX512-BF16: **130 s per
-forward pass in bf16 against 31.1 s in float32**. Two full-grid attempts were
-cancelled at the 330 min cap before this was found — the first, on
-`llava-hf/llava-interleave-qwen-0.5b-hf`, additionally costs 62.8 s per pass
-because it tiles one image anyres, and grating **size does not change that**
-(455 s at 384 px vs 462 s at 224 px, the processor resizing to its own
-resolution first). The workflow gained `size` and `dtype` inputs; `run.py` had
-both flags already but no dispatch could reach them.
+Worth recording because it cancelled two full-grid attempts at the 330 min cap.
+Four measurements of the same model:
 
-The sizing lesson is sharper than the dtype one: a 7-pass probe read 14.6 s/pass
-where the real grid ran at 130, a 9× error. **Size a run from a probe that
-crosses a progress line**, not from one that fits in a handful of passes.
+| | dtype | grid | s/pass |
+|---|---|---|---|
+| probe | bfloat16 | 6 cells | 14.6 |
+| full run (cancelled) | bfloat16 | 8×14 | **130** |
+| probe | float32 | 14 cells | 31.1 |
+| full run (landed) | float32 | 8×14 | **14.9** |
+
+> **Corrected 2026-07-30.** Committed earlier the same day as "the checkpoint's
+> own dtype cost 4.2×", on the strength of 130 against 31.1. Those are the bf16
+> *full run* and the fp32 *probe* — different grids and different runners, so
+> the ratio isolated nothing. Within bf16 the spread is **8.9×** and within fp32
+> **2.1×**; the one grid-matched pair is 130 vs 14.9, a single run each on
+> different runners. bf16 emulation without AVX512-BF16 is still a plausible
+> contributor, but runner variance alone covers the gap, so per rule 4 this is
+> stated as unresolved rather than attributed. Settling it needs both dtypes on
+> one runner, which a dispatch cannot currently pin.
+
+One cost claim here **is** clean, because it was a controlled comparison:
+`llava-hf/llava-interleave-qwen-0.5b-hf` costs 62.8 s per pass from anyres
+tiling, and grating **size does not change it** — 455 s at 384 px against 462 s
+at 224 px on the same 6-cell grid, because the processor resizes to its own
+resolution before tiling. That is why the VLM work moved to SmolVLM rather than
+shrinking the image.
+
+The sizing lesson is the durable one and survives the correction: a 7-pass probe
+read 14.6 s/pass where the real grid ran at 130, a **9×** error no safety factor
+absorbs. **Size a run from a probe that crosses a progress line**, not from one
+that fits in a handful of passes — and read the cell counter, not the job's
+green status.
 
 #### Preprocessing moves the frequency structure more than it moves λ
 

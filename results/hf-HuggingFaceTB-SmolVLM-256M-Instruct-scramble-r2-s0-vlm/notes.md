@@ -34,7 +34,10 @@ And λ is nearly **flat across frequency** (+0.34 → +0.59, range 0.22–0.27)
 where the trained run spans 0.89–1.03 — the 7th matched pair showing frequency
 structure is a property of learning.
 
-Same caveats as its trained companion: reps = 2, one seed, one instruction.
+Same caveats as its trained companion: reps = 2, one seed, one instruction. The
+`--notes` string recorded above claims float32 "is worth 4.2x"; that comparison
+was confounded and the dtype effect is not established — see the trained
+companion's notes and [`wiki/Results.md`](../../wiki/Results.md#vlm-forward-pass-cost-varies-9-and-why-is-unresolved).
 
 ## Reproduce
 

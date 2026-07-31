@@ -49,10 +49,10 @@ on:
         default: ""
       dtype:
         description: "Torch dtype for the hf:/sam: back-ends (float32, bfloat16,
-          float16, auto; blank = the checkpoint's own). Worth setting explicitly:
-          llava-interleave ships bfloat16, and a runner without AVX512-BF16
-          emulates it, so the checkpoint's default is not automatically the
-          fastest choice on CPU."
+          float16, auto; blank = the checkpoint's own). Worth setting explicitly
+          so a run records which it used: VLM per-pass cost has been seen to vary
+          ~9x across runs of the same model, and whether dtype or runner variance
+          drives that is unresolved (wiki/Results.md)."
         default: ""
       instruction:
         description: "Text prompt for the hf: VLM back-end (blank = 'Describe

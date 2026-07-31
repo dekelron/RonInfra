@@ -474,20 +474,37 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     `vocab_size`, the chat-templated `conditioning_text` and a normalisation
     census, so a VLM `D` is interpretable from its own directory. The
     instruction was already recorded (`run.py`); the vocabulary was not.
-- **A checkpoint's own dtype is not the fast one — bf16 cost 4.2×**
-  (2026-07-30). SmolVLM ships bfloat16 and the runners emulate it without
-  AVX512-BF16: **130 s/forward pass in bf16 against 31.1 s in float32**. Two
-  full-grid attempts were cancelled at the 330 min cap before this was found.
-  `llava-interleave` is worse and unfixable on CPU — 62.8 s/pass from anyres
-  tiling, and **grating size does not change it** (455 s at 384 px vs 462 s at
-  224 px; the processor resizes to its own resolution before tiling). The
-  workflow gained `size` and `dtype` inputs — `run.py` had both flags, no
-  dispatch could reach them.
+- **VLM forward-pass cost varies ~9× run to run, and the cause is not
+  established** (2026-07-30). Four measurements of the same model, SmolVLM-256M:
+
+  | | dtype | grid | s/pass |
+  |---|---|---|---|
+  | probe | bf16 | 6 cells | 14.6 |
+  | full run (cancelled at the cap) | bf16 | 8×14 | **130** |
+  | probe | fp32 | 14 cells | 31.1 |
+  | full run (landed) | fp32 | 8×14 | **14.9** |
+
+  **Corrected 2026-07-30**, having been committed earlier the same day as
+  "a checkpoint's own dtype is not the fast one — bf16 cost 4.2×". That number
+  divided the bf16 *full run* by the fp32 *probe* — different grids **and**
+  different runners, so it isolated nothing. The within-dtype spread is **8.9×**
+  for bf16 and **2.1×** for fp32; the only grid-matched pair is 130 vs 14.9, one
+  run each on different runners. bf16 emulation without AVX512-BF16 remains a
+  plausible contributor, but runner variance alone spans enough to produce the
+  whole gap. Per rule 4, stated as unresolved. Isolating it needs the two dtypes
+  on the same runner, which the workflow cannot currently pin.
+  - `llava-interleave` is separately unfixable on CPU — 62.8 s/pass from anyres
+    tiling, and **grating size does not change it** (455 s at 384 px vs 462 s at
+    224 px; the processor resizes to its own resolution before tiling). That
+    one *is* clean: same runner class, same 6-cell grid, size the only variable.
   - **Size a long run from a probe that crosses a progress line.** A 7-pass
     probe read 14.6 s/pass where the real grid ran at 130 — a **9×** error that
     no safety factor would have absorbed. The cancelled run's own log (two
     11-cell intervals, 119.6 and 117.0 min) was the trustworthy measurement.
-    Job-status green is not progress: the cell counter is.
+    Job-status green is not progress: the cell counter is. This survives the
+    correction above intact, and is the more useful lesson.
+  - The workflow gained `size`, `dtype` and `instruction` inputs — `run.py` had
+    all three flags, no dispatch could reach them.
 - **"No BatchNorm" is not sufficient for a valid scramble** (2026-07-29,
   corrects the rule below). `resmlp-12-scramble` has **zero** BN modules and is
   broken anyway: max |D_logits| **2409** against ~2 elsewhere, r(logits,prob)
