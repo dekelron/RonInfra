@@ -54,6 +54,13 @@ on:
           emulates it, so the checkpoint's default is not automatically the
           fastest choice on CPU."
         default: ""
+      instruction:
+        description: "Text prompt for the hf: VLM back-end (blank = 'Describe
+          this image.'). A VLM forward pass needs a prompt, so every VLM λ is
+          conditional on this string — changing it is a different measurement,
+          not a refinement of the same one. Recorded in run.json alongside the
+          chat-templated form."
+        default: ""
       notes:
         description: "One-line description, stored in run.json and notes.md"
         default: ""
@@ -108,6 +115,7 @@ jobs:
       LAYERS: ${{ inputs.layers }}
       SIZE: ${{ inputs.size }}
       DTYPE: ${{ inputs.dtype }}
+      INSTRUCTION: ${{ inputs.instruction }}
       NOTES: ${{ inputs.notes }}
       SLUG_SUFFIX: ${{ inputs.slug_suffix }}
       SCRAMBLE: ${{ matrix.scramble }}
@@ -238,6 +246,7 @@ jobs:
           if [ -n "$LAYERS" ]; then args+=(--layers "$LAYERS"); fi
           if [ -n "$SIZE" ]; then args+=(--size "$SIZE"); fi
           if [ -n "$DTYPE" ]; then args+=(--dtype "$DTYPE"); fi
+          if [ -n "$INSTRUCTION" ]; then args+=(--instruction "$INSTRUCTION"); fi
           if [ "$SCRAMBLE" = "true" ]; then args+=(--scramble); fi
           if [ -n "$SCRAMBLE_SEED" ]; then args+=(--scramble-seed "$SCRAMBLE_SEED"); fi
 
