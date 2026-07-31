@@ -1,0 +1,5414 @@
+{
+  "metadata": {
+    "model": "hf:HuggingFaceTB/SmolVLM-256M-Instruct",
+    "scramble": false,
+    "seed": 0,
+    "scramble_seed": 0,
+    "device": "cpu",
+    "layers": [
+      "model.vision_model.encoder.layers.0",
+      "model.vision_model.encoder.layers.1",
+      "model.vision_model.encoder.layers.2",
+      "model.vision_model.encoder.layers.3",
+      "model.vision_model.encoder.layers.4",
+      "model.vision_model.encoder.layers.5",
+      "model.vision_model.encoder.layers.6",
+      "model.vision_model.encoder.layers.7",
+      "model.vision_model.encoder.layers.8",
+      "model.vision_model.encoder.layers.9",
+      "model.vision_model.encoder.layers.10",
+      "model.vision_model.encoder.layers.11",
+      "model.text_model.layers.0",
+      "model.text_model.layers.1",
+      "model.text_model.layers.2",
+      "model.text_model.layers.3",
+      "model.text_model.layers.4",
+      "model.text_model.layers.5",
+      "model.text_model.layers.6",
+      "model.text_model.layers.7",
+      "model.text_model.layers.8",
+      "model.text_model.layers.9",
+      "model.text_model.layers.10",
+      "model.text_model.layers.11",
+      "model.text_model.layers.12",
+      "model.text_model.layers.13",
+      "model.text_model.layers.14",
+      "model.text_model.layers.15",
+      "model.text_model.layers.16",
+      "model.text_model.layers.17",
+      "model.text_model.layers.18",
+      "model.text_model.layers.19",
+      "model.text_model.layers.20",
+      "model.text_model.layers.21",
+      "model.text_model.layers.22",
+      "model.text_model.layers.23",
+      "model.text_model.layers.24",
+      "model.text_model.layers.25",
+      "model.text_model.layers.26",
+      "model.text_model.layers.27",
+      "model.text_model.layers.28",
+      "model.text_model.layers.29",
+      "logits",
+      "prob"
+    ],
+    "weights": {
+      "pretrained_verified": true,
+      "source": "transformers HuggingFaceTB/SmolVLM-256M-Instruct"
+    },
+    "command": "run.py --model hf:HuggingFaceTB/SmolVLM-256M-Instruct --reps 2 --seed 0 --save-run results/hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks --notes VLM depth profile, default prompt, 42 block outputs (12 vision + 30 decoder) plus logits and prob. Replaces a --layers all attempt that was killed 41 s into the first forward pass with exit 143, the runner receiving a shutdown signal - almost certainly OOM: --layers all hooks all 471 modules including attention internals, whose outputs at ~1200 tokens are ~92 MB each. Block outputs are (1, seq, dim) only, roughly 240 MB for the whole tap set at reps 2. Taps cost no extra forward passes, so the 225 passes and the measured 14.9 s/pass are unchanged. --figures out/ --layers model.vision_model.encoder.layers.0,model.vision_model.encoder.layers.1,model.vision_model.encoder.layers.2,model.vision_model.encoder.layers.3,model.vision_model.encoder.layers.4,model.vision_model.encoder.layers.5,model.vision_model.encoder.layers.6,model.vision_model.encoder.layers.7,model.vision_model.encoder.layers.8,model.vision_model.encoder.layers.9,model.vision_model.encoder.layers.10,model.vision_model.encoder.layers.11,model.text_model.layers.0,model.text_model.layers.1,model.text_model.layers.2,model.text_model.layers.3,model.text_model.layers.4,model.text_model.layers.5,model.text_model.layers.6,model.text_model.layers.7,model.text_model.layers.8,model.text_model.layers.9,model.text_model.layers.10,model.text_model.layers.11,model.text_model.layers.12,model.text_model.layers.13,model.text_model.layers.14,model.text_model.layers.15,model.text_model.layers.16,model.text_model.layers.17,model.text_model.layers.18,model.text_model.layers.19,model.text_model.layers.20,model.text_model.layers.21,model.text_model.layers.22,model.text_model.layers.23,model.text_model.layers.24,model.text_model.layers.25,model.text_model.layers.26,model.text_model.layers.27,model.text_model.layers.28,model.text_model.layers.29 --dtype float32",
+    "code": {
+      "available": true,
+      "commit": "42af5439223f0f573a0ada360598a94152580fc2",
+      "branch": "master",
+      "dirty": false,
+      "dirty_files": null
+    },
+    "versions": {
+      "python": "3.11.15",
+      "numpy": "2.4.6",
+      "torch": "2.13.0+cpu",
+      "torchvision": "0.28.0+cpu",
+      "huggingface_hub": "1.26.0",
+      "transformers": "5.14.1"
+    },
+    "environment": {
+      "platform": "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+      "machine": "x86_64",
+      "cpu_count": 4,
+      "executable": "/opt/hostedtoolcache/Python/3.11.15/x64/bin/python",
+      "wall_seconds": 6444.9
+    },
+    "created_utc": "2026-07-31T20:33:27Z",
+    "notes": "VLM depth profile, default prompt, 42 block outputs (12 vision + 30 decoder) plus logits and prob. Replaces a --layers all attempt that was killed 41 s into the first forward pass with exit 143, the runner receiving a shutdown signal - almost certainly OOM: --layers all hooks all 471 modules including attention internals, whose outputs at ~1200 tokens are ~92 MB each. Block outputs are (1, seq, dim) only, roughly 240 MB for the whole tap set at reps 2. Taps cost no extra forward passes, so the 225 passes and the measured 14.9 s/pass are unchanged.",
+    "instruction": "Describe this image.",
+    "model_details": {
+      "backend": "hf-vlm",
+      "model_id": "HuggingFaceTB/SmolVLM-256M-Instruct",
+      "model_type": "idefics3",
+      "parameter_count": 256484928,
+      "vocab_size": 49280,
+      "instruction": "Describe this image.",
+      "conditioning_text": "<|im_start|>User:<image>Describe this image.<end_of_utterance>\nAssistant:",
+      "chat_template_used": true,
+      "input_size": 336,
+      "dtype": "torch.float32",
+      "normalisation_census": {
+        "LayerNorm": 25,
+        "LlamaRMSNorm": 61
+      },
+      "batchnorm_modules": 0,
+      "batchnorm_free": true
+    }
+  },
+  "repetitions": 2,
+  "size": 336,
+  "mean": 0.5,
+  "contrasts": [
+    0.0078125,
+    0.015625,
+    0.0234375,
+    0.03125,
+    0.046875,
+    0.0625,
+    0.0859375,
+    0.125,
+    0.1796875,
+    0.2578125,
+    0.359375,
+    0.5,
+    0.71875,
+    1.0
+  ],
+  "frequencies": [
+    1.0,
+    1.75,
+    3.5,
+    7.0,
+    14.0,
+    28.0,
+    56.0,
+    75.0
+  ],
+  "layers": [
+    {
+      "layer": "model.vision_model.encoder.layers.0",
+      "mean_of_distances": {
+        "lambda": 0.6784276374734743,
+        "lambda_ci": [
+          0.6404128636221916,
+          0.7174949965779144
+        ],
+        "lambda_r2": 0.9939477848976037,
+        "mean_r2": 0.836449198684843
+      },
+      "mean_r2": 0.8164850175362082,
+      "lambda": 0.6788196498306536,
+      "lambda_ci": [
+        0.545168356993449,
+        0.8258711988310524
+      ],
+      "lambda_r2": 0.988395892301168,
+      "pooled_r2": 0.7371954831351522,
+      "pooled_slope": 0.035279308356886585,
+      "spacing_cv": 1.0941489256005428,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.7408022231526328,
+          "slope": 0.017537812315328423,
+          "intercept": 0.02756412620263944,
+          "lambda": 0.926319646905785,
+          "lambda_ci": [
+            0.7917444377565839,
+            1.0739680071420676
+          ],
+          "lambda_r2": 0.9913472094125126
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.6760555414484533,
+          "slope": 0.018224955535636585,
+          "intercept": 0.028550528596952302,
+          "lambda": 1.1890424947873026,
+          "lambda_ci": [
+            1.0462432697231856,
+            1.346009115969741
+          ],
+          "lambda_r2": 0.9935004621469721
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.7259527230201093,
+          "slope": 0.021808227008891543,
+          "intercept": 0.03497553476085382,
+          "lambda": 1.066270599455897,
+          "lambda_ci": [
+            0.9333970678662817,
+            1.2126131133749936
+          ],
+          "lambda_r2": 0.9940592254475903
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7923874044011309,
+          "slope": 0.03009813605353782,
+          "intercept": 0.04914255209949864,
+          "lambda": 0.8089737021372589,
+          "lambda_ci": [
+            0.7132478475291746,
+            0.9111710986887058
+          ],
+          "lambda_r2": 0.9952306353954153
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8623327971091382,
+          "slope": 0.03799039351940146,
+          "intercept": 0.06449241215724492,
+          "lambda": 0.5486655975240483,
+          "lambda_ci": [
+            0.37708886645772344,
+            0.740571298973399
+          ],
+          "lambda_r2": 0.9774238773377779
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9179479988912983,
+          "slope": 0.04314640732231129,
+          "intercept": 0.07693838007334065,
+          "lambda": 0.4303089675058278,
+          "lambda_ci": [
+            0.34694138728159507,
+            0.5178127046240408
+          ],
+          "lambda_r2": 0.9942152139644981
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9069175188014947,
+          "slope": 0.053871324867082966,
+          "intercept": 0.10033547358184215,
+          "lambda": 0.4745757347987975,
+          "lambda_ci": [
+            0.3254687183148649,
+            0.6392677786041394
+          ],
+          "lambda_r2": 0.9846163197316296
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9094839334654077,
+          "slope": 0.05955721023290263,
+          "intercept": 0.1132243245282203,
+          "lambda": 0.4501400104875878,
+          "lambda_ci": [
+            0.2658017120403633,
+            0.658786307408926
+          ],
+          "lambda_r2": 0.976774194972948
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.1",
+      "mean_of_distances": {
+        "lambda": 0.4213469523118859,
+        "lambda_ci": [
+          0.31409485335763215,
+          0.5357451926152448
+        ],
+        "lambda_r2": 0.9918842880760199,
+        "mean_r2": 0.8936118091123774
+      },
+      "mean_r2": 0.8723662201246424,
+      "lambda": 0.473677945806073,
+      "lambda_ci": [
+        0.3294502822362415,
+        0.6535826647195025
+      ],
+      "lambda_r2": 0.9841875451075877,
+      "pooled_r2": 0.8150908153803149,
+      "pooled_slope": 0.04249902877528061,
+      "spacing_cv": 1.0187085515624328,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.7620873725824708,
+          "slope": 0.021379744137863362,
+          "intercept": 0.03398627606917509,
+          "lambda": 0.8682071094124687,
+          "lambda_ci": [
+            0.7429081377079136,
+            1.0047630038097304
+          ],
+          "lambda_r2": 0.9919793723937231
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.7340202242305125,
+          "slope": 0.023476280314267878,
+          "intercept": 0.03778320218540898,
+          "lambda": 1.012993961328271,
+          "lambda_ci": [
+            0.8912199491217099,
+            1.145387636791547
+          ],
+          "lambda_r2": 0.9943038389848894
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8201731915827319,
+          "slope": 0.03111275285679138,
+          "intercept": 0.05261735590755921,
+          "lambda": 0.7524930291722424,
+          "lambda_ci": [
+            0.6308770296044426,
+            0.8852366343894627
+          ],
+          "lambda_r2": 0.9922919112392327
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.8872272456692776,
+          "slope": 0.04204572560066543,
+          "intercept": 0.07478571077983877,
+          "lambda": 0.5428137271044092,
+          "lambda_ci": [
+            0.4392308467240523,
+            0.6536228629263237
+          ],
+          "lambda_r2": 0.9926432966116804
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.926323606907907,
+          "slope": 0.04925614233344227,
+          "intercept": 0.0936042794601498,
+          "lambda": 0.3743090365975705,
+          "lambda_ci": [
+            0.21966971774843064,
+            0.5434668508407439
+          ],
+          "lambda_r2": 0.9804038955286211
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9755437477416957,
+          "slope": 0.05223048340909892,
+          "intercept": 0.10878446165458434,
+          "lambda": 0.20970184804624653,
+          "lambda_ci": [
+            0.1335785663835004,
+            0.2882695453356269
+          ],
+          "lambda_r2": 0.9945123803006696
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9150676016538447,
+          "slope": 0.0631405283807105,
+          "intercept": 0.13798908577034086,
+          "lambda": 0.4045421645077367,
+          "lambda_ci": [
+            0.18647653564700523,
+            0.6535424665126814
+          ],
+          "lambda_r2": 0.9673802540740531
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9584867706286988,
+          "slope": 0.05735057316940528,
+          "intercept": 0.14118577833050583,
+          "lambda": 0.06395342301921128,
+          "lambda_ci": [
+            -0.15354669541444865,
+            0.295157434472231
+          ],
+          "lambda_r2": 0.9599854117278318
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.2",
+      "mean_of_distances": {
+        "lambda": 0.26746051285484607,
+        "lambda_ci": [
+          0.1474015285691397,
+          0.3948603734772668
+        ],
+        "lambda_r2": 0.9851458410592894,
+        "mean_r2": 0.9110467391813126
+      },
+      "mean_r2": 0.8875787158636351,
+      "lambda": 0.2960641753245905,
+      "lambda_ci": [
+        0.14287395359113084,
+        0.5247023493713988
+      ],
+      "lambda_r2": 0.9696537702515118,
+      "pooled_r2": 0.8500865599798313,
+      "pooled_slope": 0.04387064588188428,
+      "spacing_cv": 1.1726036400726136,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.7802218515085345,
+          "slope": 0.023703591430740512,
+          "intercept": 0.038097256704762744,
+          "lambda": 0.8205349875031569,
+          "lambda_ci": [
+            0.708906767714452,
+            0.9409281287750333
+          ],
+          "lambda_r2": 0.9932751437092665
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.7895066963259665,
+          "slope": 0.027433286599106706,
+          "intercept": 0.04524667122263478,
+          "lambda": 0.8422712008096596,
+          "lambda_ci": [
+            0.7568389290270876,
+            0.9328858035622423
+          ],
+          "lambda_r2": 0.9965507761908894
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.8759074967210886,
+          "slope": 0.038308567267244055,
+          "intercept": 0.06737254808912926,
+          "lambda": 0.5666412840321338,
+          "lambda_ci": [
+            0.45909428071053826,
+            0.6819360813569855
+          ],
+          "lambda_r2": 0.9920042778668271
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.933097732926967,
+          "slope": 0.0486033400620741,
+          "intercept": 0.09287115806401253,
+          "lambda": 0.38161211154075303,
+          "lambda_ci": [
+            0.2691329107832483,
+            0.5014616392793458
+          ],
+          "lambda_r2": 0.9897480198860109
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9490141623077334,
+          "slope": 0.05319843145701601,
+          "intercept": 0.11253777508881722,
+          "lambda": 0.21051623910842804,
+          "lambda_ci": [
+            0.016614996399013364,
+            0.4222621471308666
+          ],
+          "lambda_r2": 0.9664759130975829
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9873995045286007,
+          "slope": 0.052873649642789095,
+          "intercept": 0.12898790269202084,
+          "lambda": -0.020874255287917066,
+          "lambda_ci": [
+            -0.12919276418193826,
+            0.08918183184782494
+          ],
+          "lambda_r2": 0.9875999410953478
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9177782680351281,
+          "slope": 0.058248317289973275,
+          "intercept": 0.15359653291432582,
+          "lambda": 0.19886530417268344,
+          "lambda_ci": [
+            -0.10544866582982237,
+            0.5479430594634518
+          ],
+          "lambda_r2": 0.9306202953357986
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8677040145550624,
+          "slope": 0.04859598330613062,
+          "intercept": 0.15664090802325764,
+          "lambda": -0.3059061506553048,
+          "lambda_ci": [
+            -0.6822491470249468,
+            0.04621615295136611
+          ],
+          "lambda_r2": 0.9009557948303711
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.3",
+      "mean_of_distances": {
+        "lambda": 0.05537828598049992,
+        "lambda_ci": [
+          -0.09104955192381814,
+          0.34600746641456825
+        ],
+        "lambda_r2": 0.9651631075774894,
+        "mean_r2": 0.9147090187264845
+      },
+      "mean_r2": 0.884171971301567,
+      "lambda": 0.25597992162021455,
+      "lambda_ci": [
+        -0.09604513749606855,
+        0.4087676427765996
+      ],
+      "lambda_r2": 0.9429582697983264,
+      "pooled_r2": 0.8578268805043776,
+      "pooled_slope": 0.0425608282150349,
+      "spacing_cv": 1.2236965415027863,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8161776986542539,
+          "slope": 0.026442444765329084,
+          "intercept": 0.04340304025724275,
+          "lambda": 0.7178568754073142,
+          "lambda_ci": [
+            0.6051698911031962,
+            0.839335607298805
+          ],
+          "lambda_r2": 0.9922007496981584
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8547059621883706,
+          "slope": 0.03182591134758142,
+          "intercept": 0.054303929304569676,
+          "lambda": 0.6358595710680615,
+          "lambda_ci": [
+            0.5566168371948785,
+            0.7192954477744626
+          ],
+          "lambda_r2": 0.9960021462579979
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9249536343555999,
+          "slope": 0.04512834169872834,
+          "intercept": 0.08303663426403002,
+          "lambda": 0.41372108713788985,
+          "lambda_ci": [
+            0.3229291150986917,
+            0.5093940635230505
+          ],
+          "lambda_r2": 0.9932943006709319
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9688864268388595,
+          "slope": 0.051384993035881996,
+          "intercept": 0.10748160948636235,
+          "lambda": 0.14746853143793998,
+          "lambda_ci": [
+            -0.004118591522180861,
+            0.3081412220301487
+          ],
+          "lambda_r2": 0.9780333811654989
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.960693995451744,
+          "slope": 0.055023754927658285,
+          "intercept": 0.12966980022536428,
+          "lambda": 0.016854407416007827,
+          "lambda_ci": [
+            -0.18797168346995624,
+            0.2310588085592818
+          ],
+          "lambda_r2": 0.9608091706622189
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9613674571389654,
+          "slope": 0.04998931522493855,
+          "intercept": 0.14225142369560068,
+          "lambda": -0.1955194104357716,
+          "lambda_ci": [
+            -0.3517390097163261,
+            -0.041305042363997124
+          ],
+          "lambda_r2": 0.977325310541161
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8295389712246111,
+          "slope": 0.04744026955153034,
+          "intercept": 0.15690060595404817,
+          "lambda": 0.36449131180248906,
+          "lambda_ci": [
+            -0.19833817389455694,
+            1.176814973153124
+          ],
+          "lambda_r2": 0.855356272558291
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7570516245601314,
+          "slope": 0.03325159516863135,
+          "intercept": 0.15069298228216443,
+          "lambda": -0.39111011735013324,
+          "lambda_ci": [
+            -1.2323639671039364,
+            0.2841946166771585
+          ],
+          "lambda_r2": 0.7906448268323534
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.4",
+      "mean_of_distances": {
+        "lambda": 0.06485842523731752,
+        "lambda_ci": [
+          -0.25191877697834136,
+          0.3789731910088483
+        ],
+        "lambda_r2": 0.9555692210620845,
+        "mean_r2": 0.9134241364102365
+      },
+      "mean_r2": 0.8826124590902934,
+      "lambda": 0.20517061191391572,
+      "lambda_ci": [
+        -0.08619691273485414,
+        0.5607076232696004
+      ],
+      "lambda_r2": 0.9349109737125598,
+      "pooled_r2": 0.858561991220935,
+      "pooled_slope": 0.03982276579247823,
+      "spacing_cv": 1.213053665908797,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8385342082669365,
+          "slope": 0.02726764099926461,
+          "intercept": 0.045390463934036944,
+          "lambda": 0.6579526666600659,
+          "lambda_ci": [
+            0.552551874158786,
+            0.7708860397756956
+          ],
+          "lambda_r2": 0.9927064803674294
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.8795769875176156,
+          "slope": 0.032924734939963375,
+          "intercept": 0.05706154871829241,
+          "lambda": 0.5580499511689129,
+          "lambda_ci": [
+            0.4735634010975389,
+            0.647159728201725
+          ],
+          "lambda_r2": 0.9949695548407778
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9373172084190314,
+          "slope": 0.04628185638893658,
+          "intercept": 0.08657270383242094,
+          "lambda": 0.3654013031828344,
+          "lambda_ci": [
+            0.2626390089968109,
+            0.47425551833747603
+          ],
+          "lambda_r2": 0.9911225741801922
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.963457817869722,
+          "slope": 0.0501404570811054,
+          "intercept": 0.10916388852509915,
+          "lambda": 0.04493992064499701,
+          "lambda_ci": [
+            -0.14725145370739628,
+            0.2481731952097998
+          ],
+          "lambda_r2": 0.9643005144618725
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9326879870716799,
+          "slope": 0.050912835757947125,
+          "intercept": 0.1285256476753961,
+          "lambda": -0.10927999787052686,
+          "lambda_ci": [
+            -0.38256335265913666,
+            0.17002962122198245
+          ],
+          "lambda_r2": 0.9371538693303343
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.927103435800847,
+          "slope": 0.04278591179004536,
+          "intercept": 0.1351056559066771,
+          "lambda": -0.292534770521477,
+          "lambda_ci": [
+            -0.5296390907174795,
+            -0.06675970176207874
+          ],
+          "lambda_r2": 0.9579567319646302
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8149069255545833,
+          "slope": 0.04017548362438587,
+          "intercept": 0.14524841197497235,
+          "lambda": 0.5391260894091641,
+          "lambda_ci": [
+            -0.025142371762312002,
+            1.3572779382726994
+          ],
+          "lambda_r2": 0.8677721587495477
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.767315102221932,
+          "slope": 0.028093205758177718,
+          "intercept": 0.1381223736752623,
+          "lambda": -0.17942956559410356,
+          "lambda_ci": [
+            -1.0492044843228063,
+            0.671555066447328
+          ],
+          "lambda_r2": 0.7733059058056945
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.5",
+      "mean_of_distances": {
+        "lambda": 0.07781473040633331,
+        "lambda_ci": [
+          -0.18793053229002588,
+          0.3886438128495963
+        ],
+        "lambda_r2": 0.9614782824788274,
+        "mean_r2": 0.9274526966073875
+      },
+      "mean_r2": 0.9068485400838111,
+      "lambda": 0.1780243475532007,
+      "lambda_ci": [
+        -0.0755193539387677,
+        0.5051403718771472
+      ],
+      "lambda_r2": 0.9450838832048747,
+      "pooled_r2": 0.8885159107037931,
+      "pooled_slope": 0.03973306910077692,
+      "spacing_cv": 1.093320036405631,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8778804171821972,
+          "slope": 0.03129093325102648,
+          "intercept": 0.052975138981084066,
+          "lambda": 0.5403001051638405,
+          "lambda_ci": [
+            0.4335670942676211,
+            0.6544334484397889
+          ],
+          "lambda_r2": 0.9913669660735248
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9132011503930727,
+          "slope": 0.03574047681218767,
+          "intercept": 0.06342951231101238,
+          "lambda": 0.45773758821188926,
+          "lambda_ci": [
+            0.3760726060920834,
+            0.5435023163196464
+          ],
+          "lambda_r2": 0.9948415357191696
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9446542827578516,
+          "slope": 0.04596097575281485,
+          "intercept": 0.0880123421862421,
+          "lambda": 0.32145853314980294,
+          "lambda_ci": [
+            0.1866370845371172,
+            0.4667784274346479
+          ],
+          "lambda_r2": 0.9848513066144018
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9609345206975638,
+          "slope": 0.04904546294453696,
+          "intercept": 0.10807539939658367,
+          "lambda": 0.034590161956598496,
+          "lambda_ci": [
+            -0.16822426963228287,
+            0.24955044759577366
+          ],
+          "lambda_r2": 0.9614180503990059
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9228220575960225,
+          "slope": 0.048393129062901656,
+          "intercept": 0.12378165881889246,
+          "lambda": -0.13337686244596664,
+          "lambda_ci": [
+            -0.4302034431663,
+            0.16903556502955913
+          ],
+          "lambda_r2": 0.9292239405022837
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.933152111695411,
+          "slope": 0.03958241999593596,
+          "intercept": 0.12575080671302755,
+          "lambda": -0.23900092330978068,
+          "lambda_ci": [
+            -0.4946495895968731,
+            0.007716217568266634
+          ],
+          "lambda_r2": 0.9527155224123287
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.8658250098709666,
+          "slope": 0.0386086394040111,
+          "intercept": 0.13576997240782723,
+          "lambda": 0.42614178233775213,
+          "lambda_ci": [
+            0.017185561754747475,
+            0.9507797428963434
+          ],
+          "lambda_r2": 0.9093353369740436
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8363187704774029,
+          "slope": 0.02924251558280083,
+          "intercept": 0.13077134355392278,
+          "lambda": -0.05109103810055727,
+          "lambda_ci": [
+            -0.6350355989628533,
+            0.5919596076764793
+          ],
+          "lambda_r2": 0.8369184069442388
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.6",
+      "mean_of_distances": {
+        "lambda": -0.007500191404017101,
+        "lambda_ci": [
+          -0.1904644174378525,
+          0.1821151987503633
+        ],
+        "lambda_r2": 0.9764851323559866,
+        "mean_r2": 0.9518573343379366
+      },
+      "mean_r2": 0.9407016578137415,
+      "lambda": 0.09228560371259215,
+      "lambda_ci": [
+        -0.1268406408004305,
+        0.29983979498942415
+      ],
+      "lambda_r2": 0.9645814331641143,
+      "pooled_r2": 0.9258184839387104,
+      "pooled_slope": 0.04932798062122287,
+      "spacing_cv": 0.9351369640188225,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9098769667692947,
+          "slope": 0.03959545416801701,
+          "intercept": 0.06839362890109621,
+          "lambda": 0.44116953228002237,
+          "lambda_ci": [
+            0.3385584955440982,
+            0.5501046324073935
+          ],
+          "lambda_r2": 0.9910595363989876
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9460430872077334,
+          "slope": 0.04401822281941839,
+          "intercept": 0.08041740047119754,
+          "lambda": 0.3372823750127343,
+          "lambda_ci": [
+            0.2576607311785878,
+            0.42028199325653104
+          ],
+          "lambda_r2": 0.9943523856734521
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9618945322045775,
+          "slope": 0.05384642792624499,
+          "intercept": 0.10655362484822407,
+          "lambda": 0.22517074862062908,
+          "lambda_ci": [
+            0.08541240628037325,
+            0.3745578852881606
+          ],
+          "lambda_r2": 0.9824326017548004
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9632161029086765,
+          "slope": 0.05781858863461789,
+          "intercept": 0.1300846369054702,
+          "lambda": 0.014848568974563044,
+          "lambda_ci": [
+            -0.18480237282901957,
+            0.22512170469068765
+          ],
+          "lambda_r2": 0.9633035483671939
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9411993189925213,
+          "slope": 0.0593314253995197,
+          "intercept": 0.15148952930516568,
+          "lambda": -0.11023742994010823,
+          "lambda_ci": [
+            -0.3635949305836278,
+            0.14752247159693826
+          ],
+          "lambda_r2": 0.945757710399723
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9603483584355528,
+          "slope": 0.05011214609723029,
+          "intercept": 0.15464653535458767,
+          "lambda": -0.17474970203313572,
+          "lambda_ci": [
+            -0.3550280251945941,
+            0.002994922386255803
+          ],
+          "lambda_r2": 0.9721901726907664
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9462026739315803,
+          "slope": 0.04982089354944504,
+          "intercept": 0.16594032871313896,
+          "lambda": 0.16972263845062124,
+          "lambda_ci": [
+            -0.06887890877184141,
+            0.43105830092424424
+          ],
+          "lambda_r2": 0.9559264835459931
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8968322220599961,
+          "slope": 0.04008068637528986,
+          "intercept": 0.161062662062067,
+          "lambda": -0.21383136607059494,
+          "lambda_ci": [
+            -0.5737408982305032,
+            0.14010472300734206
+          ],
+          "lambda_r2": 0.9116290264819973
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.7",
+      "mean_of_distances": {
+        "lambda": -0.09466849994071852,
+        "lambda_ci": [
+          -0.25987607872127927,
+          0.07268474519126128
+        ],
+        "lambda_r2": 0.9804064112711207,
+        "mean_r2": 0.9525780299988269
+      },
+      "mean_r2": 0.9432567812206248,
+      "lambda": -0.011668346031521561,
+      "lambda_ci": [
+        -0.20797624615724533,
+        0.19223996455723336
+      ],
+      "lambda_r2": 0.969849735423761,
+      "pooled_r2": 0.9312962637057055,
+      "pooled_slope": 0.05412697971060237,
+      "spacing_cv": 0.9107291025375951,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9203713761374643,
+          "slope": 0.04653068310573012,
+          "intercept": 0.08099539039244166,
+          "lambda": 0.4028241625167012,
+          "lambda_ci": [
+            0.2963786733398006,
+            0.5158316417439333
+          ],
+          "lambda_r2": 0.9899295917390515
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9538501652235873,
+          "slope": 0.051994154815148665,
+          "intercept": 0.09578213268050817,
+          "lambda": 0.30335917310092164,
+          "lambda_ci": [
+            0.22195257888012893,
+            0.38810197573340766
+          ],
+          "lambda_r2": 0.9938632212956554
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9718530184329264,
+          "slope": 0.06153722723847919,
+          "intercept": 0.12374791032614263,
+          "lambda": 0.16481916029916854,
+          "lambda_ci": [
+            0.032704544427050425,
+            0.3042910346659251
+          ],
+          "lambda_r2": 0.9833500909870168
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9649269626184722,
+          "slope": 0.06365762408616933,
+          "intercept": 0.14632692827332217,
+          "lambda": -0.033170917582424964,
+          "lambda_ci": [
+            -0.22534181586476704,
+            0.16615047164402746
+          ],
+          "lambda_r2": 0.9653726271576878
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9306121864650682,
+          "slope": 0.06176328142872588,
+          "intercept": 0.16487006107080032,
+          "lambda": -0.21376110121331005,
+          "lambda_ci": [
+            -0.4619266395808349,
+            0.030030920502762487
+          ],
+          "lambda_r2": 0.9482456948344958
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9429737503385381,
+          "slope": 0.05161415689929767,
+          "intercept": 0.16813055514810804,
+          "lambda": -0.27182517801117084,
+          "lambda_ci": [
+            -0.45917599313356017,
+            -0.09150597274312827
+          ],
+          "lambda_r2": 0.9713987630486857
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9654782736374607,
+          "slope": 0.05259174997402618,
+          "intercept": 0.182027593570641,
+          "lambda": 0.009834225519381842,
+          "lambda_ci": [
+            -0.19061067644972363,
+            0.21832945747043925
+          ],
+          "lambda_r2": 0.9655143807903241
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8959885169114813,
+          "slope": 0.04332696013724199,
+          "intercept": 0.17955468155853932,
+          "lambda": -0.3546802306098064,
+          "lambda_ci": [
+            -0.6402191531618544,
+            -0.08752685786060418
+          ],
+          "lambda_r2": 0.9411235135371709
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.8",
+      "mean_of_distances": {
+        "lambda": -0.14848772401395924,
+        "lambda_ci": [
+          -0.30419072000506636,
+          0.007706907369325486
+        ],
+        "lambda_r2": 0.9815201348272442,
+        "mean_r2": 0.9468525617461561
+      },
+      "mean_r2": 0.9356645500089453,
+      "lambda": -0.06103519871397482,
+      "lambda_ci": [
+        -0.2514735273572658,
+        0.1342628649666746
+      ],
+      "lambda_r2": 0.9697768292543351,
+      "pooled_r2": 0.9219213503086704,
+      "pooled_slope": 0.0695308158608266,
+      "spacing_cv": 0.9493580726610059,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9254129454481422,
+          "slope": 0.062307507591617774,
+          "intercept": 0.10902979150671115,
+          "lambda": 0.3853346972257902,
+          "lambda_ci": [
+            0.27782495509388294,
+            0.49943217260257244
+          ],
+          "lambda_r2": 0.9895707970975072
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9548230435082421,
+          "slope": 0.07019324751266057,
+          "intercept": 0.12987590675335678,
+          "lambda": 0.3015761790460574,
+          "lambda_ci": [
+            0.22032930263173445,
+            0.3861616029285817
+          ],
+          "lambda_r2": 0.9939531543612704
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.972646991894455,
+          "slope": 0.08245962427628378,
+          "intercept": 0.16690449366856086,
+          "lambda": 0.15716167010025517,
+          "lambda_ci": [
+            0.023858364419438248,
+            0.2978252733688611
+          ],
+          "lambda_r2": 0.9830672455680373
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9622881801443148,
+          "slope": 0.08281716500558267,
+          "intercept": 0.19418645289178865,
+          "lambda": -0.06709838655302944,
+          "lambda_ci": [
+            -0.26297224090710414,
+            0.13444167634824505
+          ],
+          "lambda_r2": 0.9641132361757481
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9183341141993897,
+          "slope": 0.07789937772445693,
+          "intercept": 0.21609567163870005,
+          "lambda": -0.27683382677830054,
+          "lambda_ci": [
+            -0.5295647891435806,
+            -0.03386209669428952
+          ],
+          "lambda_r2": 0.9479310367837392
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9200398522716905,
+          "slope": 0.062210809360926066,
+          "intercept": 0.21777449233353724,
+          "lambda": -0.3605067965405197,
+          "lambda_ci": [
+            -0.5652325616634011,
+            -0.1685159502330253
+          ],
+          "lambda_r2": 0.9686254868875622
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9683525813243724,
+          "slope": 0.06527286537534642,
+          "intercept": 0.23629705529547057,
+          "lambda": -0.0549720108749202,
+          "lambda_ci": [
+            -0.2399748138074274,
+            0.13408405358510417
+          ],
+          "lambda_r2": 0.969527684854961
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8634186912809554,
+          "slope": 0.05308593003973891,
+          "intercept": 0.23287413313848113,
+          "lambda": -0.4632591260137907,
+          "lambda_ci": [
+            -0.7560217336151882,
+            -0.1987518442288198
+          ],
+          "lambda_r2": 0.9414259923058553
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.9",
+      "mean_of_distances": {
+        "lambda": -0.21254407857423085,
+        "lambda_ci": [
+          -0.37007682792305224,
+          -0.056822030276062294
+        ],
+        "lambda_r2": 0.9818841288184181,
+        "mean_r2": 0.9394835614265454
+      },
+      "mean_r2": 0.9269445720423716,
+      "lambda": -0.11434449337051898,
+      "lambda_ci": [
+        -0.30931307100600963,
+        0.08304983269380875
+      ],
+      "lambda_r2": 0.9692292802130664,
+      "pooled_r2": 0.9119779577894012,
+      "pooled_slope": 0.09313441396893549,
+      "spacing_cv": 0.9743791421995951,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9360798293244326,
+          "slope": 0.087653901290213,
+          "intercept": 0.1551213243049755,
+          "lambda": 0.3415904497540983,
+          "lambda_ci": [
+            0.23017870896702047,
+            0.45966249171005813
+          ],
+          "lambda_r2": 0.9881935930986808
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9639400733769519,
+          "slope": 0.09782783551889516,
+          "intercept": 0.18361597831629214,
+          "lambda": 0.25832003120396874,
+          "lambda_ci": [
+            0.1754350445673935,
+            0.3444227923647999
+          ],
+          "lambda_r2": 0.9934262180096084
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9794945651999296,
+          "slope": 0.11246345894416075,
+          "intercept": 0.23256591013985659,
+          "lambda": 0.0946899552673905,
+          "lambda_ci": [
+            -0.03357833415274075,
+            0.2285009432867579
+          ],
+          "lambda_r2": 0.9834427875004521
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9574390766195856,
+          "slope": 0.11107392924413369,
+          "intercept": 0.26868384869312595,
+          "lambda": -0.13033454475183504,
+          "lambda_ci": [
+            -0.3244807643907359,
+            0.06610310487860449
+          ],
+          "lambda_r2": 0.9644514766430228
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9072124045919804,
+          "slope": 0.10454007899280861,
+          "intercept": 0.30006432000370264,
+          "lambda": -0.3316906082817662,
+          "lambda_ci": [
+            -0.581683669217496,
+            -0.09534243897233127
+          ],
+          "lambda_r2": 0.9500341222362993
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8828252223234837,
+          "slope": 0.08013136019793583,
+          "intercept": 0.30167597547449043,
+          "lambda": -0.47592948339587354,
+          "lambda_ci": [
+            -0.7266979538413896,
+            -0.25084839913675927
+          ],
+          "lambda_r2": 0.96084053281551
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9629887552095533,
+          "slope": 0.08463428051800681,
+          "intercept": 0.3251784259425684,
+          "lambda": -0.09835444198920293,
+          "lambda_ci": [
+            -0.29414537762128334,
+            0.09999656050901301
+          ],
+          "lambda_r2": 0.9666860337863058
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8255766496930557,
+          "slope": 0.06675046704533072,
+          "intercept": 0.3177957828887586,
+          "lambda": -0.5788428091183239,
+          "lambda_ci": [
+            -0.8711030593461966,
+            -0.32330727722454744
+          ],
+          "lambda_r2": 0.9467594776146524
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.10",
+      "mean_of_distances": {
+        "lambda": -0.20525563515831952,
+        "lambda_ci": [
+          -0.37763344254678244,
+          -0.03447756852861529
+        ],
+        "lambda_r2": 0.9788357088739745,
+        "mean_r2": 0.9436229722587557
+      },
+      "mean_r2": 0.9301683569748266,
+      "lambda": -0.10771439779328497,
+      "lambda_ci": [
+        -0.31898121357278575,
+        0.10711604116498262
+      ],
+      "lambda_r2": 0.9655925114865545,
+      "pooled_r2": 0.9143762590665849,
+      "pooled_slope": 0.11291644756391872,
+      "spacing_cv": 0.9730582134960775,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9456849973973942,
+          "slope": 0.1090489563651779,
+          "intercept": 0.1952266512135558,
+          "lambda": 0.29789052990229764,
+          "lambda_ci": [
+            0.1820594089386136,
+            0.4204353269061474
+          ],
+          "lambda_r2": 0.986592104760904
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9723672063322668,
+          "slope": 0.11976307057794106,
+          "intercept": 0.2283910040617478,
+          "lambda": 0.2113632976020573,
+          "lambda_ci": [
+            0.12524448442352332,
+            0.30065582777189237
+          ],
+          "lambda_r2": 0.992604316757854
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.979261253974156,
+          "slope": 0.13586093578073088,
+          "intercept": 0.2859253142379801,
+          "lambda": 0.0670530549302459,
+          "lambda_ci": [
+            -0.06923546727575752,
+            0.2090581140279294
+          ],
+          "lambda_r2": 0.9812376347204281
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9520492833522324,
+          "slope": 0.13185235526682382,
+          "intercept": 0.3251751561783214,
+          "lambda": -0.1321817022499318,
+          "lambda_ci": [
+            -0.3452847969992493,
+            0.08376408537195343
+          ],
+          "lambda_r2": 0.9589764436719906
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9111156789906789,
+          "slope": 0.12867140048237247,
+          "intercept": 0.3684526805551013,
+          "lambda": -0.28253614094661467,
+          "lambda_ci": [
+            -0.555587924899344,
+            -0.02167524600126232
+          ],
+          "lambda_r2": 0.9413179076656489
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8904376359855861,
+          "slope": 0.09823883425929837,
+          "intercept": 0.37062914612198866,
+          "lambda": -0.443709578677145,
+          "lambda_ci": [
+            -0.6963059061424033,
+            -0.2156625477252267
+          ],
+          "lambda_r2": 0.9590762410620525
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9601316075142141,
+          "slope": 0.1002557961776688,
+          "intercept": 0.395422990578843,
+          "lambda": -0.08324709333663813,
+          "lambda_ci": [
+            -0.2926776301463222,
+            0.1304679969580118
+          ],
+          "lambda_r2": 0.9627137437134874
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.830299192252084,
+          "slope": 0.07964023160133697,
+          "intercept": 0.3872865143996696,
+          "lambda": -0.5695662297919653,
+          "lambda_ci": [
+            -0.8811937139875616,
+            -0.29801339148467754
+          ],
+          "lambda_r2": 0.9422216995400696
+        }
+      ]
+    },
+    {
+      "layer": "model.vision_model.encoder.layers.11",
+      "mean_of_distances": {
+        "lambda": -0.02440277768009097,
+        "lambda_ci": [
+          -0.24613947337402378,
+          0.2516510791644636
+        ],
+        "lambda_r2": 0.9685396260660445,
+        "mean_r2": 0.9419077765774089
+      },
+      "mean_r2": 0.924734528312137,
+      "lambda": 0.04745453226829608,
+      "lambda_ci": [
+        -0.20146166847277472,
+        0.297843506858517
+      ],
+      "lambda_r2": 0.9547778304051332,
+      "pooled_r2": 0.9093106117003448,
+      "pooled_slope": 0.3069834573595617,
+      "spacing_cv": 1.1437810883536967,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9500974988606162,
+          "slope": 0.26659955940466934,
+          "intercept": 0.4834157349314002,
+          "lambda": 0.26936187537878753,
+          "lambda_ci": [
+            0.142481447456497,
+            0.4041087693664148
+          ],
+          "lambda_r2": 0.9836657468921901
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9600400161734299,
+          "slope": 0.30140992448921045,
+          "intercept": 0.5783424157269813,
+          "lambda": 0.22889053151402505,
+          "lambda_ci": [
+            0.09094014751344232,
+            0.3762143216000112
+          ],
+          "lambda_r2": 0.9821705888559881
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.959618091729824,
+          "slope": 0.3561047134555441,
+          "intercept": 0.7477160989251032,
+          "lambda": 0.14944292886664418,
+          "lambda_ci": [
+            -0.03970079196154308,
+            0.3545706854830116
+          ],
+          "lambda_r2": 0.9682666956833696
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9289608229308767,
+          "slope": 0.35956595085449405,
+          "intercept": 0.8731350221700309,
+          "lambda": 0.05331010071887027,
+          "lambda_ci": [
+            -0.25397170484733655,
+            0.3927554619459336
+          ],
+          "lambda_r2": 0.9298683125498535
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9176685548507798,
+          "slope": 0.3648337016005441,
+          "intercept": 1.0134287114820106,
+          "lambda": -0.11138309358783231,
+          "lambda_ci": [
+            -0.43269028639449136,
+            0.21448841619334152
+          ],
+          "lambda_r2": 0.9219512438495803
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9187203804002898,
+          "slope": 0.2823541990163504,
+          "intercept": 1.0255488958835466,
+          "lambda": -0.30075956118775715,
+          "lambda_ci": [
+            -0.5457130985022913,
+            -0.07137798003855539
+          ],
+          "lambda_r2": 0.9536575191546429
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.96715550849531,
+          "slope": 0.2964273454150602,
+          "intercept": 1.1057420693325926,
+          "lambda": 0.04159896381772189,
+          "lambda_ci": [
+            -0.14895163209821288,
+            0.24111632823402235
+          ],
+          "lambda_r2": 0.967821355834292
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7956153530559695,
+          "slope": 0.2285722646406217,
+          "intercept": 1.0819675163860276,
+          "lambda": -0.6173356710250297,
+          "lambda_ci": [
+            -0.9637415809130521,
+            -0.3235849281485097
+          ],
+          "lambda_r2": 0.9308211804211494
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.0",
+      "mean_of_distances": {
+        "lambda": 0.03882110404624083,
+        "lambda_ci": [
+          -0.15962159761859515,
+          0.29864568522689044
+        ],
+        "lambda_r2": 0.967579016613785,
+        "mean_r2": 0.9415767650136783
+      },
+      "mean_r2": 0.9320875159304082,
+      "lambda": 0.11486069499123745,
+      "lambda_ci": [
+        -0.11854052199445834,
+        0.3149524887547626
+      ],
+      "lambda_r2": 0.9603648793681505,
+      "pooled_r2": 0.9108949386742404,
+      "pooled_slope": 0.5931527735935997,
+      "spacing_cv": 1.0034193227226513,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9493555566871215,
+          "slope": 0.4691084922936824,
+          "intercept": 0.8512809796784475,
+          "lambda": 0.2739786446277216,
+          "lambda_ci": [
+            0.14748374387360008,
+            0.4083362701026282
+          ],
+          "lambda_r2": 0.9838829849597513
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9618341510693764,
+          "slope": 0.5348038280449511,
+          "intercept": 1.0222048506787886,
+          "lambda": 0.2609819694067573,
+          "lambda_ci": [
+            0.15792744774252299,
+            0.3693097502624726
+          ],
+          "lambda_r2": 0.9903448001809353
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9440718978467344,
+          "slope": 0.6392324967101658,
+          "intercept": 1.3141674512297212,
+          "lambda": 0.2694747589021731,
+          "lambda_ci": [
+            0.07245764269929753,
+            0.48873109596217024
+          ],
+          "lambda_r2": 0.9696157064609747
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.93154548269009,
+          "slope": 0.6706297639386801,
+          "intercept": 1.5459762243656117,
+          "lambda": 0.16711373579585032,
+          "lambda_ci": [
+            -0.11136138033761037,
+            0.480084056423974
+          ],
+          "lambda_r2": 0.9407784198884
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9275719818697091,
+          "slope": 0.7407463311107277,
+          "intercept": 1.9046702719959534,
+          "lambda": -0.05982819036180495,
+          "lambda_ci": [
+            -0.35139698158872756,
+            0.24188540865708436
+          ],
+          "lambda_r2": 0.9289034795415558
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9226647133219309,
+          "slope": 0.5873999557510908,
+          "intercept": 1.9565871913465247,
+          "lambda": -0.2052516107457505,
+          "lambda_ci": [
+            -0.5105429090834233,
+            0.08674472339570624
+          ],
+          "lambda_r2": 0.9366348165366712
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9676779110049473,
+          "slope": 0.6564233620842673,
+          "intercept": 2.1805967035585763,
+          "lambda": 0.06260765418662459,
+          "lambda_ci": [
+            -0.12571966365130632,
+            0.26059522724705264
+          ],
+          "lambda_r2": 0.9691584507996387
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8519784329533555,
+          "slope": 0.44687795881523484,
+          "intercept": 1.9825118045364625,
+          "lambda": -0.5650012491278325,
+          "lambda_ci": [
+            -0.8056852644833663,
+            -0.34918120593582014
+          ],
+          "lambda_r2": 0.9636003765772768
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.1",
+      "mean_of_distances": {
+        "lambda": 0.04005224868456482,
+        "lambda_ci": [
+          -0.1620168432326232,
+          0.30464527996374535
+        ],
+        "lambda_r2": 0.9677177181063701,
+        "mean_r2": 0.9409179846808864
+      },
+      "mean_r2": 0.9313405151791452,
+      "lambda": 0.1136221474753215,
+      "lambda_ci": [
+        -0.12097967712240813,
+        0.3142518550760985
+      ],
+      "lambda_r2": 0.9605117912031127,
+      "pooled_r2": 0.9099039457549771,
+      "pooled_slope": 0.6021729365771546,
+      "spacing_cv": 1.0081613465686226,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9489433726184457,
+          "slope": 0.47676524964767636,
+          "intercept": 0.8648265908159775,
+          "lambda": 0.2759929618344938,
+          "lambda_ci": [
+            0.14937892288077892,
+            0.4105233561483761
+          ],
+          "lambda_r2": 0.9839004268044084
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9609395653238324,
+          "slope": 0.5446457778563819,
+          "intercept": 1.040029202887283,
+          "lambda": 0.2656022028585696,
+          "lambda_ci": [
+            0.16225860029466305,
+            0.3742951598413562
+          ],
+          "lambda_r2": 0.990346266388164
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9436883617022868,
+          "slope": 0.6526542628632871,
+          "intercept": 1.3396114813979938,
+          "lambda": 0.27348843672914874,
+          "lambda_ci": [
+            0.077435109719862,
+            0.49166267440959044
+          ],
+          "lambda_r2": 0.9699800273381163
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9308560188644724,
+          "slope": 0.683664812617114,
+          "intercept": 1.5735286961624635,
+          "lambda": 0.17264301156516138,
+          "lambda_ci": [
+            -0.10645629316212199,
+            0.48679564812874954
+          ],
+          "lambda_r2": 0.9406864471696333
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9277921134704702,
+          "slope": 0.7538562855753042,
+          "intercept": 1.9344913617606756,
+          "lambda": -0.05538624638472288,
+          "lambda_ci": [
+            -0.34649989966440986,
+            0.24625711358707708
+          ],
+          "lambda_r2": 0.9289352824294796
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9240662920272619,
+          "slope": 0.597097420119387,
+          "intercept": 1.985307576762705,
+          "lambda": -0.20700269073177957,
+          "lambda_ci": [
+            -0.5059169710291329,
+            0.07900774514521333
+          ],
+          "lambda_r2": 0.9384349189833079
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9674446070886296,
+          "slope": 0.6603373070131101,
+          "intercept": 2.2052051546402494,
+          "lambda": 0.054601283385481626,
+          "lambda_ci": [
+            -0.13550306108269428,
+            0.2542085503108408
+          ],
+          "lambda_r2": 0.9685704670512001
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8469937903377625,
+          "slope": 0.44836237692497793,
+          "intercept": 2.0043920849057995,
+          "lambda": -0.578663644236442,
+          "lambda_ci": [
+            -0.822687173721881,
+            -0.36069351768214764
+          ],
+          "lambda_r2": 0.9632404934605922
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.2",
+      "mean_of_distances": {
+        "lambda": 0.05342055165573227,
+        "lambda_ci": [
+          -0.1571828780014342,
+          0.3161355406148002
+        ],
+        "lambda_r2": 0.9682657790294131,
+        "mean_r2": 0.9398837538244078
+      },
+      "mean_r2": 0.93021332929071,
+      "lambda": 0.11914972239626527,
+      "lambda_ci": [
+        -0.11531731199634268,
+        0.32067530216976126
+      ],
+      "lambda_r2": 0.9611520170735434,
+      "pooled_r2": 0.9083396520414698,
+      "pooled_slope": 0.6087416090268847,
+      "spacing_cv": 1.0158559924530763,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9477497538571769,
+          "slope": 0.4811124647223395,
+          "intercept": 0.8713304206400058,
+          "lambda": 0.2823194652838213,
+          "lambda_ci": [
+            0.15640543938321272,
+            0.41614706482546315
+          ],
+          "lambda_r2": 0.9841786386004278
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9590285867179298,
+          "slope": 0.5515764408239054,
+          "intercept": 1.0503850578077105,
+          "lambda": 0.27639683101807605,
+          "lambda_ci": [
+            0.1742549556885301,
+            0.38385008422883826
+          ],
+          "lambda_r2": 0.9906701537589827
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9422543043487591,
+          "slope": 0.6622271143921806,
+          "intercept": 1.3540120533674136,
+          "lambda": 0.2853188151720656,
+          "lambda_ci": [
+            0.09094368429944788,
+            0.5017773139901911
+          ],
+          "lambda_r2": 0.9707465457925815
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9298158204422519,
+          "slope": 0.6946476622037926,
+          "intercept": 1.5894041942584336,
+          "lambda": 0.18917971770945263,
+          "lambda_ci": [
+            -0.08872737420606192,
+            0.5031974110108333
+          ],
+          "lambda_r2": 0.9415666623468805
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9284579919754429,
+          "slope": 0.7644317170461352,
+          "intercept": 1.9507307766507225,
+          "lambda": -0.04416531737850084,
+          "lambda_ci": [
+            -0.3342285010541638,
+            0.25750052011068425
+          ],
+          "lambda_r2": 0.9291857401454491
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9258080625345333,
+          "slope": 0.6037622059500145,
+          "intercept": 1.9980145826605258,
+          "lambda": -0.20836488878794301,
+          "lambda_ci": [
+            -0.49896441062117247,
+            0.06980626134760451
+          ],
+          "lambda_r2": 0.9406247864757994
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9672795403108864,
+          "slope": 0.6645044737958541,
+          "intercept": 2.218592669354597,
+          "lambda": 0.049119727083077915,
+          "lambda_ci": [
+            -0.14190724978662345,
+            0.24951193006838718
+          ],
+          "lambda_r2": 0.9681926264221492
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8413125741386995,
+          "slope": 0.4476707932808574,
+          "intercept": 2.0118819612071364,
+          "lambda": -0.5935627158941537,
+          "lambda_ci": [
+            -0.8354528800304175,
+            -0.3778943153440496
+          ],
+          "lambda_r2": 0.9640509830460773
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.3",
+      "mean_of_distances": {
+        "lambda": 0.06019520127415294,
+        "lambda_ci": [
+          -0.15850183058483175,
+          0.32124821944177795
+        ],
+        "lambda_r2": 0.9688176554338949,
+        "mean_r2": 0.9397377301610095
+      },
+      "mean_r2": 0.930116972825977,
+      "lambda": 0.11727099877661129,
+      "lambda_ci": [
+        -0.11622410417551779,
+        0.32553781700476336
+      ],
+      "lambda_r2": 0.9617177856835358,
+      "pooled_r2": 0.908252490490227,
+      "pooled_slope": 0.6188891131075557,
+      "spacing_cv": 1.0106443737607889,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9465736666022074,
+          "slope": 0.4909998112041861,
+          "intercept": 0.8878713891042352,
+          "lambda": 0.28822632836157736,
+          "lambda_ci": [
+            0.1626970751584833,
+            0.4217063773818879
+          ],
+          "lambda_r2": 0.9843770005724122
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9573610416580217,
+          "slope": 0.5644747303997524,
+          "intercept": 1.072289575709681,
+          "lambda": 0.285137570207527,
+          "lambda_ci": [
+            0.18359876712685963,
+            0.391993419185685
+          ],
+          "lambda_r2": 0.9908595515667329
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9420065175133439,
+          "slope": 0.6793601481800333,
+          "intercept": 1.3844576003465419,
+          "lambda": 0.29124847073888693,
+          "lambda_ci": [
+            0.1000762992742941,
+            0.5038789243559982
+          ],
+          "lambda_r2": 0.9717419537670995
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9296863224175519,
+          "slope": 0.7101738222865321,
+          "intercept": 1.6195110022989505,
+          "lambda": 0.19749005698428035,
+          "lambda_ci": [
+            -0.07882604671480109,
+            0.5101870606911003
+          ],
+          "lambda_r2": 0.9424575043082506
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9297625634770489,
+          "slope": 0.7766931947416906,
+          "intercept": 1.9773554598621648,
+          "lambda": -0.0397892661705809,
+          "lambda_ci": [
+            -0.3268671394866388,
+            0.25908221482384175
+          ],
+          "lambda_r2": 0.9303547627831997
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9276142398822785,
+          "slope": 0.6122793069833186,
+          "intercept": 2.0216068081615988,
+          "lambda": -0.20936573276129705,
+          "lambda_ci": [
+            -0.4930379539540386,
+            0.06249707025143997
+          ],
+          "lambda_r2": 0.9427084866832731
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9676349962612215,
+          "slope": 0.66671705780533,
+          "intercept": 2.2342065611236808,
+          "lambda": 0.03705194056894223,
+          "lambda_ci": [
+            -0.1536221616362345,
+            0.23647040084791665
+          ],
+          "lambda_r2": 0.9681570881940508
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8402964347961426,
+          "slope": 0.450414833259606,
+          "intercept": 2.0279274386573456,
+          "lambda": -0.5960772388278994,
+          "lambda_ci": [
+            -0.8425494471402106,
+            -0.376766382986224
+          ],
+          "lambda_r2": 0.9630859375932679
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.4",
+      "mean_of_distances": {
+        "lambda": 0.060099690638664785,
+        "lambda_ci": [
+          -0.1576047629154864,
+          0.3202542593421993
+        ],
+        "lambda_r2": 0.9696199555496784,
+        "mean_r2": 0.9410733855364982
+      },
+      "mean_r2": 0.9318361059064719,
+      "lambda": 0.11486536842324714,
+      "lambda_ci": [
+        -0.11555691415042753,
+        0.3241934134229453
+      ],
+      "lambda_r2": 0.9627543565210571,
+      "pooled_r2": 0.9105641300547308,
+      "pooled_slope": 0.626006340600158,
+      "spacing_cv": 1.000481295453798,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.946881938812588,
+          "slope": 0.4984028622137564,
+          "intercept": 0.9009873520461396,
+          "lambda": 0.2873594916475388,
+          "lambda_ci": [
+            0.16287878618866392,
+            0.4196142825354695
+          ],
+          "lambda_r2": 0.9845829117713106
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9578492201585388,
+          "slope": 0.572798268951436,
+          "intercept": 1.087840095092962,
+          "lambda": 0.28422867170949395,
+          "lambda_ci": [
+            0.1851135999035135,
+            0.38837830331462464
+          ],
+          "lambda_r2": 0.9912603338099755
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9441583855120778,
+          "slope": 0.6880951312274038,
+          "intercept": 1.4027894054665486,
+          "lambda": 0.2848699316771905,
+          "lambda_ci": [
+            0.09872960386749863,
+            0.4910178613865054
+          ],
+          "lambda_r2": 0.9729075855940738
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9308821396737099,
+          "slope": 0.7155292789681533,
+          "intercept": 1.63431637628845,
+          "lambda": 0.1932087256382921,
+          "lambda_ci": [
+            -0.08093591380477747,
+            0.5027021394972433
+          ],
+          "lambda_r2": 0.9431483775402195
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9301697240484689,
+          "slope": 0.7815556236620111,
+          "intercept": 1.9906718687345546,
+          "lambda": -0.037922095416189155,
+          "lambda_ci": [
+            -0.3240453848746545,
+            0.2600085235312659
+          ],
+          "lambda_r2": 0.9307083610647822
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9291952333265437,
+          "slope": 0.6193801558540474,
+          "intercept": 2.0378817509639897,
+          "lambda": -0.20237846546812815,
+          "lambda_ci": [
+            -0.4824524243322392,
+            0.0668181533191462
+          ],
+          "lambda_r2": 0.9434138472961926
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.968835884132112,
+          "slope": 0.6745080120051858,
+          "intercept": 2.2534444570329293,
+          "lambda": 0.036522011208202164,
+          "lambda_ci": [
+            -0.1501779144960776,
+            0.23154935651784825
+          ],
+          "lambda_r2": 0.9693452775136495
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8467163215877361,
+          "slope": 0.45778139191927253,
+          "intercept": 2.0479994622308406,
+          "lambda": -0.5836691688904657,
+          "lambda_ci": [
+            -0.8136765085588122,
+            -0.3771498024946771
+          ],
+          "lambda_r2": 0.9666681575782533
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.5",
+      "mean_of_distances": {
+        "lambda": 0.07243409969664562,
+        "lambda_ci": [
+          -0.15467656444569927,
+          0.33560799853095485
+        ],
+        "lambda_r2": 0.969692652599736,
+        "mean_r2": 0.9398569030437123
+      },
+      "mean_r2": 0.9307854659608503,
+      "lambda": 0.11825698508578765,
+      "lambda_ci": [
+        -0.11179550932092397,
+        0.3401763678067171
+      ],
+      "lambda_r2": 0.9629973419013025,
+      "pooled_r2": 0.9092026930827648,
+      "pooled_slope": 0.6137958224452428,
+      "spacing_cv": 1.0007417825842695,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9454043340009064,
+          "slope": 0.48780242144541636,
+          "intercept": 0.8803397426392798,
+          "lambda": 0.2950796676892318,
+          "lambda_ci": [
+            0.17122939206652826,
+            0.42674128764302366
+          ],
+          "lambda_r2": 0.9848874170191262
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9552712062275128,
+          "slope": 0.5629836065095314,
+          "intercept": 1.0661607636162687,
+          "lambda": 0.29620348133754465,
+          "lambda_ci": [
+            0.19597258298846676,
+            0.4016980714531476
+          ],
+          "lambda_r2": 0.9911911838674369
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9422303208926461,
+          "slope": 0.6785144605718588,
+          "intercept": 1.378346088415686,
+          "lambda": 0.2961787939644097,
+          "lambda_ci": [
+            0.10969811066838636,
+            0.5030940784937556
+          ],
+          "lambda_r2": 0.9730956640934623
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9300187403141796,
+          "slope": 0.7030171028803373,
+          "intercept": 1.60120070144827,
+          "lambda": 0.2035883658660601,
+          "lambda_ci": [
+            -0.07083743752269694,
+            0.5143745438543081
+          ],
+          "lambda_r2": 0.9435345184759216
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9299500747439235,
+          "slope": 0.7670437374340688,
+          "intercept": 1.945720063382768,
+          "lambda": -0.02303058630020842,
+          "lambda_ci": [
+            -0.3110825692749134,
+            0.2786546641602866
+          ],
+          "lambda_r2": 0.9301471084278091
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9316887717401434,
+          "slope": 0.6080478374709392,
+          "intercept": 1.989644570867066,
+          "lambda": -0.19293977316942884,
+          "lambda_ci": [
+            -0.4673870885794561,
+            0.07188569921179624
+          ],
+          "lambda_r2": 0.9447415231406615
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9692046498227179,
+          "slope": 0.6587092292881573,
+          "intercept": 2.197085963721194,
+          "lambda": 0.03292560430551519,
+          "lambda_ci": [
+            -0.152753581119151,
+            0.22670427942579774
+          ],
+          "lambda_r2": 0.9696194521647197
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8425156299447729,
+          "slope": 0.44424818396163507,
+          "intercept": 1.9949951559982246,
+          "lambda": -0.5941136216539813,
+          "lambda_ci": [
+            -0.8247612146728245,
+            -0.38749892279057774
+          ],
+          "lambda_r2": 0.9667618680212823
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.6",
+      "mean_of_distances": {
+        "lambda": 0.07747090229769293,
+        "lambda_ci": [
+          -0.15741312103634647,
+          0.34319022191722903
+        ],
+        "lambda_r2": 0.9699641615821486,
+        "mean_r2": 0.9395960525097033
+      },
+      "mean_r2": 0.9305331581304275,
+      "lambda": 0.11692948870731718,
+      "lambda_ci": [
+        -0.11406202155566268,
+        0.34864719955772927
+      ],
+      "lambda_r2": 0.9632459570811807,
+      "pooled_r2": 0.9093044670746869,
+      "pooled_slope": 0.6106138720741489,
+      "spacing_cv": 0.9963396756674759,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9443289311709209,
+          "slope": 0.4892119711365589,
+          "intercept": 0.881821934650998,
+          "lambda": 0.2999346752920435,
+          "lambda_ci": [
+            0.17599932638274524,
+            0.4317647243438675
+          ],
+          "lambda_r2": 0.9849544800534643
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.953382118906334,
+          "slope": 0.5646388624944226,
+          "intercept": 1.0675313248289153,
+          "lambda": 0.30444934002593027,
+          "lambda_ci": [
+            0.20272545352435994,
+            0.41167758774907026
+          ],
+          "lambda_r2": 0.9910250179114968
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9415108906814229,
+          "slope": 0.6796009502577962,
+          "intercept": 1.378244953979012,
+          "lambda": 0.30109801899052985,
+          "lambda_ci": [
+            0.11504798513590164,
+            0.5076315786277117
+          ],
+          "lambda_r2": 0.9733338897708044
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9303750929375396,
+          "slope": 0.7011167199944622,
+          "intercept": 1.5954334595411785,
+          "lambda": 0.2069246465317866,
+          "lambda_ci": [
+            -0.0660078447108203,
+            0.5160913649655685
+          ],
+          "lambda_r2": 0.9443065007508039
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9300661170777655,
+          "slope": 0.7609401771547507,
+          "intercept": 1.9297274730482026,
+          "lambda": -0.01714860516052332,
+          "lambda_ci": [
+            -0.30559961766273047,
+            0.2856168113663883
+          ],
+          "lambda_r2": 0.9301748926519332
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.933654741272901,
+          "slope": 0.602972732645604,
+          "intercept": 1.9713779301282963,
+          "lambda": -0.19016472605999807,
+          "lambda_ci": [
+            -0.4591936506698877,
+            0.07000615462131912
+          ],
+          "lambda_r2": 0.9463966652888056
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9683890116447629,
+          "slope": 0.6474224058395525,
+          "intercept": 2.1693749814369814,
+          "lambda": 0.026934330882847732,
+          "lambda_ci": [
+            -0.16211619840050506,
+            0.22418410693420343
+          ],
+          "lambda_r2": 0.9686651322455764
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8425583613517728,
+          "slope": 0.4390071570700476,
+          "intercept": 1.975151478707072,
+          "lambda": -0.5955879460672389,
+          "lambda_ci": [
+            -0.8252866040511797,
+            -0.3897637353192238
+          ],
+          "lambda_r2": 0.9671110779765604
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.7",
+      "mean_of_distances": {
+        "lambda": 0.06817375807482459,
+        "lambda_ci": [
+          -0.17025863130269828,
+          0.3316540561435599
+        ],
+        "lambda_r2": 0.9706579547182799,
+        "mean_r2": 0.939322301000219
+      },
+      "mean_r2": 0.9297949755298147,
+      "lambda": 0.1058305016887553,
+      "lambda_ci": [
+        -0.1259926914219634,
+        0.34139462546179766
+      ],
+      "lambda_r2": 0.9635279895050516,
+      "pooled_r2": 0.9093551606724163,
+      "pooled_slope": 0.6108418792571556,
+      "spacing_cv": 0.995744222132987,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9440819058214036,
+          "slope": 0.49600907399207467,
+          "intercept": 0.8935244690015701,
+          "lambda": 0.30156475065902705,
+          "lambda_ci": [
+            0.17850728990260062,
+            0.43240560768166547
+          ],
+          "lambda_r2": 0.9851700068606584
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9535510727821357,
+          "slope": 0.570425911621816,
+          "intercept": 1.0784894890746024,
+          "lambda": 0.30436807462460125,
+          "lambda_ci": [
+            0.20378958872612762,
+            0.4103162631820987
+          ],
+          "lambda_r2": 0.9912182666510712
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9426432380474312,
+          "slope": 0.6841550856802832,
+          "intercept": 1.3888071939052704,
+          "lambda": 0.2964398406646414,
+          "lambda_ci": [
+            0.11205285984710475,
+            0.500780217111485
+          ],
+          "lambda_r2": 0.9736461990378709
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9319477359833501,
+          "slope": 0.702701558072852,
+          "intercept": 1.6036907060806753,
+          "lambda": 0.19894444677580436,
+          "lambda_ci": [
+            -0.0717392433109729,
+            0.5045555440536362
+          ],
+          "lambda_r2": 0.9448925930710893
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9300373140592397,
+          "slope": 0.7595297206494643,
+          "intercept": 1.9347956689417842,
+          "lambda": -0.02769055549417726,
+          "lambda_ci": [
+            -0.3150068148934212,
+            0.27247298774149664
+          ],
+          "lambda_r2": 0.9303233211767392
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9313888825881111,
+          "slope": 0.5978957009443225,
+          "intercept": 1.9741895662767865,
+          "lambda": -0.21219222693399914,
+          "lambda_ci": [
+            -0.4797975437269333,
+            0.044815685447012185
+          ],
+          "lambda_r2": 0.9473019914582427
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9674515038296075,
+          "slope": 0.6392934108711822,
+          "intercept": 2.1684214087515037,
+          "lambda": 0.012716556601706244,
+          "lambda_ci": [
+            -0.18024613953295388,
+            0.21366102900858186
+          ],
+          "lambda_r2": 0.9675127528614198
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8372581511272383,
+          "slope": 0.43672457222525135,
+          "intercept": 1.9846504615126273,
+          "lambda": -0.610830040631993,
+          "lambda_ci": [
+            -0.8378108700573754,
+            -0.4076917043349164
+          ],
+          "lambda_r2": 0.9681587849233214
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.8",
+      "mean_of_distances": {
+        "lambda": 0.04980773918286227,
+        "lambda_ci": [
+          -0.19061199901942044,
+          0.3061821665160612
+        ],
+        "lambda_r2": 0.9720589543000743,
+        "mean_r2": 0.9390632678861152
+      },
+      "mean_r2": 0.9289735710534804,
+      "lambda": 0.08034022692661874,
+      "lambda_ci": [
+        -0.14758425378368678,
+        0.3252110008782143
+      ],
+      "lambda_r2": 0.9642015395083245,
+      "pooled_r2": 0.9092669839171935,
+      "pooled_slope": 0.6464341163441509,
+      "spacing_cv": 0.9950099176198658,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9433095015327693,
+          "slope": 0.5350736709849528,
+          "intercept": 0.9614881904667442,
+          "lambda": 0.306856775004874,
+          "lambda_ci": [
+            0.18623562921163983,
+            0.4349957939493827
+          ],
+          "lambda_r2": 0.9858037401290557
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9544428001044033,
+          "slope": 0.6142355289640327,
+          "intercept": 1.1590678457886054,
+          "lambda": 0.302525689041485,
+          "lambda_ci": [
+            0.20663148662838193,
+            0.40324799619393303
+          ],
+          "lambda_r2": 0.991957202859622
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9476985535850418,
+          "slope": 0.7302131719780548,
+          "intercept": 1.4829019296459587,
+          "lambda": 0.27854739748421586,
+          "lambda_ci": [
+            0.10417297315766702,
+            0.4700044773433476
+          ],
+          "lambda_r2": 0.9757596232478744
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9343441061147396,
+          "slope": 0.7459769882894631,
+          "intercept": 1.7044483899664165,
+          "lambda": 0.18599196657120526,
+          "lambda_ci": [
+            -0.08031518866100029,
+            0.48478547366855185
+          ],
+          "lambda_r2": 0.9458254198242361
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9282485934319267,
+          "slope": 0.8025951891726425,
+          "intercept": 2.0520196125513857,
+          "lambda": -0.050521632974430124,
+          "lambda_ci": [
+            -0.338153226819769,
+            0.24717400556249552
+          ],
+          "lambda_r2": 0.9292198870975903
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9217397133071683,
+          "slope": 0.6208029175360511,
+          "intercept": 2.083586157948279,
+          "lambda": -0.2596981089077058,
+          "lambda_ci": [
+            -0.5371423873117465,
+            0.002086833208690391
+          ],
+          "lambda_r2": 0.9454042927174149
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9680342471255072,
+          "slope": 0.6636235854932501,
+          "intercept": 2.2856577167147356,
+          "lambda": -0.025311512717967777,
+          "lambda_ci": [
+            -0.21485331890637327,
+            0.17021911984610205
+          ],
+          "lambda_r2": 0.9682802121091804
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8339710532262877,
+          "slope": 0.458951878334763,
+          "intercept": 2.1064478357833076,
+          "lambda": -0.6242653897071021,
+          "lambda_ci": [
+            -0.8388118276355936,
+            -0.4314754640987225
+          ],
+          "lambda_r2": 0.971361938081623
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.9",
+      "mean_of_distances": {
+        "lambda": 0.061065377056811324,
+        "lambda_ci": [
+          -0.17717841343030016,
+          0.3157231620498982
+        ],
+        "lambda_r2": 0.9730738752490845,
+        "mean_r2": 0.9397533438476853
+      },
+      "mean_r2": 0.929887328918113,
+      "lambda": 0.08508840590886167,
+      "lambda_ci": [
+        -0.1358249920814844,
+        0.3352641745947427
+      ],
+      "lambda_r2": 0.9652040976626187,
+      "pooled_r2": 0.9103289542487297,
+      "pooled_slope": 0.6591284834509932,
+      "spacing_cv": 0.9866736904895861,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9426442142467021,
+          "slope": 0.5470960501158858,
+          "intercept": 0.9820693596841106,
+          "lambda": 0.3097807712441568,
+          "lambda_ci": [
+            0.1892888923542329,
+            0.4378099930911018
+          ],
+          "lambda_r2": 0.9858746593177198
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9532131814139199,
+          "slope": 0.6270230537999432,
+          "intercept": 1.1820089290589857,
+          "lambda": 0.3071760545602771,
+          "lambda_ci": [
+            0.20934329651740335,
+            0.41008338420811263
+          ],
+          "lambda_r2": 0.9916836720993769
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9453009811025532,
+          "slope": 0.7456281543321868,
+          "intercept": 1.511405424228369,
+          "lambda": 0.2887877390491847,
+          "lambda_ci": [
+            0.11094694325617929,
+            0.48474798690082455
+          ],
+          "lambda_r2": 0.9751275382584484
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9339068256590402,
+          "slope": 0.7612275549115225,
+          "intercept": 1.7334363267869015,
+          "lambda": 0.19774921246408694,
+          "lambda_ci": [
+            -0.06683370327831883,
+            0.4951563872444992
+          ],
+          "lambda_r2": 0.94683385625619
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9296240623296118,
+          "slope": 0.8166460081568448,
+          "intercept": 2.077393795964164,
+          "lambda": -0.036090558999133035,
+          "lambda_ci": [
+            -0.32133727699418757,
+            0.2604449649813728
+          ],
+          "lambda_r2": 0.9301199858887935
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9236759132937201,
+          "slope": 0.6289372487984153,
+          "intercept": 2.1011774695775403,
+          "lambda": -0.25406605179379016,
+          "lambda_ci": [
+            -0.526061396849616,
+            0.003313019323962816
+          ],
+          "lambda_r2": 0.9465979976876906
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9714639831352584,
+          "slope": 0.6744925844135482,
+          "intercept": 2.309791547776203,
+          "lambda": -0.027572400646363605,
+          "lambda_ci": [
+            -0.20481628088464998,
+            0.15474572573642148
+          ],
+          "lambda_r2": 0.9717610399470774
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8392694701640981,
+          "slope": 0.4719772130796008,
+          "intercept": 2.139211550753283,
+          "lambda": -0.6100988380980602,
+          "lambda_ci": [
+            -0.8116760857896179,
+            -0.4274715401599931
+          ],
+          "lambda_r2": 0.9736340318456536
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.10",
+      "mean_of_distances": {
+        "lambda": 0.041198474311925304,
+        "lambda_ci": [
+          -0.1898758502363604,
+          0.2860477401777637
+        ],
+        "lambda_r2": 0.9742991828579741,
+        "mean_r2": 0.9408761277324635
+      },
+      "mean_r2": 0.9309866966849407,
+      "lambda": 0.06652987153086114,
+      "lambda_ci": [
+        -0.15058948275031858,
+        0.31306992380586834
+      ],
+      "lambda_r2": 0.9663359940376841,
+      "pooled_r2": 0.911652114079819,
+      "pooled_slope": 0.6455118192626547,
+      "spacing_cv": 0.9834108963088382,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9446446001227895,
+          "slope": 0.5408410860230304,
+          "intercept": 0.9729209257142818,
+          "lambda": 0.3004172677666939,
+          "lambda_ci": [
+            0.17960107222594823,
+            0.4286803792573304
+          ],
+          "lambda_r2": 0.9856318112695891
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9568145683969067,
+          "slope": 0.6158115596593788,
+          "intercept": 1.1657048751460803,
+          "lambda": 0.2907542242567042,
+          "lambda_ci": [
+            0.19411159096185732,
+            0.39220958730796907
+          ],
+          "lambda_r2": 0.9917285686344002
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9503514496999728,
+          "slope": 0.7291218176458358,
+          "intercept": 1.4863380336842695,
+          "lambda": 0.26557367241883917,
+          "lambda_ci": [
+            0.09358892156577867,
+            0.4537445552246787
+          ],
+          "lambda_r2": 0.9761049640859597
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9395685234598422,
+          "slope": 0.7487720497962964,
+          "intercept": 1.7142815015126083,
+          "lambda": 0.170609339829506,
+          "lambda_ci": [
+            -0.08349112881340798,
+            0.45261435495921276
+          ],
+          "lambda_r2": 0.9494671889413095
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9302622777908647,
+          "slope": 0.8010456464204158,
+          "intercept": 2.0526215942612147,
+          "lambda": -0.05653816360404196,
+          "lambda_ci": [
+            -0.33813080284376185,
+            0.23393026030376762
+          ],
+          "lambda_r2": 0.9314914689576153
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9238040551980424,
+          "slope": 0.6171298615511004,
+          "intercept": 2.076836791026492,
+          "lambda": -0.27953065470533267,
+          "lambda_ci": [
+            -0.5361768523959967,
+            -0.037593342214464365
+          ],
+          "lambda_r2": 0.9519557050672818
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.970346749313954,
+          "slope": 0.6548125243409791,
+          "intercept": 2.2731629171592633,
+          "lambda": -0.03754959676778371,
+          "lambda_ci": [
+            -0.21768783668722919,
+            0.14740763130828066
+          ],
+          "lambda_r2": 0.9708969909578132
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8321013494971532,
+          "slope": 0.4565600086642032,
+          "intercept": 2.106307173440267,
+          "lambda": -0.6258359910036866,
+          "lambda_ci": [
+            -0.82948482136077,
+            -0.44194882743333663
+          ],
+          "lambda_r2": 0.9734112543875034
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.11",
+      "mean_of_distances": {
+        "lambda": 0.03666514814502342,
+        "lambda_ci": [
+          -0.19417928324948971,
+          0.2807908130496096
+        ],
+        "lambda_r2": 0.9741602939357618,
+        "mean_r2": 0.9386966372938719
+      },
+      "mean_r2": 0.9278171904521731,
+      "lambda": 0.06162860901910849,
+      "lambda_ci": [
+        -0.16485228651354988,
+        0.3067654473561585
+      ],
+      "lambda_r2": 0.9655128727276079,
+      "pooled_r2": 0.9077767114938189,
+      "pooled_slope": 0.6451447654675788,
+      "spacing_cv": 0.9980303797111725,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9448670010992414,
+          "slope": 0.551528965050155,
+          "intercept": 0.9925584617542341,
+          "lambda": 0.3001611011448895,
+          "lambda_ci": [
+            0.17997254158473308,
+            0.42771258425042824
+          ],
+          "lambda_r2": 0.9857830496718898
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9579605804554935,
+          "slope": 0.6238901553739303,
+          "intercept": 1.1831453284246216,
+          "lambda": 0.2855154932036209,
+          "lambda_ci": [
+            0.18919360072213942,
+            0.3865737227096905
+          ],
+          "lambda_r2": 0.9917400503378279
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.950360372452645,
+          "slope": 0.7351412455182255,
+          "intercept": 1.5020587218712165,
+          "lambda": 0.26340350199212825,
+          "lambda_ci": [
+            0.08960928279560992,
+            0.4537049807618253
+          ],
+          "lambda_r2": 0.9756310219535257
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9399624239801609,
+          "slope": 0.7564168618983692,
+          "intercept": 1.7348266377045412,
+          "lambda": 0.16778748796071313,
+          "lambda_ci": [
+            -0.08553157014846755,
+            0.44846519119541794
+          ],
+          "lambda_r2": 0.9495745550819332
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9278598712864166,
+          "slope": 0.8028821723429753,
+          "intercept": 2.0670534284289612,
+          "lambda": -0.06633562719356101,
+          "lambda_ci": [
+            -0.3517203950487301,
+            0.22695717200262655
+          ],
+          "lambda_r2": 0.929560683481337
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9191879111552677,
+          "slope": 0.6102936397029146,
+          "intercept": 2.07916546577704,
+          "lambda": -0.306118134299232,
+          "lambda_ci": [
+            -0.5614885943835077,
+            -0.06718318003019419
+          ],
+          "lambda_r2": 0.9530046308662998
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9646523822773644,
+          "slope": 0.6397587422833779,
+          "intercept": 2.2624978366224435,
+          "lambda": -0.04453026992249614,
+          "lambda_ci": [
+            -0.24417300287863225,
+            0.1609501305424329
+          ],
+          "lambda_r2": 0.9654021266372697
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8176869809107961,
+          "slope": 0.44124634157068565,
+          "intercept": 2.099866247310351,
+          "lambda": -0.6649211145476802,
+          "lambda_ci": [
+            -0.8742279233039192,
+            -0.47751550709752955
+          ],
+          "lambda_r2": 0.9734068637907797
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.12",
+      "mean_of_distances": {
+        "lambda": 0.022727797226027163,
+        "lambda_ci": [
+          -0.20848971025509588,
+          0.26623836147604807
+        ],
+        "lambda_r2": 0.9741694101980723,
+        "mean_r2": 0.9357914592571208
+      },
+      "mean_r2": 0.9244871767295328,
+      "lambda": 0.04350350576194406,
+      "lambda_ci": [
+        -0.1857892364373133,
+        0.2962437458947644
+      ],
+      "lambda_r2": 0.9651410810524489,
+      "pooled_r2": 0.9042641570090815,
+      "pooled_slope": 0.6528679299307627,
+      "spacing_cv": 1.0165523472461415,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9454300849621988,
+          "slope": 0.5622435738571401,
+          "intercept": 1.0126683054914838,
+          "lambda": 0.2971458850279129,
+          "lambda_ci": [
+            0.17632930137410563,
+            0.4253717021377129
+          ],
+          "lambda_r2": 0.9855933483930954
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9590530722244902,
+          "slope": 0.6343746855774813,
+          "intercept": 1.2048496199766063,
+          "lambda": 0.27986643495011615,
+          "lambda_ci": [
+            0.18314098763799186,
+            0.3813265237974517
+          ],
+          "lambda_r2": 0.991622623597194
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9514271596886611,
+          "slope": 0.7478456504438526,
+          "intercept": 1.5307657400444599,
+          "lambda": 0.25584064284018687,
+          "lambda_ci": [
+            0.08176865768178576,
+            0.44627235436837553
+          ],
+          "lambda_r2": 0.9753781916358863
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9409298406921536,
+          "slope": 0.7711703741047058,
+          "intercept": 1.772417283498716,
+          "lambda": 0.15646274667965931,
+          "lambda_ci": [
+            -0.09621724139517246,
+            0.43549445857027536
+          ],
+          "lambda_r2": 0.9493582162251594
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9255867633181775,
+          "slope": 0.8155346688895925,
+          "intercept": 2.109672875026633,
+          "lambda": -0.08320413405830979,
+          "lambda_ci": [
+            -0.3712869070204077,
+            0.21116096799207706
+          ],
+          "lambda_r2": 0.9282743983424351
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9147378530006058,
+          "slope": 0.6148793878281235,
+          "intercept": 2.116535289898979,
+          "lambda": -0.3324167994017391,
+          "lambda_ci": [
+            -0.584319758497599,
+            -0.09828828043851129
+          ],
+          "lambda_r2": 0.954734640469583
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9616592708418579,
+          "slope": 0.6390279362300358,
+          "intercept": 2.2956979495466836,
+          "lambda": -0.06945573515577119,
+          "lambda_ci": [
+            -0.2753612314794541,
+            0.14136671683975743
+          ],
+          "lambda_r2": 0.963475827446726
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.797073369108118,
+          "slope": 0.4378671625151736,
+          "intercept": 2.132417113796481,
+          "lambda": -0.7106960421534271,
+          "lambda_ci": [
+            -0.9278650098984365,
+            -0.5181430717853264
+          ],
+          "lambda_r2": 0.9726914023095122
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.13",
+      "mean_of_distances": {
+        "lambda": 0.017176414747833012,
+        "lambda_ci": [
+          -0.21373851101427033,
+          0.2599351009392886
+        ],
+        "lambda_r2": 0.9733167927848708,
+        "mean_r2": 0.9357152214189535
+      },
+      "mean_r2": 0.9243316873531984,
+      "lambda": 0.04684434681744046,
+      "lambda_ci": [
+        -0.18916688325398995,
+        0.29175019226179677
+      ],
+      "lambda_r2": 0.9641798703008905,
+      "pooled_r2": 0.9039130116340436,
+      "pooled_slope": 0.6496766699967756,
+      "spacing_cv": 1.0173117573445485,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9451165051681314,
+          "slope": 0.5645072858278061,
+          "intercept": 1.0159711505714988,
+          "lambda": 0.2986638334984895,
+          "lambda_ci": [
+            0.17823988955555425,
+            0.42645788844398214
+          ],
+          "lambda_r2": 0.9856938662005109
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9598397942651717,
+          "slope": 0.6353153637954547,
+          "intercept": 1.2064174495922695,
+          "lambda": 0.27716140151798874,
+          "lambda_ci": [
+            0.18255260473639034,
+            0.37626271614575935
+          ],
+          "lambda_r2": 0.991941830838517
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9529504738940254,
+          "slope": 0.7462860252276408,
+          "intercept": 1.5289672366409317,
+          "lambda": 0.24786446221719,
+          "lambda_ci": [
+            0.07543805510576557,
+            0.4360809533115424
+          ],
+          "lambda_r2": 0.9756051101287979
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9413949005085441,
+          "slope": 0.7677525254099908,
+          "intercept": 1.7672608631732516,
+          "lambda": 0.15036226174260986,
+          "lambda_ci": [
+            -0.10214738104288038,
+            0.4286667239972326
+          ],
+          "lambda_r2": 0.9492089176574897
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9251597778693226,
+          "slope": 0.8104053269998274,
+          "intercept": 2.0992575873346273,
+          "lambda": -0.0871398952915539,
+          "lambda_ci": [
+            -0.37562370557579317,
+            0.20723766837783425
+          ],
+          "lambda_r2": 0.928109670812534
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9121134461990976,
+          "slope": 0.6102468217109833,
+          "intercept": 2.1061883507541146,
+          "lambda": -0.3344337888328128,
+          "lambda_ci": [
+            -0.597449349238308,
+            -0.09082754757047254
+          ],
+          "lambda_r2": 0.9518714609644631
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9583983094147522,
+          "slope": 0.6328032209175557,
+          "intercept": 2.277099234949555,
+          "lambda": -0.056673568107728944,
+          "lambda_ci": [
+            -0.27618638546509955,
+            0.16943062113037638
+          ],
+          "lambda_r2": 0.9595749880098554
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7996802915065411,
+          "slope": 0.43009679008494817,
+          "intercept": 2.11127005496241,
+          "lambda": -0.709429649844144,
+          "lambda_ci": [
+            -0.93456769125255,
+            -0.5106907938169807
+          ],
+          "lambda_r2": 0.9714331177949558
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.14",
+      "mean_of_distances": {
+        "lambda": -0.011695783004671154,
+        "lambda_ci": [
+          -0.23931056034492737,
+          0.22534637681184827
+        ],
+        "lambda_r2": 0.9739808239325496,
+        "mean_r2": 0.9361549874224808
+      },
+      "mean_r2": 0.9251279890780522,
+      "lambda": 0.01960088983244517,
+      "lambda_ci": [
+        -0.21292321473628728,
+        0.27220825396896775
+      ],
+      "lambda_r2": 0.9648470400895048,
+      "pooled_r2": 0.9058367574367762,
+      "pooled_slope": 0.6817201666889205,
+      "spacing_cv": 1.006957817463821,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9444403545739837,
+          "slope": 0.6119423290588144,
+          "intercept": 1.099106804437419,
+          "lambda": 0.3020666008254611,
+          "lambda_ci": [
+            0.18284746351352088,
+            0.4285235573221776
+          ],
+          "lambda_r2": 0.9859847132942654
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9616674734111617,
+          "slope": 0.6838462080608511,
+          "intercept": 1.2981414675999836,
+          "lambda": 0.26958204627291665,
+          "lambda_ci": [
+            0.1782611591229113,
+            0.3650100321345179
+          ],
+          "lambda_r2": 0.9923901804109734
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9581228799416737,
+          "slope": 0.7928411056356298,
+          "intercept": 1.6288798227114951,
+          "lambda": 0.22484743037841215,
+          "lambda_ci": [
+            0.06083221057515559,
+            0.40237320738275906
+          ],
+          "lambda_r2": 0.9772491116415065
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9457143894913068,
+          "slope": 0.8023474502527114,
+          "intercept": 1.8619596449359708,
+          "lambda": 0.11743910373559055,
+          "lambda_ci": [
+            -0.12870445018744958,
+            0.3856120737165697
+          ],
+          "lambda_r2": 0.9505869006765978
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9234694217220449,
+          "slope": 0.8380845324166029,
+          "intercept": 2.1976695496589445,
+          "lambda": -0.11252077716891594,
+          "lambda_ci": [
+            -0.40127392542051443,
+            0.17940647580341762
+          ],
+          "lambda_r2": 0.928397057898857
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9069314136547075,
+          "slope": 0.6290084088073269,
+          "intercept": 2.2035366925550925,
+          "lambda": -0.3556079337735627,
+          "lambda_ci": [
+            -0.6230531965911861,
+            -0.10974044836053548
+          ],
+          "lambda_r2": 0.9514580066795767
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9576185809524613,
+          "slope": 0.6477263622979924,
+          "intercept": 2.373138146591344,
+          "lambda": -0.0782373240707002,
+          "lambda_ci": [
+            -0.297141979285125,
+            0.14584084702173966
+          ],
+          "lambda_r2": 0.9598650080702801
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8030593988770771,
+          "slope": 0.44796493698143813,
+          "intercept": 2.2128681422354957,
+          "lambda": -0.7039618430953575,
+          "lambda_ci": [
+            -0.9221887667117006,
+            -0.5105348530701765
+          ],
+          "lambda_r2": 0.9728453420439811
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.15",
+      "mean_of_distances": {
+        "lambda": -0.004728239105795604,
+        "lambda_ci": [
+          -0.23147033279596388,
+          0.23187799167738146
+        ],
+        "lambda_r2": 0.9744537735614558,
+        "mean_r2": 0.9366741098750229
+      },
+      "mean_r2": 0.926635892637113,
+      "lambda": 0.020497226380243504,
+      "lambda_ci": [
+        -0.2080312113389987,
+        0.27441664380805714
+      ],
+      "lambda_r2": 0.965513569721852,
+      "pooled_r2": 0.9084731807085178,
+      "pooled_slope": 0.7349251147903654,
+      "spacing_cv": 0.9960573073554241,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9431619510616611,
+          "slope": 0.6509438859389423,
+          "intercept": 1.1660323491402016,
+          "lambda": 0.30937516193942294,
+          "lambda_ci": [
+            0.19225719275560993,
+            0.43355136443606246
+          ],
+          "lambda_r2": 0.9865710303563539
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9612401910298704,
+          "slope": 0.7284241894777487,
+          "intercept": 1.378632821062848,
+          "lambda": 0.2730411225246168,
+          "lambda_ci": [
+            0.18451815303723457,
+            0.3654234580435497
+          ],
+          "lambda_r2": 0.9928435430723954
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9588023323667545,
+          "slope": 0.8433743283320271,
+          "intercept": 1.7289250567435543,
+          "lambda": 0.22246832098002894,
+          "lambda_ci": [
+            0.06028423145802882,
+            0.39777308461223215
+          ],
+          "lambda_r2": 0.9776282436366168
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9446917711501416,
+          "slope": 0.8595113887295719,
+          "intercept": 1.9845503018385184,
+          "lambda": 0.12685473607200753,
+          "lambda_ci": [
+            -0.12028019667494658,
+            0.3968058850096028
+          ],
+          "lambda_r2": 0.9503605308514982
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9251415985556007,
+          "slope": 0.9046518213754946,
+          "intercept": 2.353887282674289,
+          "lambda": -0.10542664622203508,
+          "lambda_ci": [
+            -0.3904643507180554,
+            0.18340982957256458
+          ],
+          "lambda_r2": 0.9294989823366384
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9078691127356475,
+          "slope": 0.6837087715888472,
+          "intercept": 2.3733371435993833,
+          "lambda": -0.35624831420601455,
+          "lambda_ci": [
+            -0.6191624191862246,
+            -0.11417491403896748
+          ],
+          "lambda_r2": 0.9527448214998164
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9600217864327021,
+          "slope": 0.7107760007471291,
+          "intercept": 2.578402068494816,
+          "lambda": -0.08586028331152053,
+          "lambda_ci": [
+            -0.2957822260030508,
+            0.12827506633492175
+          ],
+          "lambda_r2": 0.9627531814591473
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.812158397764525,
+          "slope": 0.4980105321331655,
+          "intercept": 2.4142613967060353,
+          "lambda": -0.6830913028202348,
+          "lambda_ci": [
+            -0.9049397443313678,
+            -0.48630872484541854
+          ],
+          "lambda_r2": 0.9717082245623491
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.16",
+      "mean_of_distances": {
+        "lambda": 0.0035776490040497766,
+        "lambda_ci": [
+          -0.22391606798333735,
+          0.24145030587166158
+        ],
+        "lambda_r2": 0.973885771504255,
+        "mean_r2": 0.9346003393787577
+      },
+      "mean_r2": 0.9244131689348338,
+      "lambda": 0.02985388904540516,
+      "lambda_ci": [
+        -0.20640055228219706,
+        0.2841356796674114
+      ],
+      "lambda_r2": 0.965048043915641,
+      "pooled_r2": 0.9051269001408898,
+      "pooled_slope": 0.7543924296094294,
+      "spacing_cv": 1.0061769857855722,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9426377355092136,
+          "slope": 0.6745596284519295,
+          "intercept": 1.208322348444047,
+          "lambda": 0.3116975123968424,
+          "lambda_ci": [
+            0.19406888371961023,
+            0.43649589064280336
+          ],
+          "lambda_r2": 0.9865211879364074
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9596937381427708,
+          "slope": 0.7554393536109828,
+          "intercept": 1.428723883724312,
+          "lambda": 0.2795359785621705,
+          "lambda_ci": [
+            0.18880790258358005,
+            0.3743773565018187
+          ],
+          "lambda_r2": 0.9925557013221412
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9563363797590255,
+          "slope": 0.8765644089588109,
+          "intercept": 1.7931282704685805,
+          "lambda": 0.23499575272971313,
+          "lambda_ci": [
+            0.06953572184846754,
+            0.41451896140393374
+          ],
+          "lambda_r2": 0.9770757348889565
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9451495737128127,
+          "slope": 0.8909021061719263,
+          "intercept": 2.0517767732145695,
+          "lambda": 0.13676222861308912,
+          "lambda_ci": [
+            -0.10754272145190799,
+            0.40405556746738913
+          ],
+          "lambda_r2": 0.9517135917449837
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9244150503740938,
+          "slope": 0.9275289642841772,
+          "intercept": 2.4125182821048683,
+          "lambda": -0.09885769778786296,
+          "lambda_ci": [
+            -0.38698400858149573,
+            0.193894002833004
+          ],
+          "lambda_r2": 0.9282276296275852
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9102690021059459,
+          "slope": 0.6974097160315873,
+          "intercept": 2.4208773508791745,
+          "lambda": -0.3542852187206474,
+          "lambda_ci": [
+            -0.6071723602292529,
+            -0.12060157330057286
+          ],
+          "lambda_r2": 0.9553126946986465
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9552122030933724,
+          "slope": 0.7159927292306841,
+          "intercept": 2.6145026659253494,
+          "lambda": -0.0770544505222788,
+          "lambda_ci": [
+            -0.3052583831124861,
+            0.15706557277084715
+          ],
+          "lambda_r2": 0.9573436160636373
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.8015916687814352,
+          "slope": 0.4967425301353411,
+          "intercept": 2.443426749153192,
+          "lambda": -0.7059636570615571,
+          "lambda_ci": [
+            -0.9303770791888519,
+            -0.5078283729734734
+          ],
+          "lambda_r2": 0.9716341950427698
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.17",
+      "mean_of_distances": {
+        "lambda": -0.0039048997280426087,
+        "lambda_ci": [
+          -0.22863842888717106,
+          0.23033562917714723
+        ],
+        "lambda_r2": 0.9748199479227879,
+        "mean_r2": 0.9326020361926219
+      },
+      "mean_r2": 0.9228865120710746,
+      "lambda": 0.017440459959220084,
+      "lambda_ci": [
+        -0.21017025344968032,
+        0.2846090251354393
+      ],
+      "lambda_r2": 0.9661342905218155,
+      "pooled_r2": 0.9046420586415567,
+      "pooled_slope": 0.7985381943369569,
+      "spacing_cv": 1.0043294668497729,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9404816291281911,
+          "slope": 0.7222881084221859,
+          "intercept": 1.2901251381549754,
+          "lambda": 0.3198443807350572,
+          "lambda_ci": [
+            0.20164174088893705,
+            0.44537793963332895
+          ],
+          "lambda_r2": 0.9864847300291927
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9575876835204437,
+          "slope": 0.8111645372549391,
+          "intercept": 1.5283136303628284,
+          "lambda": 0.28906917919217523,
+          "lambda_ci": [
+            0.19837899069060483,
+            0.38391470230454405
+          ],
+          "lambda_r2": 0.9926108170933541
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9572001405679521,
+          "slope": 0.9372735576061734,
+          "intercept": 1.912635751838151,
+          "lambda": 0.23248121961223167,
+          "lambda_ci": [
+            0.06963699334563656,
+            0.4088498720044539
+          ],
+          "lambda_r2": 0.9776395977498495
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9477357498868456,
+          "slope": 0.9409407544806636,
+          "intercept": 2.168129577449526,
+          "lambda": 0.12631571853621998,
+          "lambda_ci": [
+            -0.11261257413542633,
+            0.3865043063083401
+          ],
+          "lambda_r2": 0.9533852769384358
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9241108686635433,
+          "slope": 0.9713552568041665,
+          "intercept": 2.5325743233216316,
+          "lambda": -0.10577527375753176,
+          "lambda_ci": [
+            -0.39313239329790717,
+            0.18530334796633458
+          ],
+          "lambda_r2": 0.9284937747218458
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9078049902103941,
+          "slope": 0.729590791878314,
+          "intercept": 2.545359807214429,
+          "lambda": -0.3706596982183586,
+          "lambda_ci": [
+            -0.6200976238522187,
+            -0.14081087606912468
+          ],
+          "lambda_r2": 0.9569463368883917
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9580720713715686,
+          "slope": 0.7539576163701971,
+          "intercept": 2.7628263432545994,
+          "lambda": -0.09143479861777981,
+          "lambda_ci": [
+            -0.3077279327639343,
+            0.12902218394665588
+          ],
+          "lambda_r2": 0.9611233548135982
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7900989632196587,
+          "slope": 0.5217349318790195,
+          "intercept": 2.591651299731554,
+          "lambda": -0.7294564005794044,
+          "lambda_ci": [
+            -0.9523686523220787,
+            -0.5331958494355726
+          ],
+          "lambda_r2": 0.9723904359398562
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.18",
+      "mean_of_distances": {
+        "lambda": -0.027445913108937736,
+        "lambda_ci": [
+          -0.24806883983220548,
+          0.2006630988126816
+        ],
+        "lambda_r2": 0.9754182048947428,
+        "mean_r2": 0.93289947707148
+      },
+      "mean_r2": 0.923187175899775,
+      "lambda": -0.0019628239453888044,
+      "lambda_ci": [
+        -0.22444208452704142,
+        0.2552677301255779
+      ],
+      "lambda_r2": 0.9665711062968332,
+      "pooled_r2": 0.9054063340601628,
+      "pooled_slope": 0.8071450140522121,
+      "spacing_cv": 1.0005963613032451,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9419621139450105,
+          "slope": 0.7418083522343026,
+          "intercept": 1.324948650237233,
+          "lambda": 0.31444065006041916,
+          "lambda_ci": [
+            0.19803214734661434,
+            0.43786631527502073
+          ],
+          "lambda_r2": 0.9867687737122997
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9616950124651963,
+          "slope": 0.8301643527743344,
+          "intercept": 1.5663093639704129,
+          "lambda": 0.27182172422218026,
+          "lambda_ci": [
+            0.1867886643739735,
+            0.36037266011539637
+          ],
+          "lambda_r2": 0.9933312728105054
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.963480398897113,
+          "slope": 0.9507734266410757,
+          "intercept": 1.9503524047784153,
+          "lambda": 0.1983269242292071,
+          "lambda_ci": [
+            0.043166492697934114,
+            0.36481591941532465
+          ],
+          "lambda_r2": 0.978855248120787
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9516639723809008,
+          "slope": 0.9509299278078752,
+          "intercept": 2.204473414525252,
+          "lambda": 0.0987842396214441,
+          "lambda_ci": [
+            -0.133121044159156,
+            0.348876256284644
+          ],
+          "lambda_r2": 0.9551861886936621
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9220227839844809,
+          "slope": 0.975377031415549,
+          "intercept": 2.5627362918855567,
+          "lambda": -0.1271759556332036,
+          "lambda_ci": [
+            -0.4146801678262686,
+            0.1616592039665118
+          ],
+          "lambda_r2": 0.9284076512060224
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.904935518489981,
+          "slope": 0.7352260973868362,
+          "intercept": 2.580848324558428,
+          "lambda": -0.38027106662322774,
+          "lambda_ci": [
+            -0.6303857995958133,
+            -0.1505753394724686
+          ],
+          "lambda_r2": 0.9568712534741315
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9583393419139445,
+          "slope": 0.7547791310620423,
+          "intercept": 2.799224651858055,
+          "lambda": -0.10270988751222171,
+          "lambda_ci": [
+            -0.31576312489492686,
+            0.11368785410823734
+          ],
+          "lambda_r2": 0.9622038483663768
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7813982651215732,
+          "slope": 0.5181017930956862,
+          "intercept": 2.624587799803065,
+          "lambda": -0.7476679277399324,
+          "lambda_ci": [
+            -0.9797073639244951,
+            -0.5447938198613007
+          ],
+          "lambda_r2": 0.9709446139908812
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.19",
+      "mean_of_distances": {
+        "lambda": -0.025821297372345786,
+        "lambda_ci": [
+          -0.24618182075897063,
+          0.20222447753405076
+        ],
+        "lambda_r2": 0.9750845259149963,
+        "mean_r2": 0.9344231169715227
+      },
+      "mean_r2": 0.9244766943082363,
+      "lambda": 0.010349054146717489,
+      "lambda_ci": [
+        -0.21794205736939004,
+        0.256828575339867
+      ],
+      "lambda_r2": 0.9659130690840193,
+      "pooled_r2": 0.9060025747039027,
+      "pooled_slope": 0.8452782864798281,
+      "spacing_cv": 0.9973650089262615,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9420956669274818,
+          "slope": 0.7705185724174761,
+          "intercept": 1.3767181394794277,
+          "lambda": 0.31391216204317046,
+          "lambda_ci": [
+            0.19734997605948212,
+            0.4375095150248669
+          ],
+          "lambda_r2": 0.9867361318196671
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9623102946046665,
+          "slope": 0.8623792951534317,
+          "intercept": 1.628267210055748,
+          "lambda": 0.26902973883446085,
+          "lambda_ci": [
+            0.1842504549245142,
+            0.35729048091101534
+          ],
+          "lambda_r2": 0.9933536402634779
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9640386961943349,
+          "slope": 0.9929611930615018,
+          "intercept": 2.0375186473710434,
+          "lambda": 0.19516335028043474,
+          "lambda_ci": [
+            0.040772401167952235,
+            0.36066979249554276
+          ],
+          "lambda_r2": 0.9789782405974241
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9509494993145258,
+          "slope": 0.9981535083440453,
+          "intercept": 2.3122777388924716,
+          "lambda": 0.1001543206677024,
+          "lambda_ci": [
+            -0.13356743209261734,
+            0.3525183559368792
+          ],
+          "lambda_r2": 0.9545630940156291
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.923340461063876,
+          "slope": 1.0283063668737262,
+          "intercept": 2.695070239128745,
+          "lambda": -0.12545972948476908,
+          "lambda_ci": [
+            -0.4103638915334358,
+            0.16113879474285486
+          ],
+          "lambda_r2": 0.9295519284183565
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9047282065306465,
+          "slope": 0.7694428564318165,
+          "intercept": 2.701289545466489,
+          "lambda": -0.3752558209878205,
+          "lambda_ci": [
+            -0.6338050015317958,
+            -0.13818613073807245
+          ],
+          "lambda_r2": 0.9546335653381733
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9568280084592216,
+          "slope": 0.793186316436811,
+          "intercept": 2.922077753554987,
+          "lambda": -0.07945621237426742,
+          "lambda_ci": [
+            -0.30231668264616274,
+            0.14884290736754308
+          ],
+          "lambda_r2": 0.9591056175830244
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7915227213711375,
+          "slope": 0.54727818311982,
+          "intercept": 2.7387263299123084,
+          "lambda": -0.7247224041160866,
+          "lambda_ci": [
+            -0.9562971229394603,
+            -0.5215155499405799
+          ],
+          "lambda_r2": 0.9703823346364022
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.20",
+      "mean_of_distances": {
+        "lambda": -0.039053035611462616,
+        "lambda_ci": [
+          -0.25812952371510034,
+          0.18664205256484823
+        ],
+        "lambda_r2": 0.9755522391883901,
+        "mean_r2": 0.9312629338596798
+      },
+      "mean_r2": 0.9212413933024557,
+      "lambda": -0.011700125248732728,
+      "lambda_ci": [
+        -0.23834007967409251,
+        0.24109423695786628
+      ],
+      "lambda_r2": 0.9661765538451796,
+      "pooled_r2": 0.902751383379665,
+      "pooled_slope": 0.92878133416333,
+      "spacing_cv": 1.0061289455253397,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9412139487475518,
+          "slope": 0.8567870763674903,
+          "intercept": 1.5292042070278586,
+          "lambda": 0.3165797534149873,
+          "lambda_ci": [
+            0.19893881197466434,
+            0.44142721222799874
+          ],
+          "lambda_r2": 0.986524863469891
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9609591247359232,
+          "slope": 0.962210717896915,
+          "intercept": 1.813363261050717,
+          "lambda": 0.27468398509897085,
+          "lambda_ci": [
+            0.18861203512933794,
+            0.3643831689724778
+          ],
+          "lambda_r2": 0.9931885115385335
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9649193401681215,
+          "slope": 1.0999272309514685,
+          "intercept": 2.2585913250457224,
+          "lambda": 0.1873788328838651,
+          "lambda_ci": [
+            0.03295506698121946,
+            0.35272145872708893
+          ],
+          "lambda_r2": 0.9787837705363964
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9522309593689122,
+          "slope": 1.0998275152528956,
+          "intercept": 2.551507948371605,
+          "lambda": 0.08911670052650703,
+          "lambda_ci": [
+            -0.1418684517446786,
+            0.3374588504130661
+          ],
+          "lambda_r2": 0.9551239189515152
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9208112335394109,
+          "slope": 1.1272350379052194,
+          "intercept": 2.9624899869168386,
+          "lambda": -0.1406601266649618,
+          "lambda_ci": [
+            -0.42618861078503023,
+            0.14472962350266644
+          ],
+          "lambda_r2": 0.9287285901024265
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.9006996767925372,
+          "slope": 0.8378414022763101,
+          "intercept": 2.962533726927911,
+          "lambda": -0.4003499958532752,
+          "lambda_ci": [
+            -0.6507185329065548,
+            -0.17158017341388743
+          ],
+          "lambda_r2": 0.9577087323597087
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9548825956183555,
+          "slope": 0.8561850309623215,
+          "intercept": 3.1967027846491956,
+          "lambda": -0.11251695102397248,
+          "lambda_ci": [
+            -0.3348117076035064,
+            0.11314014067664882
+          ],
+          "lambda_r2": 0.9594597715805335
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7742142674488329,
+          "slope": 0.5902366616940206,
+          "intercept": 3.0026482102414276,
+          "lambda": -0.7625708610896145,
+          "lambda_ci": [
+            -1.0006438585110407,
+            -0.5552379550128927
+          ],
+          "lambda_r2": 0.9698942722224326
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.21",
+      "mean_of_distances": {
+        "lambda": -0.07012994307298348,
+        "lambda_ci": [
+          -0.28215085281559105,
+          0.14625849383798623
+        ],
+        "lambda_r2": 0.9767013243500833,
+        "mean_r2": 0.9317872546643959
+      },
+      "mean_r2": 0.922176889831668,
+      "lambda": -0.04602321499329222,
+      "lambda_ci": [
+        -0.2595610552684834,
+        0.20043781383058468
+      ],
+      "lambda_r2": 0.9672797493924775,
+      "pooled_r2": 0.904386382220649,
+      "pooled_slope": 1.0347394176600593,
+      "spacing_cv": 0.9840106142507179,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9401752282465586,
+          "slope": 0.9845607447564613,
+          "intercept": 1.7528831690910478,
+          "lambda": 0.31736078374894133,
+          "lambda_ci": [
+            0.19708157920927383,
+            0.4451775918267339
+          ],
+          "lambda_r2": 0.9858549549512017
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9622865388372267,
+          "slope": 1.1019311323526557,
+          "intercept": 2.0731458433084926,
+          "lambda": 0.2672580194590878,
+          "lambda_ci": [
+            0.18229435007880695,
+            0.35567665033591067
+          ],
+          "lambda_r2": 0.9932444016166675
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9714501473374418,
+          "slope": 1.2322799296902962,
+          "intercept": 2.5433630832934933,
+          "lambda": 0.14811563426786895,
+          "lambda_ci": [
+            0.003452820160615862,
+            0.301307109155288
+          ],
+          "lambda_r2": 0.9804716139874347
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9560701670256927,
+          "slope": 1.2163164079714062,
+          "intercept": 2.846510558879561,
+          "lambda": 0.053843470893069206,
+          "lambda_ci": [
+            -0.16962314000412687,
+            0.2913363537171326
+          ],
+          "lambda_r2": 0.9571472723809613
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9197108646737093,
+          "slope": 1.2373369467998478,
+          "intercept": 3.2866558793791953,
+          "lambda": -0.16758503167808447,
+          "lambda_ci": [
+            -0.4476950579206723,
+            0.10953927394403676
+          ],
+          "lambda_r2": 0.9311006431992846
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.88755677682224,
+          "slope": 0.906824822348864,
+          "intercept": 3.2814879903370233,
+          "lambda": -0.4465474632424683,
+          "lambda_ci": [
+            -0.7118025656061722,
+            -0.20822865405957536
+          ],
+          "lambda_r2": 0.9559574186492689
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.957288243139353,
+          "slope": 0.9373354424533149,
+          "intercept": 3.552552360938641,
+          "lambda": -0.14588990087965364,
+          "lambda_ci": [
+            -0.34949897053283985,
+            0.058413849274826235
+          ],
+          "lambda_r2": 0.9652077556975434
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.782877152571122,
+          "slope": 0.6613299149076323,
+          "intercept": 3.362243621648142,
+          "lambda": -0.7465313025440843,
+          "lambda_ci": [
+            -0.9860711908372779,
+            -0.5374565688833561
+          ],
+          "lambda_r2": 0.9692539346574581
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.22",
+      "mean_of_distances": {
+        "lambda": -0.09157313911009647,
+        "lambda_ci": [
+          -0.29406005482672715,
+          0.11390886300089215
+        ],
+        "lambda_r2": 0.9775396922940578,
+        "mean_r2": 0.9327222728135308
+      },
+      "mean_r2": 0.9230436889207492,
+      "lambda": -0.06892405243740975,
+      "lambda_ci": [
+        -0.2811962049068751,
+        0.16398179245760292
+      ],
+      "lambda_r2": 0.9680059562616665,
+      "pooled_r2": 0.9055128075773247,
+      "pooled_slope": 1.130817326981258,
+      "spacing_cv": 0.9638616950890688,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9414047348575854,
+          "slope": 1.0783028258078935,
+          "intercept": 1.9226271040496234,
+          "lambda": 0.3134890384444857,
+          "lambda_ci": [
+            0.19431280779392773,
+            0.4400176069550069
+          ],
+          "lambda_r2": 0.9860711165978794
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9642416313488692,
+          "slope": 1.201637168463652,
+          "intercept": 2.267090949236979,
+          "lambda": 0.2573402548496908,
+          "lambda_ci": [
+            0.17232866768946742,
+            0.34574078438467026
+          ],
+          "lambda_r2": 0.9931604314977411
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9747099606944449,
+          "slope": 1.341622036180964,
+          "intercept": 2.7809846673018024,
+          "lambda": 0.1310056449075963,
+          "lambda_ci": [
+            -0.006853784709897616,
+            0.2761481092540867
+          ],
+          "lambda_r2": 0.981898006838938
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.959399351608485,
+          "slope": 1.32425646137533,
+          "intercept": 3.1205095259199203,
+          "lambda": 0.023883550425929018,
+          "lambda_ci": [
+            -0.19060657288261118,
+            0.249522176387465
+          ],
+          "lambda_r2": 0.9596162466444211
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9223557826198949,
+          "slope": 1.3621954679836166,
+          "intercept": 3.636124099321425,
+          "lambda": -0.18498510359336323,
+          "lambda_ci": [
+            -0.45267426248791665,
+            0.07844140852774084
+          ],
+          "lambda_r2": 0.9364069781057179
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8813822378359907,
+          "slope": 0.9955030819442466,
+          "intercept": 3.6307158156363273,
+          "lambda": -0.46572404295958164,
+          "lambda_ci": [
+            -0.7400420480246326,
+            -0.22129637561074245
+          ],
+          "lambda_r2": 0.9545464393446498
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9538968608964933,
+          "slope": 1.0172754364345902,
+          "intercept": 3.90301728630533,
+          "lambda": -0.1617316553007485,
+          "lambda_ci": [
+            -0.371785836931139,
+            0.048216989249198317
+          ],
+          "lambda_r2": 0.9635319815116731
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.78695895150423,
+          "slope": 0.7257461376597752,
+          "intercept": 3.6999413337508353,
+          "lambda": -0.7432259994458733,
+          "lambda_ci": [
+            -0.9862637597525978,
+            -0.5313462787848788
+          ],
+          "lambda_r2": 0.9688164495523122
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.23",
+      "mean_of_distances": {
+        "lambda": -0.1141390550344179,
+        "lambda_ci": [
+          -0.32014560291345784,
+          0.09372230102700835
+        ],
+        "lambda_r2": 0.9774884221469224,
+        "mean_r2": 0.9303765782564145
+      },
+      "mean_r2": 0.9203439006364394,
+      "lambda": -0.09559114677749735,
+      "lambda_ci": [
+        -0.314500509432713,
+        0.14386227036119814
+      ],
+      "lambda_r2": 0.9672147731970502,
+      "pooled_r2": 0.9007213645802667,
+      "pooled_slope": 1.302708346188898,
+      "spacing_cv": 0.9896349336887222,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9449501146724402,
+          "slope": 1.2848587563824574,
+          "intercept": 2.3004883374440532,
+          "lambda": 0.293909864981412,
+          "lambda_ci": [
+            0.17092099486701479,
+            0.4244792344641827
+          ],
+          "lambda_r2": 0.9848136029464736
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9697735149606559,
+          "slope": 1.4172915664787897,
+          "intercept": 2.693187501902016,
+          "lambda": 0.22837380055922335,
+          "lambda_ci": [
+            0.14407793167224392,
+            0.3158047631668862
+          ],
+          "lambda_r2": 0.993057110948771
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9763917109403797,
+          "slope": 1.5696781529233403,
+          "intercept": 3.2866378036153843,
+          "lambda": 0.10066828390875374,
+          "lambda_ci": [
+            -0.040334204239153404,
+            0.24863189736018743
+          ],
+          "lambda_r2": 0.9806923224044253
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9578083968401714,
+          "slope": 1.5390240912949673,
+          "intercept": 3.6785524617070515,
+          "lambda": -0.005083117707321024,
+          "lambda_ci": [
+            -0.22457123330406797,
+            0.22435535335672108
+          ],
+          "lambda_r2": 0.9578182118598587
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9172065288729931,
+          "slope": 1.554702747870796,
+          "intercept": 4.231816227792102,
+          "lambda": -0.20526471496187482,
+          "lambda_ci": [
+            -0.4804123395543344,
+            0.06336918736567518
+          ],
+          "lambda_r2": 0.9343200077162097
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8758168447634944,
+          "slope": 1.1268987655680895,
+          "intercept": 4.214020081173323,
+          "lambda": -0.49412177445101907,
+          "lambda_ci": [
+            -0.7546862234743699,
+            -0.2622844349718899
+          ],
+          "lambda_r2": 0.959020811245452
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.948570214632743,
+          "slope": 1.1284812992694377,
+          "intercept": 4.492630020431509,
+          "lambda": -0.18609917584767366,
+          "lambda_ci": [
+            -0.4044297855613581,
+            0.030693427979830296
+          ],
+          "lambda_r2": 0.9612340779649219
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7722338794086379,
+          "slope": 0.8007313897233092,
+          "intercept": 4.27529022517429,
+          "lambda": -0.7743103648451529,
+          "lambda_ci": [
+            -1.031780859964977,
+            -0.5526594367552837
+          ],
+          "lambda_r2": 0.966762040490289
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.24",
+      "mean_of_distances": {
+        "lambda": -0.15021790786815162,
+        "lambda_ci": [
+          -0.35434320221935456,
+          0.053623407932344117
+        ],
+        "lambda_r2": 0.9774958328219934,
+        "mean_r2": 0.9272331350647554
+      },
+      "mean_r2": 0.9166543145944668,
+      "lambda": -0.12614758900810524,
+      "lambda_ci": [
+        -0.34730759818635154,
+        0.10514871478331135
+      ],
+      "lambda_r2": 0.9667822213397805,
+      "pooled_r2": 0.8960961183448231,
+      "pooled_slope": 1.39302276910396,
+      "spacing_cv": 0.9989572359151319,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9480288611792651,
+          "slope": 1.4148094609381872,
+          "intercept": 2.5433324992851256,
+          "lambda": 0.2790738030989017,
+          "lambda_ci": [
+            0.15530517489088536,
+            0.41030389071807305
+          ],
+          "lambda_r2": 0.9843682186151712
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9739763705515917,
+          "slope": 1.5468939745496229,
+          "intercept": 2.9594658308218733,
+          "lambda": 0.204448500571434,
+          "lambda_ci": [
+            0.12071824790786861,
+            0.2911001974740872
+          ],
+          "lambda_r2": 0.9929734503803329
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9788161038143138,
+          "slope": 1.6875100946772132,
+          "intercept": 3.57606306519985,
+          "lambda": 0.06640172086262217,
+          "lambda_ci": [
+            -0.07272326867865028,
+            0.2114697091542178
+          ],
+          "lambda_r2": 0.9807258472139875
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9583531577851101,
+          "slope": 1.6457200537525039,
+          "intercept": 3.995708363749313,
+          "lambda": -0.043805687410400355,
+          "lambda_ci": [
+            -0.2585030880319461,
+            0.17797913612489796
+          ],
+          "lambda_r2": 0.959094805278646
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9102375902338778,
+          "slope": 1.6558484775657971,
+          "intercept": 4.587862982780315,
+          "lambda": -0.23785903416304938,
+          "lambda_ci": [
+            -0.5177580546722393,
+            0.03231829344172474
+          ],
+          "lambda_r2": 0.9331847682527239
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8558857505934832,
+          "slope": 1.175650050926414,
+          "intercept": 4.547123450460638,
+          "lambda": -0.5601457569822174,
+          "lambda_ci": [
+            -0.8297033367799727,
+            -0.32467381697146336
+          ],
+          "lambda_r2": 0.959651176570846
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9430346423714803,
+          "slope": 1.177892618274438,
+          "intercept": 4.849708736125247,
+          "lambda": -0.20848949060581012,
+          "lambda_ci": [
+            -0.436112108340757,
+            0.016071344514056174
+          ],
+          "lambda_r2": 0.9587465737980494
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7649020402266126,
+          "slope": 0.8398574221475095,
+          "intercept": 4.63802567037826,
+          "lambda": -0.7917360882845318,
+          "lambda_ci": [
+            -1.0586199479623244,
+            -0.5636985049187033
+          ],
+          "lambda_r2": 0.9655129306084868
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.25",
+      "mean_of_distances": {
+        "lambda": -0.17217101597968834,
+        "lambda_ci": [
+          -0.3742931660548325,
+          0.0284309835678982
+        ],
+        "lambda_r2": 0.9777734065683873,
+        "mean_r2": 0.9247089674394715
+      },
+      "mean_r2": 0.9135161873238501,
+      "lambda": -0.1448752816866341,
+      "lambda_ci": [
+        -0.3687652715593518,
+        0.08038044237830999
+      ],
+      "lambda_r2": 0.9665338986285326,
+      "pooled_r2": 0.8914443371350318,
+      "pooled_slope": 1.4774882412887798,
+      "spacing_cv": 1.0202532521142773,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9491775005863947,
+          "slope": 1.5333331884041685,
+          "intercept": 2.7610528224026023,
+          "lambda": 0.2726828515251691,
+          "lambda_ci": [
+            0.14818726764443896,
+            0.40462726216189315
+          ],
+          "lambda_r2": 0.9840603193930412
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9757909090657972,
+          "slope": 1.664365006206464,
+          "intercept": 3.1961598187307865,
+          "lambda": 0.19273269946337712,
+          "lambda_ci": [
+            0.10853991738182361,
+            0.27979346307219255
+          ],
+          "lambda_r2": 0.9928110109204721
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9795740512808464,
+          "slope": 1.8052472267032966,
+          "intercept": 3.8463552339481533,
+          "lambda": 0.053029482595200565,
+          "lambda_ci": [
+            -0.08520421364939418,
+            0.19679903588096653
+          ],
+          "lambda_r2": 0.9808012606617509
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9579258890755731,
+          "slope": 1.7446767811778403,
+          "intercept": 4.280832392824321,
+          "lambda": -0.06931546574605532,
+          "lambda_ci": [
+            -0.28135014756623056,
+            0.14807702090099534
+          ],
+          "lambda_r2": 0.9598032816694859
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.905766291827122,
+          "slope": 1.7547243718734944,
+          "intercept": 4.916595830093982,
+          "lambda": -0.25716735110868993,
+          "lambda_ci": [
+            -0.5388733143008575,
+            0.012683863855624651
+          ],
+          "lambda_r2": 0.9327303329978782
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8467015811518623,
+          "slope": 1.2326113492109352,
+          "intercept": 4.858235146547536,
+          "lambda": -0.5895571506625701,
+          "lambda_ci": [
+            -0.8574063934121474,
+            -0.35685208170638416
+          ],
+          "lambda_r2": 0.9611728530053066
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9392751431453481,
+          "slope": 1.217865401854773,
+          "intercept": 5.14866744566744,
+          "lambda": -0.22043509762721292,
+          "lambda_ci": [
+            -0.45618039555247303,
+            0.01116125906308066
+          ],
+          "lambda_r2": 0.9566204000163014
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7539181324578568,
+          "slope": 0.8670826048792701,
+          "intercept": 4.926597256332008,
+          "lambda": -0.8124920183286705,
+          "lambda_ci": [
+            -1.0877968103632818,
+            -0.5789967458493401
+          ],
+          "lambda_r2": 0.9642717303640245
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.26",
+      "mean_of_distances": {
+        "lambda": -0.18122130528391836,
+        "lambda_ci": [
+          -0.38125431517534125,
+          0.016826941333465746
+        ],
+        "lambda_r2": 0.9783091553027703,
+        "mean_r2": 0.9236935390978367
+      },
+      "mean_r2": 0.9119212823022702,
+      "lambda": -0.15812996820299918,
+      "lambda_ci": [
+        -0.3847704312516351,
+        0.06927440078973886
+      ],
+      "lambda_r2": 0.9665207727232662,
+      "pooled_r2": 0.8881466490740779,
+      "pooled_slope": 1.591534735549602,
+      "spacing_cv": 1.0228902204215928,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.950128993980251,
+          "slope": 1.6733341222538984,
+          "intercept": 3.0175262505094045,
+          "lambda": 0.2692186541299146,
+          "lambda_ci": [
+            0.14538916613843306,
+            0.40036625814064564
+          ],
+          "lambda_r2": 0.98418988513452
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9767024764498248,
+          "slope": 1.8121222363392357,
+          "intercept": 3.4875896929173416,
+          "lambda": 0.18773043995459232,
+          "lambda_ci": [
+            0.1041325504377108,
+            0.2741202427365319
+          ],
+          "lambda_r2": 0.9928871634775037
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9802189031338691,
+          "slope": 1.9651106766778734,
+          "intercept": 4.198159993398516,
+          "lambda": 0.04818669260890168,
+          "lambda_ci": [
+            -0.08822476033469812,
+            0.18985405552394885
+          ],
+          "lambda_r2": 0.9812356669596577
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9581518048053842,
+          "slope": 1.8932291635340244,
+          "intercept": 4.66844156760313,
+          "lambda": -0.07883226619255702,
+          "lambda_ci": [
+            -0.2887433956529343,
+            0.13578772751377477
+          ],
+          "lambda_r2": 0.960584091647626
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9041855930482222,
+          "slope": 1.880887501760895,
+          "intercept": 5.31558618308117,
+          "lambda": -0.26671920118107645,
+          "lambda_ci": [
+            -0.5490116120132085,
+            0.002761074065702949
+          ],
+          "lambda_r2": 0.9330707175517616
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8422642309202458,
+          "slope": 1.3110525132175164,
+          "intercept": 5.2387744222769035,
+          "lambda": -0.610133425655905,
+          "lambda_ci": [
+            -0.8645325900989806,
+            -0.3883765146352737
+          ],
+          "lambda_r2": 0.9650394370001805
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9346293322054723,
+          "slope": 1.2746405482385748,
+          "intercept": 5.522077495217084,
+          "lambda": -0.23742767021344136,
+          "lambda_ci": [
+            -0.480797466850336,
+            0.00030152757504082193
+          ],
+          "lambda_r2": 0.9545803252190523
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7490889238748919,
+          "slope": 0.9219011223748038,
+          "intercept": 5.308040434105913,
+          "lambda": -0.8196266099952881,
+          "lambda_ci": [
+            -1.1128579198299589,
+            -0.573408537258588
+          ],
+          "lambda_r2": 0.9605788947958277
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.27",
+      "mean_of_distances": {
+        "lambda": -0.1614872353862276,
+        "lambda_ci": [
+          -0.36345500345865656,
+          0.03954795502231091
+        ],
+        "lambda_r2": 0.9775339838844544,
+        "mean_r2": 0.9281223905216615
+      },
+      "mean_r2": 0.9166870951531461,
+      "lambda": -0.13164446120108392,
+      "lambda_ci": [
+        -0.36487071056269965,
+        0.10313555875747134
+      ],
+      "lambda_r2": 0.9662291773113093,
+      "pooled_r2": 0.8928271138986764,
+      "pooled_slope": 1.7615761105203491,
+      "spacing_cv": 1.0099145933863383,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9501496125233971,
+          "slope": 1.819078885439129,
+          "intercept": 3.281076558293712,
+          "lambda": 0.27072939508596955,
+          "lambda_ci": [
+            0.14790262932590142,
+            0.4007878233983474
+          ],
+          "lambda_r2": 0.9845011647577353
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.97614045786136,
+          "slope": 1.9781205293091135,
+          "intercept": 3.804476953273993,
+          "lambda": 0.19194585960685012,
+          "lambda_ci": [
+            0.10874420422668699,
+            0.27794377143183424
+          ],
+          "lambda_r2": 0.9929923356781126
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9798116813996058,
+          "slope": 2.1668656902568646,
+          "intercept": 4.6118272869557195,
+          "lambda": 0.061260211740951025,
+          "lambda_ci": [
+            -0.0750558555980134,
+            0.20313937434647922
+          ],
+          "lambda_r2": 0.9814415743396614
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9583453757079218,
+          "slope": 2.0990999801543793,
+          "intercept": 5.145759519690901,
+          "lambda": -0.06185141468486181,
+          "lambda_ci": [
+            -0.2744117332160645,
+            0.15658246893837469
+          ],
+          "lambda_r2": 0.9598298804573155
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9085756129505281,
+          "slope": 2.0938065002926303,
+          "intercept": 5.8638321052131674,
+          "lambda": -0.24754465009447923,
+          "lambda_ci": [
+            -0.5276277185215534,
+            0.02167081598243626
+          ],
+          "lambda_r2": 0.933451241860071
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8527592877405226,
+          "slope": 1.458495171036797,
+          "intercept": 5.755454421127091,
+          "lambda": -0.5805418321375038,
+          "lambda_ci": [
+            -0.8306799649752787,
+            -0.36074436108341357
+          ],
+          "lambda_r2": 0.9649603401497926
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9368333861536529,
+          "slope": 1.4277682415109512,
+          "intercept": 6.072910776261293,
+          "lambda": -0.201437507717306,
+          "lambda_ci": [
+            -0.4553296879093348,
+            0.04968864857656799
+          ],
+          "lambda_r2": 0.9509074601640553
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7708813468881804,
+          "slope": 1.0493738861629371,
+          "intercept": 5.843855416211724,
+          "lambda": -0.7666315503339776,
+          "lambda_ci": [
+            -1.044152914350577,
+            -0.5300840217090115
+          ],
+          "lambda_r2": 0.9617494210837305
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.28",
+      "mean_of_distances": {
+        "lambda": -0.14802696489317646,
+        "lambda_ci": [
+          -0.35144879802632445,
+          0.05512303748841081
+        ],
+        "lambda_r2": 0.9766309094455636,
+        "mean_r2": 0.9270140522909376
+      },
+      "mean_r2": 0.9152943405042142,
+      "lambda": -0.12191314738025001,
+      "lambda_ci": [
+        -0.36203151646094806,
+        0.12041298487670661
+      ],
+      "lambda_r2": 0.9650927576688736,
+      "pooled_r2": 0.8888223906743211,
+      "pooled_slope": 1.8991135203562834,
+      "spacing_cv": 1.0185636391033828,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9493435211972686,
+          "slope": 1.963293329703301,
+          "intercept": 3.539224644910415,
+          "lambda": 0.27429546918496195,
+          "lambda_ci": [
+            0.15088022650550237,
+            0.40508505252749594
+          ],
+          "lambda_r2": 0.9844423372491801
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9752605153421916,
+          "slope": 2.1385376532528917,
+          "intercept": 4.108099082096024,
+          "lambda": 0.19740635188403166,
+          "lambda_ci": [
+            0.11395186479053016,
+            0.28371411566465654
+          ],
+          "lambda_r2": 0.9929959083200726
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9785226055871924,
+          "slope": 2.3648426974728354,
+          "intercept": 5.011415179068967,
+          "lambda": 0.07676192687081083,
+          "lambda_ci": [
+            -0.06192322473543664,
+            0.22160608253757313
+          ],
+          "lambda_r2": 0.9810511378501551
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9589968197217932,
+          "slope": 2.2962036094806444,
+          "intercept": 5.59102380667227,
+          "lambda": -0.041123435290824,
+          "lambda_ci": [
+            -0.2548908257028478,
+            0.17981702072287487
+          ],
+          "lambda_r2": 0.9596469599996165
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.910204034502368,
+          "slope": 2.2656821731112564,
+          "intercept": 6.326090418083986,
+          "lambda": -0.23814713055528525,
+          "lambda_ci": [
+            -0.5189330223732633,
+            0.03264038168525259
+          ],
+          "lambda_r2": 0.933123692958379
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8504047754436979,
+          "slope": 1.5519514970857422,
+          "intercept": 6.153158490877555,
+          "lambda": -0.5823396807391704,
+          "lambda_ci": [
+            -0.846268368198525,
+            -0.3521222625605839
+          ],
+          "lambda_r2": 0.961944122077692
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9330410114020949,
+          "slope": 1.5051672351251828,
+          "intercept": 6.452995815407583,
+          "lambda": -0.20270285946967603,
+          "lambda_ci": [
+            -0.4691722072190483,
+            0.061008949030538356
+          ],
+          "lambda_r2": 0.9470323585619117
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.7665814408371067,
+          "slope": 1.1072299676184205,
+          "intercept": 6.220059720107961,
+          "lambda": -0.7735373016866515,
+          "lambda_ci": [
+            -1.0571181167100536,
+            -0.5328530153608255
+          ],
+          "lambda_r2": 0.9605055443339813
+        }
+      ]
+    },
+    {
+      "layer": "model.text_model.layers.29",
+      "mean_of_distances": {
+        "lambda": -0.16364091880878043,
+        "lambda_ci": [
+          -0.3676344200926539,
+          0.03906371165527766
+        ],
+        "lambda_r2": 0.9762246040794382,
+        "mean_r2": 0.9271534943389221
+      },
+      "mean_r2": 0.9143380170693121,
+      "lambda": -0.12005032857595414,
+      "lambda_ci": [
+        -0.36880481036363355,
+        0.13139665470423317
+      ],
+      "lambda_r2": 0.9635951175872721,
+      "pooled_r2": 0.886543749636133,
+      "pooled_slope": 2.1714636645271383,
+      "spacing_cv": 1.0282873922916804,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9509670530319304,
+          "slope": 2.2775607303442156,
+          "intercept": 4.115461470412861,
+          "lambda": 0.26696381965345434,
+          "lambda_ci": [
+            0.14345539584595268,
+            0.39776573206980437
+          ],
+          "lambda_r2": 0.9843300702763529
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9773815610216883,
+          "slope": 2.473314215533425,
+          "intercept": 4.768500589977701,
+          "lambda": 0.18533932856630764,
+          "lambda_ci": [
+            0.1031796650157514,
+            0.2701835108394681
+          ],
+          "lambda_r2": 0.9931371057358828
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.9791872879211089,
+          "slope": 2.7260337446173803,
+          "intercept": 5.805056777625264,
+          "lambda": 0.06534200013267416,
+          "lambda_ci": [
+            -0.07295231273287334,
+            0.20949568632262827
+          ],
+          "lambda_r2": 0.9810292381082656
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.9587757888089976,
+          "slope": 2.637619306118913,
+          "intercept": 6.464191321853668,
+          "lambda": -0.052524604474141166,
+          "lambda_ci": [
+            -0.26578162935354677,
+            0.16722406393865957
+          ],
+          "lambda_r2": 0.9598377083099282
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9037538866848754,
+          "slope": 2.556462497325907,
+          "intercept": 7.237777101730783,
+          "lambda": -0.258696039500496,
+          "lambda_ci": [
+            -0.5479059339431733,
+            0.017936940162626626
+          ],
+          "lambda_r2": 0.930576109744594
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.8460618562943576,
+          "slope": 1.7433751989626787,
+          "intercept": 7.026524657387934,
+          "lambda": -0.5952024575805573,
+          "lambda_ci": [
+            -0.8569386936844301,
+            -0.36737425605185625
+          ],
+          "lambda_r2": 0.9628631053198999
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9292516570060844,
+          "slope": 1.7043677189852064,
+          "intercept": 7.37784889345907,
+          "lambda": -0.1875760526777671,
+          "lambda_ci": [
+            -0.47182799137372033,
+            0.09556924546980675
+          ],
+          "lambda_r2": 0.9409639864488267
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.769325045785453,
+          "slope": 1.2529759043293924,
+          "intercept": 7.107327252764239,
+          "lambda": -0.7621943388342698,
+          "lambda_ci": [
+            -1.063187371826897,
+            -0.5085248209856699
+          ],
+          "lambda_r2": 0.9560236167544264
+        }
+      ]
+    },
+    {
+      "layer": "logits",
+      "mean_of_distances": {
+        "lambda": 0.09099398985078998,
+        "lambda_ci": [
+          -0.34997256377269076,
+          0.51751386799472
+        ],
+        "lambda_r2": 0.8804511885650597,
+        "mean_r2": 0.8612083115787346
+      },
+      "mean_r2": 0.8243014252792273,
+      "lambda": 0.1342810348361772,
+      "lambda_ci": [
+        -0.3637866069974587,
+        0.752716138546838
+      ],
+      "lambda_r2": 0.8534585811746576,
+      "pooled_r2": 0.8091292751293833,
+      "pooled_slope": 0.16350128690103474,
+      "spacing_cv": 1.9370968867412572,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.9197093614853005,
+          "slope": 0.15128579499658174,
+          "intercept": 0.2965494749600653,
+          "lambda": 0.3276433722497653,
+          "lambda_ci": [
+            0.0801370222088987,
+            0.6164017970459275
+          ],
+          "lambda_r2": 0.9551591631436079
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.9772682623196298,
+          "slope": 0.1660514483918552,
+          "intercept": 0.35261901885329167,
+          "lambda": 0.08925734668754501,
+          "lambda_ci": [
+            -0.0535317626803742,
+            0.23858639094260642
+          ],
+          "lambda_r2": 0.980579912000376
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.833155926936114,
+          "slope": 0.17997474837988947,
+          "intercept": 0.4399369604212417,
+          "lambda": 0.17930472298480937,
+          "lambda_ci": [
+            -0.3364766668973799,
+            0.8890304800477487
+          ],
+          "lambda_r2": 0.841287193382124
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.7199903595987053,
+          "slope": 0.14448159915680017,
+          "intercept": 0.4441585147505171,
+          "lambda": 0.19195573611532685,
+          "lambda_ci": [
+            -0.6051301504796192,
+            1.4797865417753586
+          ],
+          "lambda_r2": 0.7271296444411243
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.9032953868210438,
+          "slope": 0.17630331833077037,
+          "intercept": 0.4990742064539566,
+          "lambda": -0.1906700546831,
+          "lambda_ci": [
+            -0.47968903734812585,
+            0.09613176730601317
+          ],
+          "lambda_r2": 0.9194171560102057
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.6448262812897381,
+          "slope": 0.12944713695583648,
+          "intercept": 0.45962038090351653,
+          "lambda": -0.21331602131787936,
+          "lambda_ci": [
+            -1.8195850278351275,
+            1.1785473865980873
+          ],
+          "lambda_r2": 0.6513969604049064
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.6678546020620457,
+          "slope": 0.17526616103521508,
+          "intercept": 0.5281573657956191,
+          "lambda": 1.0780245072317038,
+          "lambda_ci": [
+            0.25153914743345773,
+            3.0940920462905996
+          ],
+          "lambda_r2": 0.8185817104928057
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.9283112217212415,
+          "slope": 0.18520008796132983,
+          "intercept": 0.520622405672569,
+          "lambda": -0.1191072330864992,
+          "lambda_ci": [
+            -0.3910965470975375,
+            0.151908011805512
+          ],
+          "lambda_r2": 0.9341169095221107
+        }
+      ]
+    },
+    {
+      "layer": "prob",
+      "mean_of_distances": {
+        "lambda": 0.47937617242531316,
+        "lambda_ci": [
+          0.12558177018944136,
+          1.1097657428764545
+        ],
+        "lambda_r2": 0.8296318093149905,
+        "mean_r2": 0.685433797648491
+      },
+      "mean_r2": 0.684733206352826,
+      "lambda": 0.4847363749699752,
+      "lambda_ci": [
+        0.1637509912598209,
+        1.049301183432699
+      ],
+      "lambda_r2": 0.8570781581224509,
+      "pooled_r2": 0.6593064487298319,
+      "pooled_slope": 9.025056793615115e-07,
+      "spacing_cv": 3.0699820539208593,
+      "per_frequency": [
+        {
+          "frequency": 1.0,
+          "r2": 0.8806835056295614,
+          "slope": 8.388464392022519e-07,
+          "intercept": 1.5685122580410638e-06,
+          "lambda": 0.3486274163761228,
+          "lambda_ci": [
+            0.05334456977469047,
+            0.699812613483701
+          ],
+          "lambda_r2": 0.9263776467131072
+        },
+        {
+          "frequency": 1.75,
+          "r2": 0.67967885623866,
+          "slope": 5.961434094235822e-07,
+          "intercept": 1.252469879475911e-06,
+          "lambda": 1.2482453164723353,
+          "lambda_ci": [
+            0.39100799013820253,
+            2.720613525859786
+          ],
+          "lambda_r2": 0.8445394169396483
+        },
+        {
+          "frequency": 3.5,
+          "r2": 0.41037134086628235,
+          "slope": 5.958762066557397e-07,
+          "intercept": 1.3325955865034343e-06,
+          "lambda": 2.7650156343293473,
+          "lambda_ci": [
+            2.160614844638107,
+            3.5970572802733356
+          ],
+          "lambda_r2": 0.9744612060756976
+        },
+        {
+          "frequency": 7.0,
+          "r2": 0.3675480006449222,
+          "slope": 5.43617939804542e-07,
+          "intercept": 1.4644923765283755e-06,
+          "lambda": 1.9769390264363988,
+          "lambda_ci": [
+            0.9231480140343644,
+            3.9577126984549222
+          ],
+          "lambda_r2": 0.7859044903779806
+        },
+        {
+          "frequency": 14.0,
+          "r2": 0.8165027542402529,
+          "slope": 1.1507292269986622e-06,
+          "intercept": 2.3892334689264167e-06,
+          "lambda": 0.5894075234862112,
+          "lambda_ci": [
+            0.22793251174644846,
+            1.0437629067355871
+          ],
+          "lambda_r2": 0.9181170804881038
+        },
+        {
+          "frequency": 28.0,
+          "r2": 0.7556672878526409,
+          "slope": 1.1002860849650977e-06,
+          "intercept": 2.5559660151998556e-06,
+          "lambda": 0.3800652264537392,
+          "lambda_ci": [
+            -0.14759692346384867,
+            1.054839460129811
+          ],
+          "lambda_r2": 0.8010791837475382
+        },
+        {
+          "frequency": 56.0,
+          "r2": 0.9241935964611909,
+          "slope": 1.3497670264642948e-06,
+          "intercept": 2.829516037568507e-06,
+          "lambda": 0.2939264670492658,
+          "lambda_ci": [
+            0.09956947077319336,
+            0.5040037497176719
+          ],
+          "lambda_r2": 0.9624769485198496
+        },
+        {
+          "frequency": 75.0,
+          "r2": 0.6432203088890964,
+          "slope": 1.0447791013779241e-06,
+          "intercept": 2.5669965220296674e-06,
+          "lambda": 0.03464245975789158,
+          "lambda_ci": [
+            -0.7451107556840428,
+            0.7753752875416962
+          ],
+          "lambda_r2": 0.643669292117682
+        }
+      ]
+    }
+  ]
+}
