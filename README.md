@@ -4,11 +4,16 @@
 log-contrast response of ImageNet-trained vision networks: feed sinusoidal
 gratings at log-spaced contrasts, and the mean absolute change in the net's
 late-layer representation is close to linear in `log(contrast)`. Measured on
-**27 architectures** (VGG-19 on two checkpoints, VGG-19-BN, AlexNet,
+**28 architectures** (VGG-19 on two checkpoints, VGG-19-BN, AlexNet,
 ResNet/ResNeXt, DenseNet, GoogLeNet, SqueezeNet, the
 MobileNet/MNASNet/ShuffleNet/EfficientNet group, RegNet, ConvNeXt,
 ViT/Swin/MaxViT, and — via `timm` — FocalNet, PoolFormer, XCiT and the
-attention-free, convolution-free gMLP and ResMLP), 86 committed runs.
+attention-free, convolution-free gMLP and ResMLP), 88 committed runs.
+
+Twenty-seven of those are ImageNet classifiers; the twenty-eighth is a
+**generative VLM** (SmolVLM-256M), where the compression also appears — its
+hidden taps sit at the log law with a weight-scrambled control cleanly
+separated, so the effect does not depend on the classification objective.
 
 ```bash
 pip install numpy matplotlib

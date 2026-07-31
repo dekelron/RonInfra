@@ -708,6 +708,81 @@ one single-seed run, not a family property. And **XCiT's λ-R² is 0.745, the
 worst fit in the repo**, so its −0.469 locates very little; quote it with the
 R² or not at all.
 
+### Beyond the classification objective — a generative VLM
+
+Every architecture above is an ImageNet classifier with a 1000-way softmax, so
+the **training objective** is the one axis none of them varies. SmolVLM-256M
+([`…-r2-s0-vlm`](../results/hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-vlm/notes.md),
+2026-07-30) is generative: a language-modelling objective, a SigLIP tower, and
+no classification head at all. `prob` is the softmax over a **49 280-token
+vocabulary**, so the TV bound becomes 2/V rather than 2/1000 — λ stays
+comparable across runs because it is dimensionless, but the magnitude of
+`D_prob` does not.
+
+**The compression survives the change of objective.** The three hidden taps sit
+at the log law and the weight-scrambled control does not, with **non-overlapping
+95% profile-F intervals at all three**:
+
+| tap | trained λ | λ-R² | scrambled λ | λ-R² |
+|---|---|---|---|---|
+| `vision_model.encoder.layers.11` | **+0.047** [−0.20, +0.30] | 0.955 | +0.560 [+0.43, +0.70] | 0.984 |
+| `text_model.layers.14` | **+0.020** [−0.21, +0.27] | 0.965 | +0.524 [+0.37, +0.70] | 0.978 |
+| `text_model.layers.29` | **−0.120** [−0.37, +0.13] | 0.964 | +0.549 [+0.37, +0.74] | 0.971 |
+| `logits` | +0.134 [−0.36, +0.75] | 0.853 | +0.632 [+0.45, +0.83] | 0.970 |
+| `prob` | +0.485 [+0.16, +1.05] | 0.857 | +0.938 [+0.59, +1.28] | 0.927 |
+
+Every trained interval contains λ = 0; no scrambled one does.
+
+**`prob` is unusable here and must not be quoted.** Its λ-R² is 0.857, its
+interval overlaps the control's, and per-frequency it runs +0.03 to **+2.77** —
+sampling noise at 2 reps over a 49 280-way softmax. The classifier work already
+preferred a pre-softmax tap (`classifier.4` over `prob`); on a VLM that becomes
+mandatory. Corroborating it: `D_prob` reaches 7.6% of its 2/V ceiling trained
+against **92.3%** scrambled, because a scrambled language head flips between
+confident tokens and the two distributions end up nearly disjoint.
+
+**The control is valid**, by the renormalisation rule rather than by assumption:
+zero BatchNorm (census 25 LayerNorm + 61 RMSNorm, all renormalising by the
+current input), no tap pinned at a λ bound, `max D_logits` 2.93 against the
+trained 0.72. Its softmax is only partly affine (`ratio × V` = 0.612 where pure
+affine gives 1.0), but far from `resmlp-12-scramble`'s broken 0.127.
+
+**Frequency structure needs trained weights — a 7th matched pair.** Trained λ
+falls monotonically with frequency; scrambled is flat:
+
+| tap | trained 1 → 75 cyc/img | range | scrambled range | ratio |
+|---|---|---|---|---|
+| `vision_model.encoder.layers.11` | +0.27 → −0.62 | 0.89 | 0.25 | 3.6× |
+| `text_model.layers.14` | +0.30 → −0.70 | 1.00 | 0.22 | 4.5× |
+| `text_model.layers.29` | +0.27 → −0.76 | 1.03 | 0.27 | 3.8× |
+
+3.6–4.5× sits inside the 3.4–20.8× band the six classifier pairs give, so a
+generative objective behaves like the classifiers on this axis too.
+
+**Caveats, which are heavy.** **reps = 2**, 25× below the corpus's 50 — the cost
+of fitting the full 8×14 grid at 31.1 s per forward pass on a 4-core runner. One
+seed, one instruction (`'Describe this image.'`; the chat-templated string is in
+`run.json`). The intervals are profile-F **within one run**: they test whether
+these two runs differ given their own contrast sampling, not whether the result
+reproduces across seeds. The λ vs λ_mod gap stays ≤ 0.072 at the three hidden
+taps, which is why those are quoted.
+
+#### The checkpoint's own dtype cost 4.2× — measured
+
+Worth recording because it nearly sank the measurement. SmolVLM ships
+**bfloat16**, and GitHub's runners emulate bf16 without AVX512-BF16: **130 s per
+forward pass in bf16 against 31.1 s in float32**. Two full-grid attempts were
+cancelled at the 330 min cap before this was found — the first, on
+`llava-hf/llava-interleave-qwen-0.5b-hf`, additionally costs 62.8 s per pass
+because it tiles one image anyres, and grating **size does not change that**
+(455 s at 384 px vs 462 s at 224 px, the processor resizing to its own
+resolution first). The workflow gained `size` and `dtype` inputs; `run.py` had
+both flags already but no dispatch could reach them.
+
+The sizing lesson is sharper than the dtype one: a 7-pass probe read 14.6 s/pass
+where the real grid ran at 130, a 9× error. **Size a run from a probe that
+crosses a progress line**, not from one that fits in a handful of passes.
+
 #### Preprocessing moves the frequency structure more than it moves λ
 
 `gmlp-s16` was run twice, identical but for the input normalisation — the

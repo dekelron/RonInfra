@@ -8,7 +8,33 @@ First VLM measurement. The training objective is the one axis the other 27 archi
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+The control for the first VLM run. **It is valid**, by the renormalisation
+rule: SmolVLM has **zero BatchNorm** (census: 25 LayerNorm, 61 RMSNorm, all of
+which renormalise by the current input), no tap is pinned at a λ search bound,
+and `max D_logits` = 2.93 against the trained run's 0.72 — ordinary magnitudes,
+nothing like `resmlp-12-scramble`'s 2409.
+
+The softmax is only *partly* in its affine regime: `ratio × V` = 0.612 where a
+pure affine softmax gives 1.0 and the broken ResMLP control gave 0.127, with
+r(logits, prob) = 0.947. `D_prob` reaches **92.3%** of its 2/V ceiling against
+the trained run's 7.6% — a scrambled language head flips between confident
+tokens, so the two distributions are nearly disjoint. Read `prob` here as a
+saturation artifact, not a response.
+
+What the control establishes, at the three hidden taps where the intervals do
+not overlap the trained run's:
+
+| tap | scrambled λ | trained λ |
+|---|---|---|
+| `model.vision_model.encoder.layers.11` | +0.560 [+0.43, +0.70] R² 0.984 | +0.047 [−0.20, +0.30] |
+| `model.text_model.layers.14` | +0.524 [+0.37, +0.70] R² 0.978 | +0.020 [−0.21, +0.27] |
+| `model.text_model.layers.29` | +0.549 [+0.37, +0.74] R² 0.971 | −0.120 [−0.37, +0.13] |
+
+And λ is nearly **flat across frequency** (+0.34 → +0.59, range 0.22–0.27)
+where the trained run spans 0.89–1.03 — the 7th matched pair showing frequency
+structure is a property of learning.
+
+Same caveats as its trained companion: reps = 2, one seed, one instruction.
 
 ## Reproduce
 

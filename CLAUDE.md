@@ -451,6 +451,43 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   survivor. PoolFormer-S12 −0.034; **FocalNet-T +0.420, the highest λ of all 29
   combinations**; XCiT-nano −0.469 but at **λ-R² 0.745, the worst fit in the
   repo** — quote it with the R² or not at all. One seed each.
+- **And it does not need the classification objective** (2026-07-30). Every
+  other run here is an ImageNet classifier with a 1000-way softmax.
+  SmolVLM-256M is **generative** — language-modelling objective, SigLIP tower,
+  no classification head — and its three hidden taps sit at the log law with
+  the scrambled control **cleanly separated** (non-overlapping 95% intervals at
+  all three): `vision…layers.11` **+0.047** vs +0.560, `text_model.layers.14`
+  **+0.020** vs +0.524, `text_model.layers.29` **−0.120** vs +0.549, trained
+  λ-R² 0.955–0.965. Every trained interval contains 0; no scrambled one does.
+  Also a **7th matched pair** for frequency structure needing trained weights
+  (trained λ range 0.89–1.03 across frequency vs scrambled 0.22–0.27, ratio
+  3.6–4.5×, inside the classifiers' 3.4–20.8×). Control valid by the
+  renormalisation rule: 0 BN, 25 LayerNorm + 61 RMSNorm, no pinned taps,
+  max D_logits 2.93. **reps = 2**, one seed, one instruction — heavy caveats.
+  - **Do not quote this run's `prob`.** λ +0.485 at λ-R² 0.857, interval
+    overlapping the control's, per-frequency λ from +0.03 to **+2.77** — noise
+    at 2 reps over a 49 280-way softmax. `D_prob` is 7.6% of its 2/V ceiling
+    trained against **92.3%** scrambled, a saturated language head rather than
+    a response. On a VLM, preferring a pre-softmax tap is mandatory, not merely
+    better.
+  - **`prob`'s bound is 2/V, not 2/1000.** `HFVLMModel` now records
+    `vocab_size`, the chat-templated `conditioning_text` and a normalisation
+    census, so a VLM `D` is interpretable from its own directory. The
+    instruction was already recorded (`run.py`); the vocabulary was not.
+- **A checkpoint's own dtype is not the fast one — bf16 cost 4.2×**
+  (2026-07-30). SmolVLM ships bfloat16 and the runners emulate it without
+  AVX512-BF16: **130 s/forward pass in bf16 against 31.1 s in float32**. Two
+  full-grid attempts were cancelled at the 330 min cap before this was found.
+  `llava-interleave` is worse and unfixable on CPU — 62.8 s/pass from anyres
+  tiling, and **grating size does not change it** (455 s at 384 px vs 462 s at
+  224 px; the processor resizes to its own resolution before tiling). The
+  workflow gained `size` and `dtype` inputs — `run.py` had both flags, no
+  dispatch could reach them.
+  - **Size a long run from a probe that crosses a progress line.** A 7-pass
+    probe read 14.6 s/pass where the real grid ran at 130 — a **9×** error that
+    no safety factor would have absorbed. The cancelled run's own log (two
+    11-cell intervals, 119.6 and 117.0 min) was the trustworthy measurement.
+    Job-status green is not progress: the cell counter is.
 - **"No BatchNorm" is not sufficient for a valid scramble** (2026-07-29,
   corrects the rule below). `resmlp-12-scramble` has **zero** BN modules and is
   broken anyway: max |D_logits| **2409** against ~2 elsewhere, r(logits,prob)

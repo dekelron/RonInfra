@@ -115,6 +115,8 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`vgg19-scramble-r50-s0-p3-alllayers-caffe`](vgg19-scramble-r50-s0-p3-alllayers-caffe/notes.md) | VGG-19, scrambled | 50 | converted Caffe | `prob` **0.422** | Permutation 3, the low end. Sweep spans 0.422–0.516; the paper's 0.60 is outside it. |
 | [`data-r250-s0`](data-r250-s0/notes.md) | raw pixels | 250 | none | λ **+0.925**, R² 0.985 | The paper's `data` row, and the metric's **noise floor**. `features.0` reproduces it to 3 decimals on both checkpoints. |
 | [`data-r50-s0`](data-r50-s0/notes.md) | raw pixels | 50 | none | D(50)/D(250) = **2.237** | Companion to the above: makes the 1/√reps scaling checkable (√5 = 2.236). |
+| [`hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-vlm`](hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-vlm/notes.md) | SmolVLM-256M, trained | **2** | transformers | `text_model.layers.14` λ **+0.020**, R² 0.965 | **The first non-classifier.** A generative VLM's hidden taps sit at the log law; all three intervals contain 0 and none overlaps the control. **Do not quote its `prob`** (λ-R² 0.857, per-frequency +0.03 to +2.77). |
+| [`hf-HuggingFaceTB-SmolVLM-256M-Instruct-scramble-r2-s0-vlm`](hf-HuggingFaceTB-SmolVLM-256M-Instruct-scramble-r2-s0-vlm/notes.md) | SmolVLM-256M, scrambled | **2** | transformers | `text_model.layers.14` λ **+0.524**, R² 0.978 | **valid** — zero BatchNorm, no pinned taps, max D_logits 2.93. Separated from trained at all three hidden taps; λ flat across frequency (range 0.22–0.27 vs 0.89–1.03). |
 
 > **`logness` was removed on 2026-07-26 and replaced by `λ`.** Prose in any
 > `notes.md` written before that date quotes the retired statistic — a race

@@ -8,7 +8,52 @@ First VLM measurement. The training objective is the one axis the other 27 archi
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+**The compression survives a change of training objective.** The three hidden
+taps sit at the log law and their weight-scrambled companions do not, with
+**non-overlapping** 95% profile-F intervals at all three:
+
+| tap | trained λ | scrambled λ | separated |
+|---|---|---|---|
+| `model.vision_model.encoder.layers.11` | **+0.047** [−0.20, +0.30] R² 0.955 | +0.560 [+0.43, +0.70] R² 0.984 | yes |
+| `model.text_model.layers.14` | **+0.020** [−0.21, +0.27] R² 0.965 | +0.524 [+0.37, +0.70] R² 0.978 | yes |
+| `model.text_model.layers.29` | **−0.120** [−0.37, +0.13] R² 0.964 | +0.549 [+0.37, +0.74] R² 0.971 | yes |
+| `logits` | +0.134 [−0.36, +0.75] R² 0.853 | +0.632 [+0.45, +0.83] R² 0.970 | no |
+| `prob` | +0.485 [+0.16, +1.05] R² 0.857 | +0.938 [+0.59, +1.28] R² 0.927 | no |
+
+All three trained intervals contain λ = 0; none of the scrambled ones do.
+
+**`prob` is not usable on this run and should not be quoted.** λ = +0.485 at
+λ-R² 0.857, its interval overlaps the control's, and per-frequency it runs
++0.03 to **+2.77** — that is sampling noise at 2 reps over a 49 280-way
+softmax, not a response. The repo already preferred a pre-softmax tap on the
+classifiers; on a VLM it is mandatory. `D_prob` reaches 7.6% of its 2/V
+ceiling (V = 49 280), against the scrambled run's 92.3%.
+
+**Frequency structure needs trained weights — a 7th matched pair.** Trained λ
+falls monotonically with frequency while scrambled is nearly flat:
+
+| tap | trained, 1 → 75 cyc/img | range | scrambled range | ratio |
+|---|---|---|---|---|
+| `…encoder.layers.11` | +0.27 → −0.62 | 0.89 | 0.25 | 3.6× |
+| `…text_model.layers.14` | +0.30 → −0.70 | 1.00 | 0.22 | 4.5× |
+| `…text_model.layers.29` | +0.27 → −0.76 | 1.03 | 0.27 | 3.8× |
+
+3.6–4.5× sits inside the 3.4–20.8× band the six classifier pairs give, so the
+generative objective behaves like the classifiers on this axis.
+
+**Caveats, and they are heavy.** **reps = 2**, 25× below the corpus's 50 — the
+price of fitting the full 8×14 grid at 31.1 s per forward pass. One seed, one
+instruction (`'Describe this image.'`, chat template recorded in `run.json`).
+The λ vs λ_mod gap is the per-tap noise check and stays ≤ 0.072 at the three
+hidden taps, which is why those are quoted and `prob` (gap 0.005 but λ-R²
+0.857 and a wild frequency profile) is not. Intervals here are profile-F
+within one run; they answer "do these two runs differ given their own contrast
+sampling", **not** "does this reproduce across seeds".
+
+**dtype is load-bearing.** The checkpoint ships bfloat16 and these runners
+emulate it: 130 s per forward pass in bf16 against 31.1 s in float32, a 4.2×
+penalty for accepting the checkpoint's own default. Two earlier full-grid
+attempts were cancelled at the 330 min cap before this was found.
 
 ## Reproduce
 
