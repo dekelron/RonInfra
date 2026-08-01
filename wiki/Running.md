@@ -61,14 +61,14 @@ python -m log_response.run --model data --reps 50        # noise floor
 | Flag | What it does |
 |---|---|
 | `--reps N` | Draws per cell, default 250. The cost knob — see the table below. |
-| `--layers all` | Every leaf module (45 on VGG-19) instead of the three-tap default. How the depth profile is measured. Works on every back-end, including `clip:`/`hf:`/`sam:`. |
+| `--layers all` | Every leaf module (45 on VGG-19) instead of the three-tap default. How the depth profile is measured. Works on every back-end — but **not advisable on a VLM**: it hooks 471 modules on SmolVLM including attention internals, whose outputs at ~1 000 tokens are ~92 MB each, and two attempts were killed by the runner OOM 41 s in. Pass an explicit list of block outputs instead. |
 | `--frequencies` | Override the 8 spatial frequencies (cycles/image). |
 | `--contrasts linear` | Sample the same contrast endpoints evenly instead of geometrically. The grid control; λ should not move, and [measurably does not](Results.md). |
-| `--size N` | Input side in pixels, default 224. Use 227 for architectures that expect it. Changes the stimulus, so runs at different sizes are not comparable. |
+| `--size N` | Input side in pixels, default the back-end's native size (224 for the CNNs, 336–384 for the VLMs). Frequencies are in cycles per *image*, so this does **not** rescale the pattern — it changes how finely the pattern is sampled, and how much work a forward pass is. Comparable across sizes on λ in principle; the caveats are aliasing as the top frequency approaches Nyquist, and whatever the model's own resize does. On `llava-interleave` size buys nothing: 455 s at 384 px vs 462 s at 224 px, because the processor resizes to its own resolution before tiling. |
 | `--scramble` | Permute weights within each layer — the control. Pair with `--scramble-seed`, because one permutation is one sample. |
 | `--scramble-seed N` | Permutation seed, independent of `--seed`. Set both explicitly: a sweep that varies them together bounds the wrong thing. |
 | `--weights PATH` | Local `state_dict`. Required in this sandbox, where weight hosts are blocked. |
-| `--device` / `--dtype` | Placement and precision. **Leave `--dtype` alone unless you mean it** — D is accumulated in float64 and every committed run is float64. |
+| `--device` / `--dtype` | Placement, and the **model's** weight dtype — not the accumulator, which is float64 in every run regardless. Leave it alone on the torchvision back-ends. On `hf:` it is worth setting explicitly so the run records which dtype it used: VLM per-pass cost has been seen to vary ~9× across runs of the same model, and whether dtype or runner variance drives that is [unresolved](Results.md). |
 | `--noise-blocks K` | Split the reps K ways round-robin and report the standard error of D from their spread. Costs no extra forward passes, only K extra accumulators. This is what turns "which law fits better" into "does *any* law fit within measurement error" — it adds a `chi2/dof` column. **No committed run has used it yet.** |
 | `--save` / `--save-run` / `--load` | See *Storing a run* below. |
 | `--notes "..."` | Prose written into the run directory's `notes.md`. `--save-run` never overwrites an existing `notes.md`. |
@@ -76,7 +76,10 @@ python -m log_response.run --model data --reps 50        # noise floor
 | `--quiet` | Suppress the per-cell progress output. |
 
 `--instruction`, `--prompts` and `--mask-decoder` apply only to the VLM and SAM
-back-ends.
+back-ends. Every VLM λ is conditional on the instruction, so it is recorded in
+`run.json` both raw and chat-templated — though the prompt turns out not to
+reach the representation at all, only the final-position readout
+([why](Results.md)).
 
 ## Cost and wait times
 
@@ -287,8 +290,10 @@ and retries up to five times, which is how the two r250 directories landed as
 consecutive commits.
 
 **Dispatch inputs.** `model`, `reps`, `seed`, `frequencies`, `contrasts`,
-`layers`, `notes` map straight onto the CLI flags above. The rest are about
-where the run lands and which weights it uses:
+`layers`, `size`, `dtype`, `instruction`, `notes` map straight onto the CLI
+flags above — the last three were added 2026-07-31, having existed in
+`run.py` from the start with no way to reach them from a dispatch. The rest
+are about where the run lands and which weights it uses:
 
 | Input | What it does |
 |---|---|

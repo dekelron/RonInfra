@@ -565,6 +565,48 @@ def test_vlm_backend_tiny_offline():
     m.close()
 
 
+def test_normalisation_census_counts_the_kinds_the_scramble_rule_turns_on():
+    """The census is shared by TimmModel and HFVLMModel, so test it directly.
+
+    Both back-ends report it, but the only test that reaches it through a
+    back-end needs transformers, and the case it matters most for -- a
+    BatchNorm-bearing net, where the weight scramble decalibrates rather than
+    degrades -- is a timm one. This exercises the helper on a hand-built module
+    so it stays covered wherever the optional deps are missing.
+    """
+    import unittest
+
+    try:
+        import torch
+        from torch import nn
+    except ImportError:
+        raise unittest.SkipTest("torch not installed")
+
+    from .features import _TorchBackend
+
+    net = nn.Sequential(
+        nn.Conv2d(3, 4, 3), nn.BatchNorm2d(4), nn.ReLU(),
+        nn.Conv2d(4, 4, 3), nn.BatchNorm2d(4),
+        nn.GroupNorm(2, 4), nn.Flatten(), nn.LayerNorm(4),
+    )
+    probe = _TorchBackend.__new__(_TorchBackend)
+    probe.net = net
+    census, bn = probe._normalisation_census()
+
+    # BatchNorm is counted separately because it is the one kind that reads
+    # fixed buffers rather than renormalising by the current input.
+    assert bn == 2, census
+    assert census["BatchNorm2d"] == 2
+    assert census["GroupNorm"] == 1 and census["LayerNorm"] == 1
+    assert "ReLU" not in census and "Conv2d" not in census
+
+    # A net with nothing to desynchronise reports zero.
+    _, bn_free = _TorchBackend.__new__(_TorchBackend).__class__._normalisation_census(
+        type("P", (), {"net": nn.Sequential(nn.LayerNorm(4))})()
+    )
+    assert bn_free == 0
+
+
 def test_vlm_records_the_vocabulary_the_prob_bound_depends_on():
     """``prob``'s ceiling is 2/V, so a run is uninterpretable without V.
 
@@ -803,7 +845,11 @@ def test_timm_refuses_the_standard_scramble_on_batchnorm_nets():
     model = TimmModel("vit_tiny_patch16_224", pretrained=False,
                       allow_random_init=True, scramble=True)
     assert model.model_metadata["batchnorm_modules"] == 0
-    assert model.model_metadata["standard_scramble_valid"] is True
+    # ``batchnorm_free`` is a fact, not the verdict the old
+    # ``standard_scramble_valid`` name asserted: resmlp-12 is BN-free and its
+    # scramble broke anyway, so the census is what a validity claim rests on.
+    assert model.model_metadata["batchnorm_free"] is True
+    assert sum(model.model_metadata["normalisation_census"].values()) > 0
 
 
 def test_torchvision_refuses_random_init_by_default():

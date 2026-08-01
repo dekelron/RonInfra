@@ -31,3 +31,11 @@ run.py --model timm:resmlp_12_224.fb_in1k --reps 50 --seed 0 --layers all --quie
 ```
 
 Code: `unknown`. Weights: timm 1.0.22; resmlp_12_224.fb_in1k; hf_hub_id=timm/resmlp_12_224.fb_in1k; tag=fb_in1k.
+
+> **Its `run.json` overstates one field.** `model_details.standard_scramble_valid`
+> reads `true` here, because `TimmModel` derived that flag from `batchnorm_modules
+> == 0` alone — and this run is the standing proof that BN-free is only the
+> *necessary* half of the renormalisation rule. The field is left as recorded
+> (it is provenance), but the run it describes is the broken control, not a valid
+> one. The back-end was changed on 2026-07-31 to report `batchnorm_free` plus a
+> normalisation census instead, so no later run repeats the claim.

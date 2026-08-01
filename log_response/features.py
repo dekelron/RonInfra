@@ -224,6 +224,36 @@ class _TorchBackend(FeatureModel):
     # text tower, SAM's mask decoder in encoder-only mode). None taps everything.
     _all_layers_prefix: str | None = None
 
+    def _normalisation_census(self) -> tuple[dict[str, int], int]:
+        """Census of normalisation modules by class name, plus the BN count.
+
+        Whether the weight scramble *degrades* a net (usable control) or
+        *decalibrates* it (broken control) turns on whether it renormalises by
+        statistics of the current input: LayerNorm/RMSNorm/GroupNorm recompute
+        theirs per forward, BatchNorm in eval reads fixed buffers instead.
+        Reported as counts per class name rather than as a verdict, because the
+        class name is what identifies the behaviour and the set of scale-only
+        modules cannot be enumerated in advance -- resmlp-12's ``Affine`` is
+        not norm-like at all and would not appear here. An empty or all-
+        renormalising census is therefore evidence, not proof.
+        """
+        from torch import nn
+
+        renormalising = (nn.LayerNorm, nn.GroupNorm, nn.InstanceNorm1d,
+                         nn.InstanceNorm2d, nn.InstanceNorm3d)
+        census: dict[str, int] = {}
+        bn = 0
+        for module in self.net.modules():
+            name = type(module).__name__
+            if isinstance(module, nn.modules.batchnorm._BatchNorm):
+                bn += 1
+                census[name] = census.get(name, 0) + 1
+            elif isinstance(module, renormalising) or "Norm" in name:
+                # Third-party RMSNorm/Qwen2RMSNorm land here by name; they
+                # divide by the current input's own RMS, so they renormalise.
+                census[name] = census.get(name, 0) + 1
+        return census, bn
+
     def _init_hooks(self) -> None:
         self._acts: dict[str, np.ndarray] = {}
         # Firings of each hooked module within the current forward -- see the
@@ -574,8 +604,15 @@ class TimmModel(_TorchBackend):
             "architecture": cfg.get("architecture"),
             "classifier": cfg.get("classifier"),
             "first_conv": cfg.get("first_conv"),
+            "normalisation_census": self._normalisation_census()[0],
             "batchnorm_modules": int(bn_count),
-            "standard_scramble_valid": not bool(bn_count),
+            # Renamed from ``standard_scramble_valid`` on 2026-07-31. BN-free is
+            # only the necessary half of the renormalisation rule, and this field
+            # asserted the sufficient half: resmlp-12 has zero BN, so its run.json
+            # carries standard_scramble_valid=true while wiki/Results.md documents
+            # that same control as broken (42/114 taps pinned, max |D_logits|
+            # 2409). Report the fact and let the census carry the judgement.
+            "batchnorm_free": not bool(bn_count),
         }
 
     def _default_layers(self) -> list[str]:
@@ -895,36 +932,6 @@ class HFVLMModel(_TorchBackend):
             # A census supports the judgement; a boolean would pre-empt it.
             "batchnorm_free": not bn_count,
         }
-
-    def _normalisation_census(self) -> tuple[dict[str, int], int]:
-        """Census of normalisation modules by class name, plus the BN count.
-
-        Whether the weight scramble *degrades* a net (usable control) or
-        *decalibrates* it (broken control) turns on whether it renormalises by
-        statistics of the current input: LayerNorm/RMSNorm/GroupNorm recompute
-        theirs per forward, BatchNorm in eval reads fixed buffers instead.
-        Reported as counts per class name rather than as a verdict, because the
-        class name is what identifies the behaviour and the set of scale-only
-        modules cannot be enumerated in advance -- resmlp-12's ``Affine`` is
-        not norm-like at all and would not appear here. An empty or all-
-        renormalising census is therefore evidence, not proof.
-        """
-        from torch import nn
-
-        renormalising = (nn.LayerNorm, nn.GroupNorm, nn.InstanceNorm1d,
-                         nn.InstanceNorm2d, nn.InstanceNorm3d)
-        census: dict[str, int] = {}
-        bn = 0
-        for module in self.net.modules():
-            name = type(module).__name__
-            if isinstance(module, nn.modules.batchnorm._BatchNorm):
-                bn += 1
-                census[name] = census.get(name, 0) + 1
-            elif isinstance(module, renormalising) or "Norm" in name:
-                # Third-party RMSNorm/Qwen2RMSNorm land here by name; they
-                # divide by the current input's own RMS, so they renormalise.
-                census[name] = census.get(name, 0) + 1
-        return census, bn
 
     def _infer_vocab_size(self) -> int | None:
         """Width of the ``logits``/``prob`` taps, i.e. V in the 2/V bound.

@@ -158,10 +158,19 @@ the grating generator, the contrast convention or the metric shows up as a
 deviation from a closed form. `D`'s population value at raw pixels is zero, so
 there is nothing there to check a measurement against.
 
-**Probability layer bound:** with p,q the 1000-class softmax vectors,
-`D_prob = (1/1000) Σ_i |p_i − q_i| = (2/1000)·TV(p,q)`, so `0 ≤ D_prob ≤ 0.002`.
-This bound means no *global* log law is possible — D must →0 near zero contrast
-and saturate; the relation holds only over the finite sampled range (~1/128..1).
+**Probability layer bound:** with p,q softmax vectors over `V` outputs,
+`D_prob = (1/V) Σ_i |p_i − q_i| = (2/V)·TV(p,q)`, so **`0 ≤ D_prob ≤ 2/V`**.
+For a 1000-class classifier that is `0 ≤ D_prob ≤ 0.002`. This bound means no
+*global* log law is possible — D must →0 near zero contrast and saturate; the
+relation holds only over the finite sampled range (~1/128..1).
+
+`V` is **not** always 1000. On the `hf:` VLM back-end `prob` is the softmax over
+the language model's vocabulary, so `V` is the vocabulary size — 49 280 for
+SmolVLM-256M, giving a ceiling of 4.06e-05, twenty times tighter. `D_prob` is
+therefore **not comparable in magnitude** between a VLM and a classifier, while
+λ is, being dimensionless. `HFVLMModel` records `vocab_size` in `run.json` so
+the ceiling is recoverable from the run directory alone; runs made before
+2026-07-30 lack it and their `V` must be read off the checkpoint.
 
 ## Log-response regression
 
