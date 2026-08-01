@@ -474,6 +474,29 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     `vocab_size`, the chat-templated `conditioning_text` and a normalisation
     census, so a VLM `D` is interpretable from its own directory. The
     instruction was already recorded (`run.py`); the vocabulary was not.
+- **In a VLM the vision tower builds the compression and the decoder passes it
+  on** (2026-07-31, 44 taps: 12 vision blocks + 30 decoder layers + logits/prob).
+  Vision carries λ **+0.679 → −0.114** over 10 blocks, a span of **0.79**; the
+  30-layer decoder then moves it 0.27 and is flat to three decimals for its
+  first eight. λ-R² **0.935–0.988 across all 42 blocks**; only logits/prob
+  degrade (0.853/0.857). `vision.0` at +0.679 is **not** on the noise floor — a
+  whole block is not affine, so the floor does not apply.
+- **A prompt cannot change what a VLM represents — only its readout**
+  (2026-07-31). Same run with `'How much contrast does this pattern have?'`
+  instead of `'Describe this image.'`: mean |Δλ| **0.0000** across the vision
+  blocks and **0.0006** across the decoder, against a profile spanning 0.79.
+  Structural, not a null — the vision tower never sees text, and under **causal
+  masking the image tokens precede the prompt**, so their states cannot attend
+  to it; `D` averages ~1 000 image positions against ~10 text ones. The readout
+  point estimates do move (`logits` +0.134 → −0.627) but **are not resolved**:
+  the intervals overlap over [−0.36, +0.16], and the contrast prompt's `prob`
+  fits at R² **0.536** with an interval spanning nearly the whole search range.
+  - **A VLM tap list must be explicit.** Two `--layers all` attempts were killed
+    41 s into the first forward pass (exit 143, runner shutdown = OOM): `all`
+    hooks 471 modules including attention internals, ~92 MB each at ~1 000
+    tokens. The 42 block outputs are `(1, seq, dim)`, a few hundred MB total.
+    Taps add no forward passes but are **not free in memory**, and on a
+    long-sequence model memory binds before time.
 - **VLM forward-pass cost varies ~9× run to run, and the cause is not
   established** (2026-07-30). Four measurements of the same model, SmolVLM-256M:
 

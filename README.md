@@ -8,7 +8,7 @@ late-layer representation is close to linear in `log(contrast)`. Measured on
 ResNet/ResNeXt, DenseNet, GoogLeNet, SqueezeNet, the
 MobileNet/MNASNet/ShuffleNet/EfficientNet group, RegNet, ConvNeXt,
 ViT/Swin/MaxViT, and — via `timm` — FocalNet, PoolFormer, XCiT and the
-attention-free, convolution-free gMLP and ResMLP), 88 committed runs.
+attention-free, convolution-free gMLP and ResMLP), 90 committed runs.
 
 Twenty-seven of those are ImageNet classifiers; the twenty-eighth is a
 **generative VLM** (SmolVLM-256M), where the compression also appears — its

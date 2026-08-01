@@ -8,7 +8,41 @@ VLM depth profile, default prompt, 42 block outputs (12 vision + 30 decoder) plu
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+**The compression is built in the vision tower; the language model passes it
+through.** 44 taps — 12 vision blocks, 30 decoder layers, `logits`, `prob`:
+
+| stage | λ start → end | span | over |
+|---|---|---|---|
+| vision blocks 0 → 11 | **+0.679 → +0.047** (min −0.114 at block 9) | **0.79** | 12 blocks |
+| decoder layers 0 → 29 | +0.115 → −0.120 (min −0.158 at layer 26) | 0.27 | 30 layers |
+
+The vision encoder moves λ from **+0.68** — above the log law, nearer a square
+root — to **−0.11**, past it, in ten blocks. The decoder then does about a third
+as much over nearly three times the depth, and is flat to three decimals for its
+first eight layers. λ-R² is **0.935–0.988 across all 42 blocks**, so every one of
+those λ locates something; only the two terminal taps degrade (0.853, 0.857).
+
+**`vision.0` is not on the metric's noise floor** (λ ≈ 0.925 at power-R² 0.985 /
+log-R² 0.754). It reads +0.679, and it should: it is a whole block — attention
+plus MLP — so nothing in the image→tap path is affine and the zero-population
+floor does not apply. The floor is a property of affineness, not of being first.
+
+**Consistency check.** `prob` here reproduces the 5-tap
+[`…-r2-s0-vlm`](../hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-vlm/notes.md)
+run to six significant figures (λ +0.485, D_prob 3.08658e-06 vs 3.08657e-06),
+which is what identical seed and grid should give.
+
+**Why an explicit tap list rather than `--layers all`.** Two `--layers all`
+attempts were killed 41 s into the first forward pass with exit 143, the runner
+receiving a shutdown signal — OOM. `all` hooks 471 modules including attention
+internals, whose outputs at ~1 000 tokens are ~92 MB each; the 42 block outputs
+are `(1, seq, dim)` and total a few hundred MB. Taps cost no extra forward
+passes, but they are **not free in memory**, and on a VLM that is the binding
+constraint rather than time.
+
+**Caveats.** reps = 2, one seed, one instruction. |λ − λ_mod| stays ≤ 0.10 at
+most taps but reaches **0.20 at `vision.3`**, which is where to distrust the
+primary metric first.
 
 ## Reproduce
 

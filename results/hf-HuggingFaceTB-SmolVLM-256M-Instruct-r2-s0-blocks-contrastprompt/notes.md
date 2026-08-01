@@ -8,7 +8,44 @@ VLM depth profile, contrast-relevant prompt. Identical to the -blocks run in mod
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+**The prompt does not change the representation — and structurally cannot.**
+Identical to [`…-r2-s0-blocks`](../hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks/notes.md)
+in model, grid, seed, dtype and tap list; the instruction is the only variable.
+
+| taps | mean \|Δλ\| | max \|Δλ\| |
+|---|---|---|
+| 12 vision blocks | **0.0000** | **0.0000** |
+| 30 decoder layers | 0.0006 | 0.0020 |
+
+against a depth profile spanning 0.79. Two separate reasons, and the second is
+the interesting one:
+
+* the **vision tower never sees text**, so those taps are bit-identical;
+* under **causal masking the image tokens precede the prompt**, so their hidden
+  states cannot attend to it. `D` averages over ~1 000 image-token positions
+  against ~10 text ones, so the prompt is invisible in the average even at
+  decoder taps that do contain text positions.
+
+**Only the final position sees the prompt**, which is exactly what `logits` and
+`prob` read — and there the point estimates move a long way:
+
+| tap | "Describe this image." | "How much contrast…?" |
+|---|---|---|
+| `logits` | +0.134 [−0.36, +0.75] R² 0.853 | **−0.627** [−1.13, +0.16] R² 0.875 |
+| `prob` | +0.485 [+0.16, +1.05] R² 0.857 | +0.909 [−0.01, +4.00] R² **0.536** |
+
+**That shift is not resolved and must not be quoted as a prompt effect.** The
+two `logits` intervals overlap over [−0.36, +0.16]; this run's `prob` fits at
+R² 0.536 — the worst in the repo — with an interval covering nearly the whole
+λ search range, and it is flagged for λ vs λ_mod disagreeing by 0.31.
+
+So the answer to "does asking about contrast change the contrast response" is:
+not in the representation, where it cannot; and at the readout, this pair cannot
+tell. Settling the readout question needs more reps and more than one seed.
+
+**Caveats.** reps = 2, one seed. The two prompts differ in token count, so the
+decoder taps average over slightly different sequence lengths — which is exactly
+why the near-zero Δλ is evidence about causal structure rather than a null.
 
 ## Reproduce
 

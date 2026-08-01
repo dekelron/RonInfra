@@ -767,6 +767,66 @@ differ given their own contrast sampling, not whether the result reproduces
 across seeds. The λ vs λ_mod gap stays ≤ 0.072 at the three hidden taps, which
 is why those are quoted.
 
+#### The VLM depth profile: the vision tower builds it, the decoder passes it on
+
+Measured 2026-07-31 on 44 taps — 12 vision blocks, 30 decoder layers, `logits`,
+`prob` ([`…-r2-s0-blocks`](../results/hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks/notes.md)).
+
+| stage | λ start → end | span | over |
+|---|---|---|---|
+| vision blocks 0 → 11 | **+0.679 → +0.047** (min −0.114 at block 9) | **0.79** | 12 blocks |
+| decoder layers 0 → 29 | +0.115 → −0.120 (min −0.158 at layer 26) | 0.27 | 30 layers |
+
+The vision encoder carries λ from **above** the log law (+0.68, nearer a square
+root) to **past** it (−0.11) in ten blocks. The 30-layer language model then
+moves it about a third as far, and is flat to three decimals through its first
+eight layers. λ-R² is **0.935–0.988 across all 42 blocks**; only the two terminal
+taps degrade, to 0.853 and 0.857.
+
+`vision.0` reads λ = +0.679 and is **not** on the metric's noise floor
+(0.925 at power-R² 0.985 / log-R² 0.754) — it is a whole block, attention plus
+MLP, so nothing in the image→tap path is affine. The floor tracks affineness,
+not position, exactly as `vgg19_bn`'s BatchNorm tap and ViT's `conv_proj`
+already showed.
+
+#### The prompt cannot change the representation — only the readout
+
+The same run repeated with `'How much contrast does this pattern have?'` in
+place of `'Describe this image.'`, everything else identical
+([`…-blocks-contrastprompt`](../results/hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks-contrastprompt/notes.md)):
+
+| taps | mean \|Δλ\| | max \|Δλ\| |
+|---|---|---|
+| 12 vision blocks | **0.0000** | **0.0000** |
+| 30 decoder layers | 0.0006 | 0.0020 |
+
+against a profile spanning 0.79. This is structural rather than a null:
+
+* the **vision tower never sees text**, so those taps are bit-identical;
+* under **causal masking the image tokens precede the prompt**, so their hidden
+  states cannot attend to it at all — and `D` averages over ~1 000 image-token
+  positions against ~10 text ones, so the prompt stays invisible even at decoder
+  taps that do contain text positions.
+
+Only the final sequence position sees the prompt, and that is precisely what
+`logits`/`prob` read. There the point estimates move a long way — `logits`
++0.134 → **−0.627** — but **the shift is not resolved**: the two `logits`
+intervals overlap over [−0.36, +0.16], and the contrast prompt's `prob` fits at
+R² **0.536**, the worst in the repo, with an interval spanning nearly the whole
+λ search range and a λ-vs-λ_mod disagreement of 0.31.
+
+So: asking the model about contrast does not change the contrast response of its
+representation, because it cannot; whether it changes the readout is a question
+this pair cannot answer. That needs more reps and more than one seed.
+
+> A **VLM tap list must be explicit, not `--layers all`.** Two `--layers all`
+> attempts were killed 41 s into the first forward pass (exit 143, runner
+> shutdown — OOM). `all` hooks 471 modules including attention internals, whose
+> outputs at ~1 000 tokens are ~92 MB each; the 42 block outputs are
+> `(1, seq, dim)` and total a few hundred MB. Taps add no forward passes, but
+> they are **not free in memory**, and on a long-sequence model memory binds
+> before time does.
+
 #### VLM forward-pass cost varies ~9×, and why is unresolved
 
 Worth recording because it cancelled two full-grid attempts at the 330 min cap.
