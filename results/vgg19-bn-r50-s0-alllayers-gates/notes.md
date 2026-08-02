@@ -8,7 +8,25 @@ Gate-flip instrument. vgg19_bn, all taps. The case that broke 'rectifications ca
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+**The third leg: an affine normalisation moves λ by ~1.1 and leaves `G` alone.**
+
+`vgg19_bn` has VGG-19's topology, ReLU count, task and stimulus; BatchNorm in
+eval is a per-channel affine map that cannot add a gate. Its 53 `features.*`
+taps average λ **+0.150** against Caffe's +1.055 — and average `G` **23.4%**
+against Caffe's 31.3%, the same order of magnitude.
+
+`r(log₁₀ G, λ)` = **−0.003**: the flip rate carries no information about λ here
+at all. Counting only gates that switch during the sweep gives **+0.323**,
+sign-consistent with the other two runs and positive — the wrong direction for
+the gate-freezing reading.
+
+This is the run that most cleanly separates the two candidate variables: same
+rectifiers, same flip rates, λ shifted by ~0.9 from the Caffe checkpoint. What
+differs is where units sit relative to threshold, not how often they cross it.
+
+One seed, `--reps 50`, pretrained only. The scrambled control is deliberately
+absent — it is invalid on a BN net (see `wiki/Results.md`) and tests nothing
+here regardless. See `wiki/Results.md`.
 
 ## Reproduce
 

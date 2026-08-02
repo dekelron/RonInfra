@@ -457,6 +457,85 @@ Put beside `vgg19_bn`, where an affine normalisation moved the conv stack by
 sets λ is the **operating point** units sit at relative to whatever
 nonlinearity is present — not the count of rectifiers, and not their hardness.
 
+### Gates flip constantly and λ stays 1 — the perturbation reading is falsified
+
+Three runs, `--layers all --reps 50`, pretrained, seed 0:
+[`vgg19-r50-s0-alllayers-caffe-gates`](../results/vgg19-r50-s0-alllayers-caffe-gates/notes.md),
+[`-in1k-gates`](../results/vgg19-r50-s0-alllayers-in1k-gates/notes.md),
+[`vgg19-bn-r50-s0-alllayers-gates`](../results/vgg19-bn-r50-s0-alllayers-gates/notes.md).
+They are the first runs carrying `G(c,f)`, the fraction of units whose sign the
+grating flips ([Method](Method.md#the-gate-flip-count-and-the-operating-point)).
+
+The reading being tested: a ReLU net is piecewise linear, so *while no rectifier
+changes state* `D = |J·(c·g)| = c·|J·g|` exactly, λ = 1 at any depth. It predicts
+that Caffe's flat λ ≈ 1 conv stack is a stack in which nothing switches.
+
+**It is not. Nothing is frozen anywhere.**
+
+| conv stack | n taps | mean λ | λ range | mean `G` at c = 1 | `G` range | mean `G` at c = 1/128 |
+|---|---|---|---|---|---|---|
+| VGG-19 Caffe | 37 | **+1.055** | +0.953 .. +1.194 | **31.3%** | 6.6–47.4% | 15.0% |
+| VGG-19 `IMAGENET1K_V1` | 37 | +0.759 | +0.335 .. +1.669 | 28.1% | 7.2–48.1% | 8.0% |
+| `vgg19_bn` | 53 | +0.150 | −1.694 .. +2.203 | 23.4% | 3.6–45.0% | 5.6% |
+
+33 of Caffe's 37 conv taps sit within 0.15 of λ = 1, and among those the median
+`G` is **35.0%** — a third of all units change sign — with a minimum of 6.6%.
+Every tap in the stack is above 6.6% at full contrast and above 1.2% at
+`c = 1/128`. Counting the whole 45-tap set, **36 taps are "near-linear but
+flipping"** and **zero** are "near-linear and quiet", which is the cell the
+prediction requires.
+
+**And the flip rate does not distinguish the checkpoints that λ separates.**
+Same architecture, same 37 tap names, matched pairwise:
+
+```
+λ      +1.055 → +0.759   (Δ −0.296)
+G      31.3%  → 28.1%    (Δ −3.2 points)
+r(Δλ, ΔG) = −0.209        r(Δλ, Δopen) = +0.004
+```
+
+Within runs there is no relation either: `r(log₁₀ G, λ)` = **+0.107** (Caffe),
+**+0.209** (IN1K), **−0.003** (`vgg19_bn`).
+
+**The refined version fails in the opposite direction.** A fairer test counts
+only gates that switch *during* the sweep, `G(c_max) − G(c_min)` — a unit
+already flipped at the lowest contrast never switches within the sampled range.
+That correlates with λ at **+0.194 / +0.414 / +0.323** across the three runs:
+sign-consistent, and *positive*, i.e. the taps where more gates switch are the
+**more** linear ones. The prediction wanted a negative sign.
+
+#### What survives: ReLU is positively homogeneous
+
+The premise "no rectifier changes state" is *sufficient* for λ = 1 and nowhere
+near necessary, because there is a second exactly-linear regime at the other
+extreme. For a unit with gray pre-activation `z₀` under perturbation `c·g`:
+
+* `|z₀| ≫ c|g|` — gate frozen, `a − a_gray = c·g·1[z₀>0]`. Linear in `c`.
+* `z₀ ≈ 0` — gate flips on essentially every draw, and yet
+  `ReLU(c·g) = c·ReLU(g)` by positive homogeneity, so the mean over draws is
+  `c·E[ReLU(g)]`. **Also exactly linear in `c`.**
+
+A unit sitting *at* threshold is the most-flipping unit there is and contributes
+a perfectly linear response. So λ < 1 requires neither frozen gates nor busy
+ones: it requires `|z₀|` **comparable to** the perturbation scale across the
+sampled contrasts — a scale-matching condition on the operating point, which is
+what the `vgg19_bn` and ViT results already pointed at. Stated as the reading
+that survives, not as a measured result: nothing here measures `z₀` against
+`c|g|` directly, and that is the next instrument.
+
+**One statistic disagrees with itself and is left open** (rule 4). The share of
+a tap's flips already present at `c = 1/128` correlates with λ at **−0.21 /
+−0.65 / −0.83** *within* runs, but its run means go the other way — Caffe 52.4%
+at λ +1.06, IN1K 32.4% at +0.76, `vgg19_bn` 23.3% at +0.15. Within-run and
+between-run answers have opposite signs, so it is not quoted as a finding.
+
+**Caveats.** One seed, `--reps 50`, pretrained only — the scrambled control
+tests nothing here. `G` is a gate count only where a hard gate exists: at `prob`
+it reads 0.000% with `open` 100% in all three runs, trivially, because
+probabilities are positive. Its internal check passes — a conv tap and the ReLU
+immediately after it report **bit-identical** `G`, as `sign(z) ` and `ReLU(z)>0`
+must, on all five such pairs in VGG-19.
+
 ### Skip connections do not hold the response linear
 
 [`resnet50-r250-s0`](../results/resnet50-r250-s0/notes.md) was launched to test

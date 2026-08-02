@@ -16,10 +16,13 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > **Runs from 2026-08-02 also carry a gate-flip count.** `gate_flips` is
 > `G(c,f)`, the fraction of units whose sign the grating flips, and `gate_open`
 > the fraction positive at gray — the operating point itself. Not a third
-> metric: piecewise linearity forces λ = 1 wherever `G` = 0, so the pair is the
-> direct test of the perturbation reading of the λ profile (`wiki/Method.md`).
-> `result.json` carries them under `gates`. Earlier runs lack both and load
-> unchanged; no committed surface moved.
+> metric: it was built as the direct test of the perturbation reading of the λ
+> profile (`wiki/Method.md`), which held that λ = 1 means no rectifier switches.
+> **The first three runs carrying it falsified that** — VGG-19's λ ≈ 1 conv
+> stack flips a median 35% of its units — so read `G` as evidence *against*
+> gate-freezing, not as support for it. `result.json` carries both under
+> `gates`. Earlier runs lack them and load unchanged; no committed surface
+> moved.
 
 > **Runs from 2026-07-28 are the first that are not VGG-19.** `alexnet`,
 > `vgg19_bn`, `resnet50` and `vit_b_16` — all `--layers all`, each with its
@@ -37,6 +40,9 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 
 | Run | Model | Reps | Weights | Headline | Notes |
 |---|---|---|---|---|---|
+| [`vgg19-r50-s0-alllayers-caffe-gates`](vgg19-r50-s0-alllayers-caffe-gates/notes.md) | VGG-19, trained | 50 | converted Caffe | **gate-freezing falsified** | First run carrying `G`. λ ≈ 1 across 33/37 conv taps with **median 35% of units flipping sign**; 36 taps near-linear-but-flipping, 0 near-linear-and-quiet. |
+| [`vgg19-r50-s0-alllayers-in1k-gates`](vgg19-r50-s0-alllayers-in1k-gates/notes.md) | VGG-19, trained | 50 | `IMAGENET1K_V1` | `G` does not track λ | Matched to the Caffe run: λ +1.055 → +0.759 while `G` 31.3% → 28.1%, r(Δλ, ΔG) = −0.209. |
+| [`vgg19-bn-r50-s0-alllayers-gates`](vgg19-bn-r50-s0-alllayers-gates/notes.md) | VGG-19+BN, trained | 50 | `IMAGENET1K_V1` | r(log `G`, λ) = **−0.003** | Same rectifiers, same flip rates, λ +0.150 against Caffe's +1.055. Separates operating point from switch count. |
 | [`resnet50-r250-s0`](resnet50-r250-s0/notes.md) | ResNet-50, trained | 250 | `IMAGENET1K_V1` | peak **0.957 at `layer2.3.relu@2`** | The peak tap is a **reuse slot** — an activation the old hook discarded. `prob` λ −0.223. Residual-stream prediction **falsified**: 0% of deep taps near λ=1. |
 | [`resnet50-r50-s0`](resnet50-r50-s0/notes.md) | ResNet-50, trained | 50 | `IMAGENET1K_V1` | 3/160 on the floor | `conv1` + `bn1` (the affine prefix) at 98.5/98.7% noise; ≤5.1% everywhere else. |
 | [`resnet50-scramble-r250-s0`](resnet50-scramble-r250-s0/notes.md) | ResNet-50, scrambled | 250 | `IMAGENET1K_V1` | **not comparable** | Same BatchNorm decalibration as `vgg19_bn`: r(logits,prob) 0.673, ratio 1.7e-10, λ-R² 0.692. |

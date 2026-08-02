@@ -193,28 +193,29 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
    is excluded. Went *down* in reps rather than up: √5 discrimination for a
    fifth of the r250 cost, where `--reps 1000` would have given √4 for 4×.
 
-6. **Measure the gate flips.** The instrument landed 2026-08-02 and no committed
-   run carries it — activations are not stored, so it cannot be back-computed.
-   The runs that decide the perturbation reading, all `--layers all --reps 50`,
-   pretrained only (the control tests nothing here):
+6. ~~**Measure the gate flips.**~~ **Done — and the gate-freezing reading is
+   dead.** Three runs: `vgg19-r50-s0-alllayers-caffe-gates`, `-in1k-gates`,
+   `vgg19-bn-r50-s0-alllayers-gates`. Caffe's flat λ ≈ 1 conv stack was
+   predicted to be one where nothing switches; it has **median `G` = 35%** of
+   units changing sign, **36 taps near-linear-but-flipping against 0
+   near-linear-and-quiet**. `G` does not separate the checkpoints λ separates
+   (31.3% vs 28.1% for Δλ = −0.296), and the fairer "switches *during* the
+   sweep" test comes out **positive** — +0.19 / +0.41 / +0.32, the opposite
+   sign. What survives is positive homogeneity: `ReLU(c·g) = c·ReLU(g)`, so a
+   unit *at* threshold flips on nearly every draw and is still exactly linear.
+   Full write-up in `wiki/Results.md`; the thread below carries the summary.
 
-   - **`vgg19` caffe** — λ ≈ 1.0 flat through 37 conv taps. Predicts `G` ≈ 0
-     through the whole stack. This is the strong prediction: 37 chances to fail.
-   - **`vgg19` `IMAGENET1K_V1`** — same topology, λ drifting 0.69 → 0.16.
-     Predicts `G` rising with depth, at the same taps where λ falls.
-   - **`vgg19_bn`** — the case that broke "rectifications carry it": conv stack
-     at λ = −0.071 with **zero** rectifiers added over plain VGG-19. If the
-     operating-point reading is right, its `G` must be large where Caffe's is 0,
-     with the same ReLU count. If `G` is also ≈ 0 there, the perturbation
-     reading is wrong and something else sets λ.
-
-   Read `gates.open_fraction` against λ per tap, not just `G`. Then write up in
-   `wiki/Results.md` — and per rule 4, if the three disagree, say so.
-
-   **Do not write it up as "is gating the mechanism".** ViT-B/16 answered that
-   the other way already — λ +0.93 → −0.62 with no hard gate anywhere. What
-   these runs settle is how much of the *ReLU* nets' profile gate-switching
-   accounts for. `open_fraction` is the part that generalises to ViT.
+7. **Measure `z₀` against the perturbation scale.** The falsification leaves one
+   live reading: λ < 1 needs `|z₀|`, the gray pre-activation, to be **comparable
+   to** `c·|g|` over the sampled contrasts — neither ≫ it (gate frozen, λ = 1)
+   nor ≈ 0 (homogeneous, also λ = 1). Nothing measures that yet, and `G` and
+   `open` cannot: both count *signs*, and this is a question about *scale*. The
+   instrument wanted is per-tap distributional — e.g. the fraction of units
+   whose `|z₀|` falls inside the range the sweep actually traverses — and it is
+   computable in the same accumulator style from `|a(gray)|` against the
+   measured per-image deviation, at no extra forward pass. Prediction to beat:
+   it must order Caffe (λ +1.06) above IN1K (+0.76) above `vgg19_bn` (+0.15),
+   which `G` conspicuously does not.
 
 ## Open threads
 
@@ -372,23 +373,36 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   by the input's own mean and variance, so it is not affine and has no
   zero-population floor. Predicting otherwise for ViT was wrong; the rule is
   affineness, exactly.
-- **Why λ ≈ 1 survives 33 layers — the live hypothesis, now constrained.** The
-  grating is a *perturbation* `gray + c·g` about a fixed operating point, and a
-  ReLU net is piecewise linear, so while the perturbation does not flip ReLU
-  gates, `D = |J·(c·g)| = c·|J·g|` exactly — linear in contrast at any depth. On
-  this reading λ < 1 is the signature of gates actually switching with contrast,
-  and the log response is what emerges once they do. Caffe stays in that regime
-  for the whole conv stack; `IMAGENET1K_V1` leaves it gradually from mid-stack.
-  **The direct check now exists and rides on every run** (2026-08-02): `G(c,f)`,
-  the fraction of units whose sign the grating flips, plus the gray gate-open
-  fraction per layer. No extra forward pass and no pre-activation tap — a ReLU
-  is positive iff its input is, so a post-ReLU tap's sign *is* its gate state
-  and a conv tap's sign is the following ReLU's. The prediction is per-tap and
-  sharp: **λ leaves 1 only where `G` leaves 0.** Calibrated offline against a
-  closed form (`test_gate_flips_hit_the_closed_form_at_a_known_threshold`).
-  It is an instrument, not a metric — `D` stays the headline. **No committed run
-  carries it yet**: activations are not stored, so it cannot be back-computed
-  and needs new runs (item 6 below).
+- **Why λ ≈ 1 survives 33 layers — the gate-freezing reading is FALSIFIED**
+  (2026-08-02, three runs). It held that while the perturbation `gray + c·g`
+  does not flip ReLU gates, `D = |J·(c·g)| = c·|J·g|` exactly, so λ = 1 at any
+  depth — and therefore that Caffe's flat conv stack is one where nothing
+  switches. Measured with `G`, the flip fraction: **nothing is frozen anywhere.**
+  33 of Caffe's 37 conv taps are within 0.15 of λ = 1 with **median `G` = 35%**
+  of units changing sign, minimum 6.6%, and every tap above 1.2% even at
+  `c = 1/128`. **36 taps near-linear-but-flipping, 0 near-linear-and-quiet.**
+  `G` also fails to separate the checkpoints λ separates (31.3% vs 28.1% for
+  Δλ = −0.296; `r(Δλ, ΔG)` = −0.209), and within runs `r(log G, λ)` is
+  +0.11 / +0.21 / −0.00. Counting only gates that switch *during* the sweep —
+  the fairer test — gives **+0.19 / +0.41 / +0.32**, sign-consistent and
+  *positive*: more switching goes with **more** linear. See `wiki/Results.md`.
+  - **What survives: ReLU is positively homogeneous.** Frozen gates are
+    *sufficient* for λ = 1, not necessary — there is a second exactly-linear
+    regime at the opposite extreme. A unit at `z₀ ≈ 0` flips on nearly every
+    draw and still gives `ReLU(c·g) = c·ReLU(g)`, exactly linear in `c`. So λ < 1
+    needs neither frozen nor busy gates: it needs `|z₀|` **comparable to** the
+    perturbation scale over the sampled contrasts. That is a scale-matching
+    condition on the operating point — the same variable `vgg19_bn` and ViT
+    pointed at. **Not yet measured**: nothing here compares `z₀` against `c|g|`
+    directly, and that is the next instrument to build.
+  - The instrument itself rides on every run at no extra forward pass and no
+    pre-activation tap — a ReLU is positive iff its input is, so a post-ReLU
+    tap's sign *is* its gate state and a conv tap's sign is the following
+    ReLU's. Calibrated offline against a closed form
+    (`test_gate_flips_hit_the_closed_form_at_a_known_threshold`), and validated
+    on the runs: a conv tap and its ReLU report **bit-identical** `G`, 5/5 pairs.
+    `G` is a gate count only where a hard gate exists — at `prob` it reads
+    0.000% with `open` 100%, trivially, because probabilities are positive.
   - **"Rectifications carry it" is now insufficient — measured 2026-07-28.**
     `vgg19_bn` has VGG-19's topology, ReLU count, task and stimulus, and
     BatchNorm in eval is a per-channel **affine** map that cannot add gates. Its
@@ -396,8 +410,10 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     **+1.06** and IN1K's +0.69 — a shift of ~1.1, larger than the entire Caffe
     depth profile, with zero rectifications added. So the controlling variable
     is the **operating point** units sit at relative to their ReLU, not the
-    number of rectifiers passed. The perturbation reading survives; the
-    "rectifications, not depth" phrasing does not.
+    number of rectifiers passed. The "rectifications, not depth" phrasing does
+    not survive. (Written at the time as "the perturbation reading survives" —
+    **corrected 2026-08-02**: the gate-freezing half of it is now falsified
+    outright, and only the operating-point half stands.)
   - **Depth was already ruled out independently**: AlexNet, 8 weight layers,
     reaches `prob` λ **+0.053** at R² 0.985 and peaks at `prob` over all 21
     taps.
@@ -416,8 +432,10 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     empty tap reads the same λ ≈ 1 at high fit quality, and 26 of the 37 Caffe
     conv taps sit within 0.15 of the noise-floor λ. The reps sweep (item 5) says
     they are real: only `features.0` falls with repetition count, everything
-    else holds `D` to within 3.4%. So gate-flip counting is now testing a
-    hypothesis with no live rival.
+    else holds `D` to within 3.4%. So the gate-flip count, when it came, was
+    testing a hypothesis with no live rival — and **falsified it** (above). The
+    exclusion still matters: it is why "λ ≈ 1 with 35% of gates flipping" reads
+    as a real linear response rather than an empty tap.
 - ~~The **linear-vs-log contrast grid** is the main untested caveat.~~ **Closed —
   tested, and the profile survives.** The whole depth profile was re-measured on
   `--contrasts linear` (same endpoints, even spacing, nothing else changed).
