@@ -382,6 +382,106 @@ def test_committed_runs_predate_the_second_metric():
         result.report()
 
 
+class _ThresholdUnitModel(FeatureModel):
+    """One rectifier per pixel, all closed at gray: a(x) = pixel - threshold.
+
+    Gray is 0.5 and the threshold 0.75, so every gate is shut at the operating
+    point and the grating opens exactly those a sinusoid pushes past it. That
+    makes the flip fraction a closed form (see the test below) rather than
+    something only the code can tell us.
+    """
+
+    threshold = 0.75
+
+    def __init__(self):
+        self.layers = ["gated"]
+
+    def represent(self, image):
+        return {"gated": np.asarray(image[..., 0], dtype=np.float64) - self.threshold}
+
+
+def test_gate_flips_hit_the_closed_form_at_a_known_threshold():
+    """A calibration point for G, in the style of D_mod's c/pi.
+
+    A unit at threshold ``t0`` above gray flips iff ``mu*c*sin(phase) > t0``,
+    i.e. iff ``sin(phase) > t0/(mu*c)``. Phase is uniform over the image, so the
+    fraction of pixels that satisfy it is ``1/2 - arcsin(s)/pi`` for ``s <= 1``
+    and 0 below -- independent of frequency, orientation and the drawn phase.
+    With mu = 0.5 and t0 = 0.25 that is 1/3 of the units at c = 1 and *none* at
+    c = 0.5: the gate count has a contrast threshold even though D does not.
+    """
+    contrasts = (0.4, 0.5, 0.6, 0.8, 1.0)
+    cfg = GratingConfig(size=192, frequencies_cpi=(3.5, 14.0), contrasts=contrasts)
+    result = run_experiment(_ThresholdUnitModel(), cfg, repetitions=12, seed=0,
+                            verbose=False)
+
+    assert result.gate_open is not None
+    assert result.gate_open["gated"] == 0.0  # every gate shut at the operating point
+
+    s = 0.25 / (cfg.mean * np.asarray(contrasts))
+    expected = np.where(s <= 1.0, 0.5 - np.arcsin(np.clip(s, -1, 1)) / np.pi, 0.0)
+    measured = result.gate_flips["gated"]
+    assert measured.shape == (2, len(contrasts))
+    assert np.all(measured[:, :2] < 1e-3), measured  # below threshold: no flips
+    assert np.allclose(measured[:, 2:], expected[None, 2:], atol=0.01), (
+        measured, expected
+    )
+
+
+def test_a_layer_with_no_gate_flips_is_exactly_linear_in_contrast():
+    """The instrument's whole logic, on a case where the answer is known.
+
+    Raw pixels are affine in the input and never cross zero (mu*(1 + c*sin) >= 0),
+    so no gate can flip and the perturbation argument forces lambda = 1. Both
+    halves are measured here: G is 0 everywhere, and lambda_mod is 1 to three
+    decimals. D itself cannot be used for the second half -- it sits on its own
+    zero-population floor at an affine layer and reads 0.92.
+    """
+    cfg = GratingConfig(size=128, frequencies_cpi=(7.0,))
+    result = run_experiment(RawPixelModel(), cfg, repetitions=16, seed=0,
+                            verbose=False)
+
+    assert np.all(result.gate_flips["data"] == 0.0), result.gate_flips["data"]
+    assert result.gate_open["data"] == 1.0  # gray is 0.5: everything positive
+    assert abs(result.mod_results["data"].lam - 1.0) < 0.02
+
+
+def test_gate_flips_round_trip_and_older_runs_still_load():
+    import json
+    import os
+    import tempfile
+
+    cfg = GratingConfig(size=48, frequencies_cpi=(7.0,), contrasts=(0.25, 0.5, 1.0))
+    result = run_experiment(_ThresholdUnitModel(), cfg, repetitions=4, seed=0,
+                            verbose=False)
+    with tempfile.TemporaryDirectory() as tmp:
+        base = os.path.join(tmp, "run")
+        save_result(result, base, metadata={"model": "threshold"})
+        back, _ = load_result(base)
+        assert np.allclose(back.gate_flips["gated"], result.gate_flips["gated"])
+        assert back.gate_open["gated"] == result.gate_open["gated"]
+        assert back.flip_fraction("gated") == result.flip_fraction("gated")
+
+        summary = json.load(open(base + ".json", encoding="utf-8"))
+        gates = summary["layers"][0]["gates"]
+        assert gates["open_fraction"] == result.gate_open["gated"]
+        assert gates["flip_at_max_contrast"] == result.flip_fraction("gated", -1)
+        assert gates["flip_at_min_contrast"] == result.flip_fraction("gated", 0)
+
+        # Every directory committed before 2026-08-02 lacks both arrays and must
+        # still load, with the columns simply absent from the report.
+        stripped = os.path.join(tmp, "old")
+        data = dict(np.load(base + ".npz", allow_pickle=False))
+        data.pop("gate_flips")
+        data.pop("gate_open")
+        np.savez_compressed(stripped + ".npz", **data)
+        old, _ = load_result(stripped)
+        assert old.gate_flips is None and old.gate_open is None
+        assert np.isnan(old.flip_fraction("gated"))
+        assert "flip%" not in old.report()
+        assert np.allclose(old.surfaces["gated"], result.surfaces["gated"])
+
+
 def test_parse_clip_spec():
     assert parse_clip_spec("clip") == ("ViT-B-32", "openai")
     assert parse_clip_spec("clip:ViT-L-14") == ("ViT-L-14", "openai")

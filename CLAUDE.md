@@ -191,6 +191,29 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
    is excluded. Went *down* in reps rather than up: √5 discrimination for a
    fifth of the r250 cost, where `--reps 1000` would have given √4 for 4×.
 
+6. **Measure the gate flips.** The instrument landed 2026-08-02 and no committed
+   run carries it — activations are not stored, so it cannot be back-computed.
+   The runs that decide the perturbation reading, all `--layers all --reps 50`,
+   pretrained only (the control tests nothing here):
+
+   - **`vgg19` caffe** — λ ≈ 1.0 flat through 37 conv taps. Predicts `G` ≈ 0
+     through the whole stack. This is the strong prediction: 37 chances to fail.
+   - **`vgg19` `IMAGENET1K_V1`** — same topology, λ drifting 0.69 → 0.16.
+     Predicts `G` rising with depth, at the same taps where λ falls.
+   - **`vgg19_bn`** — the case that broke "rectifications carry it": conv stack
+     at λ = −0.071 with **zero** rectifiers added over plain VGG-19. If the
+     operating-point reading is right, its `G` must be large where Caffe's is 0,
+     with the same ReLU count. If `G` is also ≈ 0 there, the perturbation
+     reading is wrong and something else sets λ.
+
+   Read `gates.open_fraction` against λ per tap, not just `G`. Then write up in
+   `wiki/Results.md` — and per rule 4, if the three disagree, say so.
+
+   **Do not write it up as "is gating the mechanism".** ViT-B/16 answered that
+   the other way already — λ +0.93 → −0.62 with no hard gate anywhere. What
+   these runs settle is how much of the *ReLU* nets' profile gate-switching
+   accounts for. `open_fraction` is the part that generalises to ViT.
+
 ## Open threads
 
 - **The paper's checkpoint is the converted Caffe one, and on it the paper
@@ -354,8 +377,16 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   this reading λ < 1 is the signature of gates actually switching with contrast,
   and the log response is what emerges once they do. Caffe stays in that regime
   for the whole conv stack; `IMAGENET1K_V1` leaves it gradually from mid-stack.
-  The direct check is still to count ReLU sign flips between gray and grating
-  against `c`; that needs a forward pass, so it is an Actions job.
+  **The direct check now exists and rides on every run** (2026-08-02): `G(c,f)`,
+  the fraction of units whose sign the grating flips, plus the gray gate-open
+  fraction per layer. No extra forward pass and no pre-activation tap — a ReLU
+  is positive iff its input is, so a post-ReLU tap's sign *is* its gate state
+  and a conv tap's sign is the following ReLU's. The prediction is per-tap and
+  sharp: **λ leaves 1 only where `G` leaves 0.** Calibrated offline against a
+  closed form (`test_gate_flips_hit_the_closed_form_at_a_known_threshold`).
+  It is an instrument, not a metric — `D` stays the headline. **No committed run
+  carries it yet**: activations are not stored, so it cannot be back-computed
+  and needs new runs (item 6 below).
   - **"Rectifications carry it" is now insufficient — measured 2026-07-28.**
     `vgg19_bn` has VGG-19's topology, ReLU count, task and stimulus, and
     BatchNorm in eval is a per-channel **affine** map that cannot add gates. Its

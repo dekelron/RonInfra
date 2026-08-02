@@ -27,6 +27,32 @@ one accumulator *number* per layer rather than one accumulator array, and the
 forward pass dominates the arithmetic either way. Runs saved before this
 existed simply carry no D_mod, and load with it set to None.
 
+A **third** quantity rides along on the same terms, and it is an instrument for
+one specific hypothesis rather than another metric:
+
+    G(c,f) = mean over the images of the fraction of units i with
+             sign(a_i(x_r)) != sign(a_i(gray))
+
+A ReLU net is piecewise linear, so about the fixed gray operating point the
+grating is a perturbation gray + c*g and, *while no rectifier changes state*,
+D = |J.(c*g)| = c*|J.g| exactly -- linear in contrast at any depth, i.e.
+lambda = 1. On that reading lambda < 1 is the signature of gates actually
+switching with contrast, and the log law is what emerges once they do. G counts
+the switches, so it turns the reading into a measurement: lambda should leave 1
+exactly where G leaves 0.
+
+It needs no pre-activation tap. A ReLU's output is positive iff its input is,
+so a post-ReLU tap's sign *is* the gate state, and a conv tap's sign is the gate
+state of the ReLU that follows it. Where no hard gate exists (GELU, LayerNorm, a
+logit) G is still well defined -- it is then the fraction of units the
+perturbation carries across zero, not a gate count -- so read it against what
+the tap is.
+
+The gray gate-open fraction is recorded per layer alongside it. That is the
+*operating point* itself: the surviving explanation for every lambda in this
+repo is where units sit relative to their nonlinearity, and it has been argued
+across 29 architecture/checkpoint combinations without once being measured.
+
 Produces, per layer: the L1 surface D(freq, contrast); per-frequency and pooled
 linear fits of D vs log10(contrast) with R^2; and optional figures.
 """
@@ -65,6 +91,24 @@ class ExperimentResult:
     # operations; see the module docstring). None for runs saved before it
     # existed -- every committed directory from before 2026-07-27.
     mean_of_distances: dict[str, np.ndarray] | None = None
+    # layer -> (n_freq, n_contrast) fraction of units whose sign differs from
+    # gray, and layer -> fraction of units positive at gray. The gate-flip
+    # instrument; see the module docstring. None for runs saved before
+    # 2026-08-02.
+    gate_flips: dict[str, np.ndarray] | None = None
+    gate_open: dict[str, float] | None = None
+
+    def flip_fraction(self, layer: str, ci: int = -1) -> float:
+        """Median over frequencies of G at one contrast (default: the highest).
+
+        The single number to read a tap's lambda against: the perturbation
+        argument says lambda = 1 is *forced* wherever this is 0, so a tap at
+        lambda ~ 1 with a large flip fraction, or lambda far from 1 with none,
+        is the observation that would break it.
+        """
+        if self.gate_flips is None:
+            return float("nan")
+        return float(np.median(self.gate_flips[layer][:, ci]))
 
     @cached_property
     def mod_results(self) -> dict[str, LayerLogResult] | None:
@@ -141,6 +185,7 @@ class ExperimentResult:
             f"{'lambda':>9}{'95% CI':>16}{'lam R^2':>9}{'c%lin':>8}{'c%log':>8}"
             + (f"{'chi2/dof':>12}" if self.noise else "")
             + (f"{'lam(mod)':>10}{'R^2(mod)':>10}" if mod_results else "")
+            + (f"{'open%':>8}{'flip%':>8}" if self.gate_flips else "")
         )
         lines.append(header)
         lines.append("-" * len(header))
@@ -163,6 +208,11 @@ class ExperimentResult:
                     f"{mod_results[layer].lam:>+10.2f}"
                     f"{mod_results[layer].lam_r2:>10.3f}"
                     if mod_results else ""
+                )
+                + (
+                    f"{100 * self.gate_open[layer]:>8.1f}"
+                    f"{100 * self.flip_fraction(layer):>8.2f}"
+                    if self.gate_flips else ""
                 )
             )
         lines.append("")
@@ -195,6 +245,14 @@ class ExperimentResult:
                 "mean_r mean_i |a_i(x_r) - gray_i|. That one has no "
                 "zero-population floor, so where a layer's two lambdas disagree "
                 "the primary metric is reporting its own sampling noise."
+            )
+        if self.gate_flips:
+            lines.append(
+                "open%: units positive at the gray operating point. flip%: units "
+                "whose sign the grating changes, at the highest contrast, median "
+                "over frequency. Piecewise linearity forces lambda = 1 while "
+                "flip% is 0, so read the two together -- that is the test of the "
+                "perturbation reading, not a second metric."
             )
         return "\n".join(lines)
 
@@ -255,11 +313,17 @@ def run_experiment(
         )
 
     ref_rep = {k: v.astype(np.float64) for k, v in ref_rep.items()}
+    # The gate state at the operating point. Computed once: it is the reference
+    # every grating's gate state is compared against, and the fraction of it
+    # that is open is the operating point itself.
+    ref_gate = {layer: ref_rep[layer] > 0 for layer in layers}
+    gate_open = {layer: float(np.mean(ref_gate[layer])) for layer in layers}
 
     freqs = cfg.frequency_array
     contrasts = cfg.contrast_array
     surfaces = {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
     mod = {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
+    gate = {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
     nblocks = int(noise_blocks) if noise_blocks and noise_blocks > 1 else 0
     noise = (
         {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
@@ -276,6 +340,10 @@ def run_experiment(
             # a scalar right away, so this is an accumulator number per layer,
             # not an accumulator array -- it costs no memory worth counting.
             mod_sums = {layer: 0.0 for layer in layers}
+            # Same shape of cost as mod_sums: each image's gate-flip count
+            # collapses to a scalar immediately, so this is an accumulator
+            # number per layer and not an accumulator array.
+            gate_sums = {layer: 0.0 for layer in layers}
             blocks = (
                 [{layer: np.zeros_like(ref_rep[layer]) for layer in layers}
                  for _ in range(nblocks)]
@@ -290,6 +358,9 @@ def run_experiment(
                     value = rep[layer].astype(np.float64)
                     sums[layer] += value
                     mod_sums[layer] += l1_distance(value, ref_rep[layer])
+                    gate_sums[layer] += float(
+                        np.mean((value > 0) != ref_gate[layer])
+                    )
                     if blocks is not None:
                         blocks[idx % nblocks][layer] += value
                 if blocks is not None:
@@ -300,6 +371,8 @@ def run_experiment(
                 surfaces[layer][fi, ci] = l1_distance(mu, ref_rep[layer])
                 # D_mod = mean_r mean_i | a_i(x_r) - gray_i |  (mean of distances)
                 mod[layer][fi, ci] = mod_sums[layer] / reps
+                # G = mean_r fraction_i [ sign a_i(x_r) != sign gray_i ]
+                gate[layer][fi, ci] = gate_sums[layer] / reps
                 if blocks is not None:
                     per_block = [
                         l1_distance(blocks[b][layer] / counts[b], ref_rep[layer])
@@ -329,6 +402,7 @@ def run_experiment(
     return ExperimentResult(
         config=cfg, repetitions=reps, layers=layers, surfaces=surfaces,
         results=results, noise=noise, mean_of_distances=mod,
+        gate_flips=gate, gate_open=gate_open,
     )
 
 
@@ -367,6 +441,15 @@ def result_summary(result: ExperimentResult, metadata: dict | None = None) -> di
                     "lambda_ci": [_finite(v) for v in mod.lam_ci],
                     "lambda_r2": _finite(mod.lam_r2),
                     "mean_r2": _finite(mod.mean_r2),
+                }}),
+                # The gate-flip instrument. Recorded per layer so the test of
+                # the perturbation reading -- does lambda leave 1 only where
+                # gates start switching? -- is a read of one committed file
+                # rather than a re-run. The surface itself is in the npz.
+                **({} if result.gate_flips is None else {"gates": {
+                    "open_fraction": _finite(result.gate_open[name]),
+                    "flip_at_min_contrast": _finite(result.flip_fraction(name, 0)),
+                    "flip_at_max_contrast": _finite(result.flip_fraction(name, -1)),
                 }}),
                 "mean_r2": _finite(res.mean_r2),
                 # The headline statistic. Recorded here as well as recomputed on
@@ -449,6 +532,15 @@ def save_result(
             [np.asarray(result.mean_of_distances[name], dtype=np.float64)
              for name in layers],
             axis=0,
+        )
+    if result.gate_flips is not None:
+        arrays["gate_flips"] = np.stack(
+            [np.asarray(result.gate_flips[name], dtype=np.float64)
+             for name in layers],
+            axis=0,
+        )
+        arrays["gate_open"] = np.asarray(
+            [float(result.gate_open[name]) for name in layers], dtype=np.float64
         )
     npz_path = base + ".npz"
     np.savez_compressed(npz_path, **arrays)
@@ -582,10 +674,19 @@ def load_result(path: str) -> tuple[ExperimentResult, dict]:
     if "mean_of_distances" in data.files:
         mod_arr = np.asarray(data["mean_of_distances"], dtype=np.float64)
         mod = {name: mod_arr[i] for i, name in enumerate(layers)}
+    # Likewise absent from every run saved before 2026-08-02. Both arrays are
+    # written together, so either both load or neither does.
+    gate_flips = gate_open = None
+    if "gate_flips" in data.files and "gate_open" in data.files:
+        gate_arr = np.asarray(data["gate_flips"], dtype=np.float64)
+        open_arr = np.asarray(data["gate_open"], dtype=np.float64)
+        gate_flips = {name: gate_arr[i] for i, name in enumerate(layers)}
+        gate_open = {name: float(open_arr[i]) for i, name in enumerate(layers)}
     reps = int(meta.get("repetitions", cfg.repetitions))
     result = ExperimentResult(
         config=cfg, repetitions=reps, layers=layers, surfaces=surfaces,
         results=results, mean_of_distances=mod,
+        gate_flips=gate_flips, gate_open=gate_open,
     )
     return result, meta
 

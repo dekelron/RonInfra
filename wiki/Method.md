@@ -172,6 +172,58 @@ therefore **not comparable in magnitude** between a VLM and a classifier, while
 the ceiling is recoverable from the run directory alone; runs made before
 2026-07-30 lack it and their `V` must be read off the checkpoint.
 
+### The gate-flip count, and the operating point
+
+Every run from 2026-08-02 also records, per layer and per cell:
+
+```
+G(c,f) = (1/250) Σ_r  (1/N_ℓ) Σ_i  1[ sign a_ℓi(x_{c,f,r}) ≠ sign b_ℓi ]
+```
+
+— the fraction of units the grating carries across zero — and, per layer, the
+scalar `open = (1/N_ℓ) Σ_i 1[b_ℓi > 0]`: the fraction of units already positive
+at the gray operating point.
+
+This is **not a third metric**. It is the instrument for the one hypothesis this
+repo has left. A ReLU net is piecewise linear, and the grating is a perturbation
+`gray + c·g` about a fixed operating point, so **while no rectifier changes
+state**
+
+```
+D = |J·(c·g)| = c·|J·g|
+```
+
+exactly — linear in contrast at any depth, λ = 1, whatever the weights and
+however deep the tap. On that reading λ < 1 is the signature of gates actually
+switching, and the log law is what emerges once they do. `G` counts the
+switches, so the prediction is sharp and per-tap: **λ must leave 1 only where
+`G` leaves 0.** A tap at λ ≈ 1 with a large `G`, or a tap far from λ = 1 with
+none, falsifies it.
+
+It needs no extra forward pass and no pre-activation tap. A ReLU is positive iff
+its input is, so a post-ReLU tap's sign *is* the gate state, and a conv tap's
+sign is the gate state of the ReLU that follows it. Cost is one accumulator
+number per layer, exactly as for `D_mod`.
+
+Two things to read it against:
+
+* **Where there is no hard gate — GELU, LayerNorm, a logit — `G` is still
+  defined but is not a gate count.** It is then the fraction of units the
+  perturbation carries across zero, which is a fact about the response, not
+  about rectification. ViT and the MLP-mixers have no gates to count.
+* **`open` is the operating point itself.** Every λ measured here has been
+  explained by where units sit relative to their nonlinearity — across 29
+  architecture/checkpoint combinations, including `vgg19_bn`, which shifts the
+  conv stack by ~1.1 in λ while adding no rectifiers at all. That explanation
+  has never been measured. This is the number that measures it.
+
+`result.json` carries both under `gates`: `open_fraction` (one number per layer,
+gray has no contrast or frequency) and `flip_at_min_contrast` /
+`flip_at_max_contrast`, each a median of `G` over the 8 frequencies.
+`result.npz` carries the full `G(c,f)` surface under `gate_flips`. Runs saved
+before this date have neither and load unchanged, with the report columns
+absent.
+
 ## Log-response regression
 
 Per layer ℓ and per frequency f_k:
@@ -398,11 +450,15 @@ find where the apparent log breaks.
 
 Two the cross-architecture runs opened:
 
-- **Count ReLU sign flips** between gray and grating against `c`. This was the
-  direct test of the gate-flip reading, and ViT-B/16 has now largely answered
-  it the other way — λ runs +0.93 → −0.62 with no hard gates anywhere — so what
-  the count would now measure is how much of the *ReLU* nets' profile it
-  explains, not whether gating is the mechanism.
+- ~~**Count ReLU sign flips**~~ **Implemented 2026-08-02** as `G(c,f)`
+  ([above](#the-gate-flip-count-and-the-operating-point)), recorded on every run
+  at no extra forward pass. Not yet *measured*: activations are not stored, so
+  no committed run carries it and it cannot be back-computed. Read it for what
+  it can still settle — ViT-B/16 already answered the general question the other
+  way (λ +0.93 → −0.62 with no hard gates anywhere), so the count measures **how
+  much of the ReLU nets' profile gate-switching accounts for**, not whether
+  gating is the mechanism. The gray gate-open fraction, recorded alongside, is
+  the more general quantity: it applies to ViT too.
 - **A BatchNorm-safe scrambling control.** `--scramble` permutes every
   `*weight*` tensor, which on a BN net desynchronises γ from
   `running_mean`/`running_var` and decalibrates rather than degrades. Scramble
@@ -410,8 +466,9 @@ Two the cross-architecture runs opened:
 - **Re-run the cross-architecture comparison per frequency.** The λ medians
   differ by less than λ varies across frequency *within* each run, so the
   architecture ordering on this page has not been shown to hold at any single
-  frequency. Needs no new runs — the surfaces are committed — but it does need
-  `result.json` to carry the per-frequency λ, which it currently does not.
+  frequency. Needs no new runs — the surfaces are committed, and `result.json`
+  has carried the per-frequency λ under `per_frequency[].lambda` since
+  2026-07-28.
 
 *(Distance-of-means vs mean-of-distances is done and both are recorded on every
 run. The model pair that was missing here now exists on every run from

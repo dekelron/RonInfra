@@ -13,6 +13,14 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > `mean_of_distances`. Earlier runs simply lack it and load unchanged; adding it
 > left every committed surface bit-identical.
 
+> **Runs from 2026-08-02 also carry a gate-flip count.** `gate_flips` is
+> `G(c,f)`, the fraction of units whose sign the grating flips, and `gate_open`
+> the fraction positive at gray — the operating point itself. Not a third
+> metric: piecewise linearity forces λ = 1 wherever `G` = 0, so the pair is the
+> direct test of the perturbation reading of the λ profile (`wiki/Method.md`).
+> `result.json` carries them under `gates`. Earlier runs lack both and load
+> unchanged; no committed surface moved.
+
 > **Runs from 2026-07-28 are the first that are not VGG-19.** `alexnet`,
 > `vgg19_bn`, `resnet50` and `vit_b_16` — all `--layers all`, each with its
 > scrambled control and its reps companion. `prob` λ across the six
