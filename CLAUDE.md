@@ -18,8 +18,10 @@ adding a new one.
 ## Working on this repo
 
 - Run from the repo root: `python -m log_response.run`, never as a script.
-- `python -m log_response.test_pipeline` is the fast check — 30 tests, no
-  downloaded weights, runs anywhere.
+- `python -m log_response.test_pipeline` is the fast check — 55 tests, no
+  downloaded weights, runs anywhere. 13 of them need torch installed and skip
+  without it, so the sandbox sees 42 and the runner sees all 55. Not fast in the
+  wall-clock sense: it re-fits every committed run, which is minutes.
 - Long runs: background them and wait on the output file rather than watching
   (see the cost table in `wiki/Running.md`). Always `--save-run`; the `D(freq,
   contrast)` surfaces are the expensive product and `--load` re-fits without a
