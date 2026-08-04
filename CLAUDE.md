@@ -236,6 +236,16 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     `IMAGENET1K_V2` on five architectures gives mean |Δλ| **0.295** at `logits`
     and **0.213** at `prob`, against a three-seed sampling sd of 0.043 / 0.007 —
     **7× and 29×**. `resnet50` moves −0.476 at `logits`.
+  - **Magnitude is not kind — and only Caffe VGG changes the profile's shape.**
+    Put all 20 runs on a normalised depth axis: 18 are the same coarse form, a
+    gradual noisy decline from λ ≈ 1 toward 0. The two Oxford/Caffe VGGs are flat
+    at λ ≈ 1 then fall off a cliff. Spearman ρ of λ against depth **−0.17 /
+    −0.23** against −0.28 … −0.91 for everything else, and the largest single
+    tap-to-tap step is **29–30%** of total variation (at `classifier.4`) against
+    3.4–17%. Matched control: torchvision VGG-19, *same 40 taps*, gives −0.643
+    and 10.5%. **Do not read the cross-lineage r as a shape claim** — it is
+    dominated by tap-level wiggle, which is why ViT `.orig` vs `.augreg` scores
+    the lowest r of all (0.386) while both are ordinary gradual profiles.
   - **The direction is not uniform.** ResNet-50/ResNeXt-50/RegNet-Y all move
     −0.40 to −0.48 at `logits`; both MobileNets move **+0.07**. "Better training
     → more log-like" is false as stated. Nor does the ordering track top-1:

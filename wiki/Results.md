@@ -1495,6 +1495,47 @@ Naming them is not testing them. Every pair here moves several ingredients at
 once, because published checkpoints come as bundles — so these are hypotheses
 the runs are consistent with, not conclusions from them.
 
+### Magnitude is not kind — only Caffe VGG changes the profile's *shape*
+
+Everything above measures how *far* λ moves. It does not establish that the
+depth profile changes in **kind**, and mostly it does not. Put all 20 runs on a
+normalised depth axis and 18 of them are the same coarse form — a gradual, noisy
+decline from λ ≈ 1 toward 0. The two Oxford/Caffe VGGs are a different shape:
+flat at λ ≈ 1 for the entire conv stack, then a cliff at one layer.
+
+Two statistics separate them. Spearman ρ of λ against depth says how much
+monotone trend the body carries; the largest single tap-to-tap step, as a share
+of the profile's total variation, says how concentrated the motion is.
+
+| | ρ vs depth | largest single step |
+|---|---|---|
+| **VGG-16 Caffe** | **−0.228** | **30.0%** (`classifier.4`) |
+| **VGG-19 Caffe** | **−0.172** | **29.3%** (`classifier.4`) |
+| AlexNet | −0.829 | 17.1% |
+| `vgg19_bn` | −0.794 | 16.0% |
+| VGG-19 / VGG-16 torchvision | −0.643 / −0.735 | 10.5% / 10.4% |
+| the 15 others | −0.28 … −0.91 | 3.4% – 10.2% |
+
+**The matched control is the strongest part**: same architecture, same 40 taps,
+same stimulus — torchvision VGG-19 gives ρ = −0.643 and a 10.5% largest step
+where Caffe gives −0.172 and 29.3%. The plateau is a property of the Oxford
+weights, not of VGG's shallowness or of its tap count. On Caffe, half the
+profile's entire motion (52%) happens in three taps at the very end.
+
+**And this is why correlation could not answer it.** `r` on raw per-tap λ is
+dominated by tap-level wiggle, so it ranks the ViT `.orig` vs `.augreg` pair as
+the *least* similar of all (r = 0.386) — yet both members of that pair are
+ordinary gradual profiles (ρ −0.431 and −0.284, largest step 4.7% and 6.2%).
+Low correlation there means the wiggles disagree, not that the shape does. The
+two questions need different instruments and give different answers.
+
+So the honest summary is two claims, not one: **lineage reliably moves λ on
+every architecture tested, and on exactly one lineage it also changes the
+functional form.** Which fits everything else here — the Oxford recipe is the
+one whose conv stack stays exactly linear in contrast, and `classifier.4` is the
+single ReLU already measured as carrying 85.5% of that checkpoint's move to the
+log law.
+
 ### What this shows, and what it does not
 
 **Shows.** Weight lineage moves λ generically, not only on VGG-19: **11 pairs
