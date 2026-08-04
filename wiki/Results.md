@@ -1373,6 +1373,21 @@ property of the Oxford training recipe, not of VGG-19. VGG-16's controls behave:
 mean log-R² 0.936 (torchvision) / 0.950 (Caffe) trained against 0.492 / 0.731
 scrambled.
 
+**Replicated on three seeds each, so VGG-16 no longer borrows its noise scale.**
+Six runs, seeds 0–2 on both checkpoints:
+
+| | seed 0 | seed 1 | seed 2 | sd |
+|---|---|---|---|---|
+| conv-stack median λ, torchvision | +0.692 | +0.665 | +0.676 | 0.014 |
+| conv-stack median λ, **Caffe** | **+1.028** | **+1.023** | **+1.029** | **0.003** |
+
+The Caffe conv stack is pinned at λ = 1 to three decimals across independent
+image draws. Against that floor the lineage effect is **22×**: mean \|Δλ\| over
+the 37 shared taps is 0.021 (torchvision seed pairs) and 0.012 (Caffe seed
+pairs) against **0.369** for the nine cross-lineage pairs, and the profile
+correlations do not overlap — 0.992–0.999 within lineage, **0.597–0.683**
+across. `prob` λ sd is 0.017 / 0.015 per lineage.
+
 ### ViT-B/16: the tightest pair here, and the largest effect
 
 `vit_base_patch16_224.orig_in21k_ft_in1k` and `.augreg_in21k_ft_in1k` share the
@@ -1509,12 +1524,18 @@ of the profile's total variation, says how concentrated the motion is.
 
 | | ρ vs depth | largest single step |
 |---|---|---|
-| **VGG-16 Caffe** | **−0.228** | **30.0%** (`classifier.4`) |
+| **VGG-16 Caffe**, 3 seeds | **−0.228 / −0.305 / −0.254** | **30.0 / 28.7 / 28.3%** (`classifier.4`) |
 | **VGG-19 Caffe** | **−0.172** | **29.3%** (`classifier.4`) |
 | AlexNet | −0.829 | 17.1% |
 | `vgg19_bn` | −0.794 | 16.0% |
-| VGG-19 / VGG-16 torchvision | −0.643 / −0.735 | 10.5% / 10.4% |
+| VGG-19 torchvision | −0.643 | 10.5% |
+| VGG-16 torchvision, 3 seeds | −0.735 / −0.757 / −0.736 | 10.4 / 10.0 / 10.6% |
 | the 15 others | −0.28 … −0.91 | 3.4% – 10.2% |
+
+**Both metrics replicate across seeds** — VGG-16 Caffe holds ρ in [−0.31, −0.23]
+and its largest step in [28.3%, 30.0%] while VGG-16 torchvision holds [−0.76,
+−0.74] and [10.0%, 10.6%]. The two do not come close to overlapping, so the
+shape difference is not a seed artifact.
 
 **The matched control is the strongest part**: same architecture, same 40 taps,
 same stimulus — torchvision VGG-19 gives ρ = −0.643 and a 10.5% largest step
@@ -1546,10 +1567,12 @@ in mean \|Δλ\|.
 
 **Does not show.** *Which ingredient* is responsible — every recipe delta is a
 bundle. *A direction* — the sign is architecture-dependent, so "modern recipe →
-more log-like" is false as stated. And these are **one seed each**; the noise
-scale they are read against comes from the older three-seed sweeps on
-`resnet50`, `vgg19` and `vit_b_16`, which is a fair scale for `prob` and
-`logits` but has not been re-measured per architecture here.
+more log-like" is false as stated. And most are **one seed each**; the noise
+scale they are read against comes from three-seed sweeps on `resnet50`,
+`vgg19`, `vit_b_16` and now `vgg16` — a fair scale for `prob` and `logits`, but
+not re-measured on the five V1/V2 pairs or the ViT pair. **VGG-16 is the
+exception**: it carries its own three seeds on both checkpoints, and the lineage
+effect there is 22× its own floor.
 
 Two further caveats. The V2 fits are systematically *worse* — `resnet50` `prob`
 λ-R² drops 0.966 → 0.796 — so per the standing rule those λ are quoted with

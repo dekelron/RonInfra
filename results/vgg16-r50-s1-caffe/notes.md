@@ -8,7 +8,7 @@ Seed replication for the VGG-16 lineage pair, Caffe half, seed 1 of 3. The VGG-1
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Seed 1 of the VGG-16 three-seed sweep on Oxford/Caffe: conv-stack median λ **+1.023**, `prob` λ +0.120 (R² 0.970). With seeds 0 and 2 this gives VGG-16 **its own** noise floor instead of borrowing VGG-19's — conv-stack median sd is 0.014 (torchvision) and **0.003** (Caffe) across the three, so Caffe's λ = 1 conv stack is pinned to three decimals under independent image draws. The lineage effect is **22×** that floor: mean |Δλ| over 37 shared taps is 0.021 / 0.012 within lineage against **0.369** across, and the profile correlations do not overlap (0.992–0.999 vs 0.597–0.683). The plateau-then-cliff shape replicates too. See `wiki/Results.md`.
 
 ## Reproduce
 

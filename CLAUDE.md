@@ -256,6 +256,13 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     VGG-19's +0.690 → +1.045 and 0.328. Caffe holds λ ≈ 1 through the conv stack
     of *both*, so the flat conv stack belongs to the **Oxford recipe**, not to
     VGG-19.
+    - **Three seeds each, so VGG-16 carries its own floor** (the only pair here
+      that does). Conv-stack median sd **0.014** (torchvision) and **0.003**
+      (Caffe) — Caffe is pinned at λ = 1 to three decimals under independent
+      image draws. Lineage effect **22×** that: mean |Δλ| 0.021 / 0.012 within
+      lineage against **0.369** across, correlations 0.992–0.999 vs 0.597–0.683,
+      no overlap. Both shape metrics replicate too (ρ −0.23…−0.31 and largest
+      step 28.3–30.0% for Caffe; −0.74…−0.76 and 10.0–10.6% for torchvision).
   - **The tightest pair gives the biggest effect.** ViT-B/16
     `.orig_in21k_ft_in1k` vs `.augreg_in21k_ft_in1k` hold architecture, 21k
     pretraining, 1k fine-tune and objective all fixed — augmentation and
