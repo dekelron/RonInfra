@@ -1409,6 +1409,35 @@ repo has measured preprocessing moving per-frequency λ by mean 0.320 elsewhere.
 The torchvision row is native, so the three-way column mixes the two regimes and
 should be read as three lineages, not as a calibrated ladder.
 
+### Why the Caffe comparison stops at two architectures
+
+VGG-16 and VGG-19 are not a sample of the Oxford/Caffe era — they are very
+nearly all of it that a torchvision architecture can accept. The reasons differ,
+and the second is dangerous:
+
+- **AlexNet fails loudly.** Different widths, so the state_dict will not load
+  (below).
+- **ResNet fails *silently*, which is worse.** Torchvision's own documentation
+  says it: *"The bottleneck of TorchVision places the stride for downsampling to
+  the second 3x3 convolution while the original paper places it to the first 1x1
+  convolution. This variant improves the accuracy and is known as ResNet V1.5."*
+  The MSRA Caffe ResNet-50 is V1. **Every tensor has the same shape in both**, so
+  `load_state_dict` succeeds, `weights_ok` is set, the digest is recorded, and
+  every guard this repo has passes — while the net computes a different function
+  from the one the weights were fitted to. A "Caffe ResNet-50" run made that way
+  would look exactly like a real one.
+- **GoogLeNet, Inception, Xception, MobileNet, DenseNet, NASNet** are either
+  post-Caffe or natively TensorFlow-trained, so there is no Caffe original to
+  port.
+
+This is the same family as the pre-activation-tap and module-reuse bugs: the
+failure is not an error, it is a plausible number. Rule 3's `weights_ok`
+machinery does not catch it, because the weights genuinely did load. The check
+that *would* catch it is architectural, not numerical — compare the stride
+placement, not the tensor shapes — and nothing here does that yet. Until
+something does, **treat `--weights` with a foreign checkpoint as unsafe for any
+architecture other than `vgg16`/`vgg19`.**
+
 ### AlexNet has no matched pair, and the reason is worse
 
 Attempted, and it cannot be done. **Torchvision's `alexnet` is not the 2012

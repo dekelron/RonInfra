@@ -255,6 +255,17 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     AugReg **reshapes** the depth profile rather than shifting it. Caveat: both
     tags are natively 0.5/0.5 and both ran on shared ImageNet constants —
     identical across the pair, off-native for both.
+  - **The Caffe comparison stops at VGG-16/19, and the reason is a trap.**
+    torchvision's ResNet is **V1.5** — stride on the 3×3 where the original puts
+    it on the first 1×1 (torchvision's own docs say so). MSRA's Caffe ResNet-50
+    is V1, and **every tensor has the same shape**, so `--weights` would load it
+    cleanly, set `weights_ok`, record a digest, pass every guard in this repo —
+    and compute a different function from the one the weights were fitted to.
+    Same family as the pre-activation-tap bug: not an error, a plausible number.
+    The check that catches it is architectural (stride placement), not numerical,
+    and nothing here does it. **Treat `--weights` with a foreign checkpoint as
+    unsafe outside `vgg16`/`vgg19`.** GoogLeNet/Inception/Xception/MobileNet/
+    DenseNet/NASNet have no Caffe original at all.
   - **AlexNet has no matched pair and cannot have one.** torchvision's `alexnet`
     follows *"One weird trick"* (2014), not the 2012 paper — widths
     64/192/384/256/256 against 96/256/384/384/256, no grouping, no LRN — so the
