@@ -22,6 +22,13 @@ per model::
     python -m log_response.run --model resnet152 --weights r152.pth --figures out/
     python -m log_response.run --model vit_b_16 --layers encoder.layers.encoder_layer_5,encoder.ln
 
+A torchvision arch may carry a weights tag. It selects a *training run*, not an
+architecture, and weight lineage has already been measured to move λ further
+than the reps count does, so the pair below is two models rather than one::
+
+    python -m log_response.run --model resnet50 --layers all
+    python -m log_response.run --model resnet50:IMAGENET1K_V2 --layers all
+
 Unusual ImageNet classifiers from timm retain the same 1000-way logits/prob
 measurement. Shared ImageNet normalization is the strict cross-model default;
 ``native`` is a recorded preprocessing sensitivity check::
@@ -271,8 +278,11 @@ def main(argv=None):
         default="synthetic",
         help="'synthetic' (offline), 'data' (raw image pixels -- the paper's "
         "'data' row, and the metric's 1/sqrt(reps) noise floor), a torchvision "
-        "arch name (vgg19, resnet152, "
-        "...), 'timm:MODEL_NAME' for a tagged timm ImageNet classifier, "
+        "arch optionally naming a weights lineage (vgg19, resnet152, "
+        "resnet50:IMAGENET1K_V2 -- same architecture, different training run, "
+        "measured here as a different model), 'timm:MODEL_NAME' for a tagged "
+        "timm ImageNet classifier (the tag is the lineage: resnet50.a1_in1k "
+        "against resnet50.tv_in1k), "
         "'clip[:ARCH[:PRETRAINED]]' (e.g. clip:ViT-B-32, "
         "clip:ViT-B-32:laion2b_s34b_b79k), 'hf:MODEL_ID' for a generative "
         "VLM (e.g. hf:llava-hf/llava-1.5-7b-hf), or 'sam[:MODEL_ID]' for a "

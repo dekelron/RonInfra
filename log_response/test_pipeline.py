@@ -66,6 +66,7 @@ from .features import (
     parse_hf_spec,
     parse_sam_spec,
     parse_timm_spec,
+    parse_torchvision_spec,
 )
 from .experiment import (
     run_experiment,
@@ -492,6 +493,28 @@ def test_parse_clip_spec():
     for bad in ("vgg19", "clip:a:b:c"):
         try:
             parse_clip_spec(bad)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"expected ValueError for {bad!r}")
+
+
+def test_parse_torchvision_spec_carries_the_weights_lineage():
+    # A bare arch has to keep meaning IMAGENET1K_V1: every torchvision run in
+    # results/ was made that way, and their run.json says so.
+    assert parse_torchvision_spec("vgg19") == ("vgg19", "IMAGENET1K_V1")
+    assert parse_torchvision_spec("resnet50:IMAGENET1K_V2") == (
+        "resnet50",
+        "IMAGENET1K_V2",
+    )
+    assert parse_torchvision_spec("vit_b_16:IMAGENET1K_SWAG_LINEAR_V1") == (
+        "vit_b_16",
+        "IMAGENET1K_SWAG_LINEAR_V1",
+    )
+    assert parse_torchvision_spec("resnet50:") == ("resnet50", "IMAGENET1K_V1")
+    for bad in ("", ":IMAGENET1K_V2", "clip:ViT-B-32:openai"):
+        try:
+            parse_torchvision_spec(bad)
         except ValueError:
             pass
         else:
@@ -1465,6 +1488,85 @@ def test_preprocessing_fold_is_exact():
     # A pure gain error would scale one path against the other; pin it at 1.
     gain = float((expected * got).sum() / (got * got).sum())
     assert abs(gain - 1.0) < 1e-12, f"input gain {gain} != 1"
+
+
+def test_caffe_converter_covers_vgg16_without_moving_vgg19():
+    """VGG-16 rides the same conversion; VGG-19's mapping must not shift.
+
+    ``results/*-caffe`` are the paper's reference checkpoint, so a change here
+    that renamed or reordered a single VGG-19 conv would silently invalidate
+    them -- the state_dict would still load, and the numbers would be wrong.
+    Pinned by listing the mapping rather than by trusting the generator.
+    """
+    from .convert_weights import KERAS_CONVS, VGG_BLOCKS, keras_convs, source_url
+
+    assert keras_convs("vgg19") == KERAS_CONVS
+    assert KERAS_CONVS[:3] == ["block1_conv1", "block1_conv2", "block2_conv1"]
+    assert KERAS_CONVS[-1] == "block5_conv4"
+    assert len(KERAS_CONVS) == 16
+
+    # VGG-16 is the same five blocks with three convs in the last three.
+    v16 = keras_convs("vgg16")
+    assert len(v16) == 13
+    assert v16[-1] == "block5_conv3"
+    assert "block3_conv4" not in v16
+    assert v16[:4] == KERAS_CONVS[:4]  # blocks 1-2 are shared
+
+    assert sum(n for _, n in VGG_BLOCKS["vgg16"]) == 13
+    assert sum(n for _, n in VGG_BLOCKS["vgg19"]) == 16
+    assert source_url("vgg16").endswith(
+        "vgg16/vgg16_weights_tf_dim_ordering_tf_kernels.h5"
+    )
+    try:
+        keras_convs("vgg13")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError for an unsupported arch")
+
+
+def test_a_mistyped_weights_tag_cannot_become_a_random_init_run():
+    """An unknown torchvision tag must raise, not look like a blocked download.
+
+    Both failures surface as an exception from ``model_fn(weights=...)``, so
+    without an explicit check a typo would be reported as a network problem --
+    and under ``--allow-random-init`` would quietly produce an untrained run
+    whose ``weights_source`` names a checkpoint it never loaded. Needs no
+    download: the tag list is enum metadata and the raise precedes any fetch.
+    """
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import torchvision  # noqa: F401
+    except Exception as exc:
+        raise unittest.SkipTest(f"torch/torchvision not installed ({exc})")
+
+    from .features import TorchvisionModel, available_weight_tags
+
+    assert "IMAGENET1K_V1" in available_weight_tags("resnet50")
+    assert "IMAGENET1K_V2" in available_weight_tags("resnet50")
+    # vgg19 was never retrained by torchvision, so it has V1 and nothing else.
+    assert available_weight_tags("vgg19") == ["IMAGENET1K_V1"]
+
+    for allow in (False, True):
+        try:
+            TorchvisionModel(arch="vgg19:IMAGENET1K_V2", allow_random_init=allow)
+        except ValueError as exc:
+            assert "no weights tag" in str(exc), exc
+        else:
+            raise AssertionError(
+                f"a bad tag was accepted with allow_random_init={allow}"
+            )
+
+    # The other half: naming a tag and also passing a local file is ambiguous
+    # about which lineage a run measured, so it is refused rather than resolved.
+    try:
+        TorchvisionModel(arch="resnet50:IMAGENET1K_V2", weights_path="nonexistent.pth")
+    except ValueError as exc:
+        assert "supplies another one" in str(exc), exc
+    else:
+        raise AssertionError("a tag plus a weights_path was accepted")
 
 
 def test_weights_digest_is_stable_across_resaves():

@@ -12,7 +12,10 @@ on:
   workflow_dispatch:
     inputs:
       model:
-        description: "Model spec (vgg19, resnet152, vit_b_16, clip:ViT-B-32, ...)"
+        description: "Model spec (vgg19, resnet152, vit_b_16, clip:ViT-B-32, ...).
+          A torchvision arch may name a weights tag — 'resnet50:IMAGENET1K_V2'
+          is the same architecture as 'resnet50' retrained by a different
+          recipe, and the two are measured as different models on purpose."
         default: vgg19
       reps:
         description: "Random orient/phase draws per (contrast, frequency) cell"
@@ -75,9 +78,10 @@ on:
         options: [both, pretrained, scrambled]
         default: both
       weights:
-        description: "Which checkpoint. 'canonical' = torchvision IMAGENET1K_V1;
-          'caffe' = the original Oxford VGG-19 converted on the runner. The two
-          disagree, so the comparison needs both — vgg19 only."
+        description: "Which checkpoint. 'canonical' = the torchvision weights
+          named by 'model' (IMAGENET1K_V1 unless the spec says otherwise);
+          'caffe' = the original Oxford weights converted on the runner. The two
+          disagree, so the comparison needs both — vgg16 and vgg19 only."
         type: choice
         options: [canonical, caffe]
         default: canonical
@@ -121,9 +125,9 @@ jobs:
       SCRAMBLE: ${{ matrix.scramble }}
       WEIGHTS: ${{ inputs.weights || 'canonical' }}
       # Kept out of the workspace so `git add results/<slug>` can never sweep a
-      # 575 MB checkpoint into a commit.
-      CAFFE_H5: ${{ github.workspace }}/../caffe-cache/vgg19_keras.h5
-      CAFFE_PTH: ${{ github.workspace }}/../caffe-cache/vgg19_caffe.pth
+      # 575 MB checkpoint into a commit. The file names are derived from the
+      # arch in the convert step, since vgg16 and vgg19 share this path.
+      CAFFE_DIR: ${{ github.workspace }}/../caffe-cache
 
     steps:
       - uses: actions/checkout@v4
@@ -170,7 +174,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/../caffe-cache
-          key: caffe-vgg19-h5-v1
+          # Per model: vgg16 and vgg19 are different files in the same directory.
+          key: caffe-${{ inputs.model }}-h5-v1
 
       - name: Fetch and convert the Caffe checkpoint
         if: ${{ inputs.weights == 'caffe' }}
@@ -180,19 +185,41 @@ jobs:
         # axis. Measured at 2.9e-8, but the run should re-establish that rather
         # than inherit the claim.
         run: |
+          # Only the VGG family has an Oxford/Caffe release to compare against;
+          # anything else would silently convert nothing and run the canonical
+          # weights while the slug claimed 'caffe'.
+          arch="${MODEL%%:*}"
+          case "$arch" in
+            vgg16|vgg19) ;;
+            *) echo "::error::weights=caffe has no checkpoint for '$arch'"; exit 1 ;;
+          esac
           pip install h5py
-          mkdir -p "$(dirname "$CAFFE_H5")"
-          python -m log_response.convert_weights \
-            --cache "$CAFFE_H5" --out "$CAFFE_PTH" --verify
+          mkdir -p "$CAFFE_DIR"
+          python -m log_response.convert_weights --arch "$arch" \
+            --cache "$CAFFE_DIR/${arch}_keras.h5" \
+            --out "$CAFFE_DIR/${arch}_caffe.pth" --verify
+          echo "CAFFE_PTH=$CAFFE_DIR/${arch}_caffe.pth" >> "$GITHUB_ENV"
           df -BG --output=avail / | tail -1 | tr -d ' ' | xargs echo "disk left:"
 
       # Resolved before the measurement so a name clash costs seconds, not the
       # 12-120 min the grid takes.
       - name: Resolve the run slug
         run: |
+          # A torchvision weights tag names a training run, not an architecture,
+          # so it comes out of the model part of the slug and goes back as a
+          # marker: resnet50-r50-s0 and resnet50-r50-s0-v2 then read as one arch
+          # measured on two lineages, which is what they are. CLIP specs also
+          # contain colons but never this shape, so they are left alone.
+          spec="$MODEL"; tagmark=""
+          case "$spec" in
+            *:IMAGENET1K_*)
+              tagmark=$(printf '%s' "${spec#*:}" \
+                | tr 'A-Z_' 'a-z-' | sed 's/^imagenet1k-//')
+              spec="${spec%%:*}" ;;
+          esac
           # results/ slug convention: <model>[-<variant>]-r<reps>-s<seed>,
           # with the model spec reduced to slug-safe characters.
-          slug=$(printf '%s' "$MODEL" | tr -c 'a-zA-Z0-9' '-' | sed 's/-\{1,\}/-/g; s/^-//; s/-$//')
+          slug=$(printf '%s' "$spec" | tr -c 'a-zA-Z0-9' '-' | sed 's/-\{1,\}/-/g; s/^-//; s/-$//')
           if [ "$SCRAMBLE" = "true" ]; then slug="$slug-scramble"; fi
           slug="$slug-r$REPS-s$SEED"
           # A permutation sweep holds --seed fixed and varies --scramble-seed, so
@@ -208,6 +235,9 @@ jobs:
           # Weight lineage is a real axis of disagreement, not a footnote, so a
           # caffe run labels itself rather than relying on the operator to.
           if [ -z "$suffix" ] && [ "$WEIGHTS" = "caffe" ]; then suffix="caffe"; fi
+          # Always appended, never optional: two lineages of one arch differ in
+          # nothing else the slug records, so dropping this collides them.
+          if [ -n "$tagmark" ]; then suffix="${suffix:+$suffix-}$tagmark"; fi
           if [ -n "$suffix" ]; then slug="$slug-$suffix"; fi
 
           # The slug encodes model, variant, reps and seed -- but NOT weight

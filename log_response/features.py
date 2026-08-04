@@ -186,6 +186,46 @@ def parse_timm_spec(spec: str) -> str:
     return spec[5:]
 
 
+DEFAULT_TV_WEIGHTS = "IMAGENET1K_V1"
+
+
+def parse_torchvision_spec(spec: str) -> tuple[str, str]:
+    """Parse ``ARCH[:WEIGHTS_TAG]``; a bare arch means ``IMAGENET1K_V1``.
+
+    The tag is torchvision's own ``WeightsEnum`` member name, and it names a
+    *training run*, not an architecture: ``resnet50`` and
+    ``resnet50:IMAGENET1K_V2`` are the same 25.6 M parameters fitted twice, by
+    recipes that differ in epochs, augmentation and loss. This repo has already
+    found weight lineage to move λ further than the reps count does
+    (``wiki/Results.md``), so the two are measured as different models on
+    purpose rather than treated as interchangeable.
+
+    Examples: ``vgg19`` -> ('vgg19', 'IMAGENET1K_V1');
+    ``resnet50:IMAGENET1K_V2`` -> ('resnet50', 'IMAGENET1K_V2').
+    """
+    parts = spec.split(":")
+    if len(parts) > 2 or not parts[0]:
+        raise ValueError(
+            f"not a torchvision model spec: {spec!r} (expected ARCH or "
+            "ARCH:WEIGHTS_TAG, e.g. resnet50:IMAGENET1K_V2)"
+        )
+    tag = parts[1] if len(parts) == 2 and parts[1] else DEFAULT_TV_WEIGHTS
+    return parts[0], tag
+
+
+def available_weight_tags(arch: str) -> list[str]:
+    """The torchvision weight tags for ``arch``, or [] if they can't be listed."""
+    import torchvision
+
+    getter = getattr(torchvision.models, "get_model_weights", None)
+    if getter is None:  # torchvision < 0.13, before the multi-weight API
+        return []
+    try:
+        return [w.name for w in getter(arch)]
+    except Exception:
+        return []
+
+
 def load_prompts(path: str) -> list[str]:
     """Load a zero-shot prompt set: one prompt per line, blank lines ignored."""
     with open(path, encoding="utf-8") as fh:
@@ -391,9 +431,11 @@ class TorchvisionModel(_TorchBackend):
         import torch
         import torchvision
 
+        arch, weights_tag = parse_torchvision_spec(arch)
         self.torch = torch
         self.device = torch.device(device)
         self.arch = arch
+        self.weights_tag = weights_tag
         self._norm_mean, self._norm_std = IMAGENET_MEAN, IMAGENET_STD
         # Whether this model carries trained weights. False means the measured
         # numbers are meaningless (the log response is a consequence of
@@ -401,12 +443,32 @@ class TorchvisionModel(_TorchBackend):
         self.weights_ok = False
         self.weights_source = "random init"
 
+        if weights_tag != DEFAULT_TV_WEIGHTS and weights_path is not None:
+            raise ValueError(
+                f"{arch}:{weights_tag} names a torchvision checkpoint but "
+                f"weights_path={weights_path!r} supplies another one. Which "
+                "lineage produced a run is the thing being measured here, so "
+                "recording one and loading the other is refused rather than "
+                "silently resolved."
+            )
+
         model_fn = getattr(torchvision.models, arch)
         if pretrained and weights_path is None:
+            # Checked *before* the load, not inside the except below: a
+            # mistyped tag raises the same exception as a blocked download, so
+            # without this it would be reported as a network problem and, under
+            # --allow-random-init, quietly become an untrained run stamped with
+            # a tag it never loaded. That is the trap CLAUDE.md keeps closed.
+            tags = available_weight_tags(arch)
+            if tags and weights_tag not in tags:
+                raise ValueError(
+                    f"torchvision {arch} has no weights tag {weights_tag!r}. "
+                    f"Available: {', '.join(tags)}"
+                )
             try:
-                self.net = model_fn(weights="IMAGENET1K_V1")
+                self.net = model_fn(weights=weights_tag)
                 self.weights_ok = True
-                self.weights_source = f"torchvision {arch} IMAGENET1K_V1"
+                self.weights_source = f"torchvision {arch} {weights_tag}"
             except Exception as exc:  # weight download blocked, etc.
                 if not allow_random_init:
                     raise RuntimeError(

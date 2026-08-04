@@ -1,9 +1,17 @@
-"""Convert the original Caffe/Keras VGG-19 ImageNet weights to torchvision layout.
+"""Convert the original Caffe/Keras VGG ImageNet weights to torchvision layout.
 
-Why this exists: where `download.pytorch.org` is blocked (this sandbox), the
-Oxford VGG-19 weights are still reachable as Keras HDF5 on
-`storage.googleapis.com`. They are also the *reference* checkpoint for
-reproducing the original paper, so this is not only a fallback.
+Handles ``vgg16`` and ``vgg19``. Both Keras files are direct conversions of the
+Oxford VGG group's own Caffe releases, so they are the *reference* checkpoints
+for reproducing the 2014 paper — and, separately, the reason this module exists
+at all: where `download.pytorch.org` is blocked (this sandbox), these weights
+are still reachable as Keras HDF5 on `storage.googleapis.com`.
+
+VGG-16 is here to test whether the checkpoint-lineage result generalises. On
+VGG-19 the paper's numbers reproduce on these weights and not on torchvision's
+`IMAGENET1K_V1` (`wiki/Results.md`); VGG-16 is the same two lineages, the same
+conversion path and a different architecture, so it separates "the Oxford and
+torchvision recipes give different contrast responses" from "VGG-19 happened
+to."
 
 Four differences have to be bridged, and the fourth is the delicate one:
 
@@ -38,6 +46,7 @@ Usage::
 
     python -m log_response.convert_weights --out vgg19_caffe.pth --verify
     python -m log_response.run --model vgg19 --weights vgg19_caffe.pth --reps 50
+    python -m log_response.convert_weights --arch vgg16 --out vgg16_caffe.pth --verify
 
 Note on digests: this reproduces the weights behind ``results/vgg19-r50-s0``
 tensor-for-tensor (all 38 verified ``torch.equal``), but ``torch.save`` does not
@@ -54,17 +63,38 @@ import urllib.request
 
 import numpy as np
 
-SOURCE_URL = (
-    "https://storage.googleapis.com/tensorflow/keras-applications/"
-    "vgg19/vgg19_weights_tf_dim_ordering_tf_kernels.h5"
-)
+def source_url(arch: str) -> str:
+    """The Keras-hosted HDF5 for ``arch`` (a straight port of the Caffe release)."""
+    return (
+        f"https://storage.googleapis.com/tensorflow/keras-applications/"
+        f"{arch}/{arch}_weights_tf_dim_ordering_tf_kernels.h5"
+    )
 
-# Keras block/conv names in forward order; zips against torchvision's Conv2d list.
-KERAS_CONVS = [
-    f"block{block}_conv{i}"
-    for block, count in [(1, 2), (2, 2), (3, 4), (4, 4), (5, 4)]
-    for i in range(1, count + 1)
-]
+
+# Convolutions per block. The two nets differ only in blocks 3-5 (three convs
+# against four), and everything downstream -- the 7x7x512 flatten, the fc
+# names -- is shared, so one code path covers both.
+VGG_BLOCKS = {
+    "vgg16": ((1, 2), (2, 2), (3, 3), (4, 3), (5, 3)),
+    "vgg19": ((1, 2), (2, 2), (3, 4), (4, 4), (5, 4)),
+}
+
+
+def keras_convs(arch: str) -> list[str]:
+    """Keras block/conv names in forward order; zips against torchvision's Conv2ds."""
+    if arch not in VGG_BLOCKS:
+        raise ValueError(
+            f"unsupported arch {arch!r}; known: {', '.join(sorted(VGG_BLOCKS))}"
+        )
+    return [
+        f"block{block}_conv{i}"
+        for block, count in VGG_BLOCKS[arch]
+        for i in range(1, count + 1)
+    ]
+
+
+SOURCE_URL = source_url("vgg19")
+KERAS_CONVS = keras_convs("vgg19")
 
 IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float64)
 IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float64)
@@ -98,11 +128,13 @@ def fold_preprocessing(
     return weight, bias
 
 
-def convert(h5_path: str) -> dict:
+def convert(h5_path: str, arch: str = "vgg19") -> dict:
     """Read the Keras HDF5 and return a torchvision-compatible ``state_dict``."""
     import h5py
     import torch
     import torchvision
+
+    convs = keras_convs(arch)
 
     with h5py.File(h5_path, "r") as fh:
 
@@ -111,17 +143,17 @@ def convert(h5_path: str) -> dict:
             key = next(k for k in group.keys() if f"_{kind}_" in k)
             return np.asarray(group[key], dtype=np.float64)
 
-        net = torchvision.models.vgg19(weights=None)
+        net = getattr(torchvision.models, arch)(weights=None)
         conv_idx = [
             i for i, m in enumerate(net.features) if isinstance(m, torch.nn.Conv2d)
         ]
-        if len(conv_idx) != len(KERAS_CONVS):
+        if len(conv_idx) != len(convs):
             raise RuntimeError(
-                f"expected {len(KERAS_CONVS)} convs, found {len(conv_idx)}"
+                f"{arch}: expected {len(convs)} convs, found {len(conv_idx)}"
             )
 
         state: dict = {}
-        for n, (idx, name) in enumerate(zip(conv_idx, KERAS_CONVS)):
+        for n, (idx, name) in enumerate(zip(conv_idx, convs)):
             weight = read(name, "W").transpose(3, 2, 0, 1)  # -> (out,in,kh,kw)
             bias = read(name, "b")
             if n == 0:
@@ -197,14 +229,21 @@ def main(argv=None) -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--out", required=True, help="path to write the state_dict to")
     p.add_argument(
+        "--arch",
+        default="vgg19",
+        choices=sorted(VGG_BLOCKS),
+        help="which VGG to convert (default: vgg19, the paper's net)",
+    )
+    p.add_argument(
         "--source",
-        default=SOURCE_URL,
-        help="Keras VGG-19 .h5 path or URL (default: the Google-hosted mirror)",
+        default=None,
+        help="Keras .h5 path or URL (default: the Google-hosted mirror for --arch)",
     )
     p.add_argument(
         "--cache",
-        default="vgg19_keras.h5",
-        help="where to keep the downloaded .h5 (reused if already present)",
+        default=None,
+        help="where to keep the downloaded .h5 (reused if already present; "
+        "default: <arch>_keras.h5)",
     )
     p.add_argument(
         "--verify",
@@ -212,6 +251,10 @@ def main(argv=None) -> None:
         help="check the folded conv1 against the caffe path and fail above 1e-5",
     )
     args = p.parse_args(argv)
+    if args.source is None:
+        args.source = source_url(args.arch)
+    if args.cache is None:
+        args.cache = f"{args.arch}_keras.h5"
 
     h5_path = args.source
     if not os.path.exists(h5_path):
@@ -220,11 +263,14 @@ def main(argv=None) -> None:
             print(f"downloading {args.source} -> {h5_path}")
             urllib.request.urlretrieve(args.source, h5_path)
 
-    state = convert(h5_path)
+    state = convert(h5_path, args.arch)
     import torch
 
     torch.save(state, args.out)
-    print(f"wrote {args.out} ({sum(v.numel() for v in state.values())} parameters)")
+    print(
+        f"wrote {args.out}: {args.arch}, "
+        f"{sum(v.numel() for v in state.values())} parameters"
+    )
 
     if args.verify:
         error = verify(h5_path, state)
