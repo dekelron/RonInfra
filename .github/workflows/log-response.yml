@@ -42,6 +42,15 @@ on:
       layers:
         description: "Comma-separated module names to tap (blank = per-arch default)"
         default: ""
+      unit_taps:
+        description: "Comma-separated taps to keep PER-UNIT surfaces for (blank =
+          none). D is an L1 norm, so λ measures whether the response's magnitude
+          is a power of contrast, not whether the response is — a mean shift
+          growing exactly like c while rotating through different units reads
+          λ = 1. These arrays are what that question is asked of. No extra
+          forward passes, but ~3.4 MB per 4096-unit tap lands in git, and a
+          single VGG conv tap would be 1.4 GB, so name a handful of head taps."
+        default: ""
       size:
         description: "Grating size in pixels (blank = the back-end's native input
           size). Frequencies are in cycles per *image*, so this does not change
@@ -117,6 +126,7 @@ jobs:
       FREQUENCIES: ${{ inputs.frequencies }}
       CONTRASTS: ${{ inputs.contrasts }}
       LAYERS: ${{ inputs.layers }}
+      UNIT_TAPS: ${{ inputs.unit_taps }}
       SIZE: ${{ inputs.size }}
       DTYPE: ${{ inputs.dtype }}
       INSTRUCTION: ${{ inputs.instruction }}
@@ -280,6 +290,7 @@ jobs:
           if [ -n "$FREQUENCIES" ]; then args+=(--frequencies "$FREQUENCIES"); fi
           if [ -n "$CONTRASTS" ]; then args+=(--contrasts "$CONTRASTS"); fi
           if [ -n "$LAYERS" ]; then args+=(--layers "$LAYERS"); fi
+          if [ -n "$UNIT_TAPS" ]; then args+=(--unit-taps "$UNIT_TAPS"); fi
           if [ -n "$SIZE" ]; then args+=(--size "$SIZE"); fi
           if [ -n "$DTYPE" ]; then args+=(--dtype "$DTYPE"); fi
           if [ -n "$INSTRUCTION" ]; then args+=(--instruction "$INSTRUCTION"); fi

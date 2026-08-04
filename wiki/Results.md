@@ -521,7 +521,10 @@ ones: it requires `|z₀|` **comparable to** the perturbation scale across the
 sampled contrasts — a scale-matching condition on the operating point, which is
 what the `vgg19_bn` and ViT results already pointed at. Stated as the reading
 that survives, not as a measured result: nothing here measures `z₀` against
-`c|g|` directly, and that is the next instrument.
+`c|g|` directly. That instrument now exists —
+[`--unit-taps`](Method.md#per-unit-detail-for-the-taps-that-ask-for-it), whose
+`scale_matched` is the fraction of units the sweep's range brackets — but it has
+not yet been read on a net.
 
 **One statistic disagrees with itself and is left open** (rule 4). The share of
 a tap's flips already present at `c = 1/128` correlates with λ at **−0.21 /
@@ -535,6 +538,72 @@ it reads 0.000% with `open` 100% in all three runs, trivially, because
 probabilities are positive. Its internal check passes — a conv tap and the ReLU
 immediately after it report **bit-identical** `G`, as `sign(z) ` and `ReLU(z)>0`
 must, on all five such pairs in VGG-19.
+
+### The "1→0 skip near `prob`" is two fc ReLUs, and both checkpoints have them
+
+Caffe VGG's depth profile is the one shape among 20 runs that is flat at λ ≈ 1
+and then falls off a cliff ([below](#magnitude-is-not-kind--only-caffe-vgg-changes-the-profiles-shape)).
+Read per tap through the head, on the four committed `--layers all --reps 50`
+runs, the cliff is **one rectifier**:
+
+| | fc6 `classifier.0` | ReLU `.1` | fc7 `.3` | **ReLU `.4`** | fc8 `.6` | `prob` |
+|---|---|---|---|---|---|---|
+| [VGG-19 Caffe](../results/vgg19-r50-s0-alllayers-caffe/notes.md) | +1.004 | +0.707 | +1.110 | **+0.231** | +0.258 | +0.059 |
+| [VGG-19 `IMAGENET1K_V1`](../results/vgg19-r50-s0-alllayers-in1k/notes.md) | +0.568 | +0.321 | +0.675 | **−0.022** | +0.187 | +0.116 |
+| [VGG-16 Caffe](../results/vgg16-r50-s0-caffe/notes.md) | +0.970 | +0.769 | +1.140 | **+0.258** | +0.401 | +0.135 |
+| [VGG-16 torchvision](../results/vgg16-r50-s0/notes.md) | +0.477 | +0.152 | +0.365 | **−0.078** | +0.209 | +0.093 |
+
+The bold step's profile-F intervals do not overlap in any row (Caffe VGG-19:
+[+0.96, +1.22] → [+0.14, +0.32]). Note also that **fc7 raises λ back above 1**
+before the drop, so the head is a zigzag rather than a single edge.
+
+**And it is not a Caffe property.** Split VGG-19's transitions by what precedes
+the rectifier:
+
+| VGG-19 | conv → ReLU (n = 16) | fc → ReLU (n = 2) |
+|---|---|---|
+| Caffe | mean Δλ **+0.026** | mean Δλ **−0.588** |
+| `IMAGENET1K_V1` | mean Δλ **−0.140** | mean Δλ **−0.472** |
+
+Both checkpoints' fc ReLUs compress hard, at the same two taps, by comparable
+amounts. What is lineage-specific is the *conv* stack: Caffe's conv ReLUs spend
+nothing, so the whole move to the log law is left to the two head ReLUs every
+VGG has. This sharpens ["the ReLU sawtooth is absent on
+Caffe"](#the-sawtooth-tracks-the-training-recipe-not-the-architecture) — true of
+its conv stack, false of its head.
+
+**Two explanations are eliminated from the committed runs.** *Sampling noise*:
+against the r250 companion, every head tap is at **≤ 2.8%** noise fraction at
+every cell, including `c = 1/128`, where a dead tap would read 100%. *Phase
+cancellation*: `D_mod`, which never averages across images and so cannot cancel,
+agrees with `D` to |Δλ| ≤ **0.04** at every head tap on Caffe (≤ 0.06 on
+torchvision).
+
+**But the obvious reading — "the ReLU compresses" — is falsified offline.** λ ≈ 1
+at `classifier.3` means the pre-activation arriving at that ReLU is proportional
+to contrast in *both* its parts: the deterministic per-unit mean shift `D`
+measures, and the per-image spread about it — `z₀ + c·μ + c·h`. Push that
+through a ReLU and compute this repo's metric on the standard 14-contrast grid.
+Over 36 configurations spanning the (μ, h, z₀) space, λ lands in **[+0.74,
++1.80]** at R² ≥ 0.996. It never comes near +0.23; the lowest value is a
+clipping regime (`z₀ ~ N(+3, 1)`, μ = 10) that is nothing like where fc7 sits.
+Pinned by `test_a_relu_on_a_contrast_linear_input_cannot_reach_the_head_lambda`,
+so it is reproducible from the repo rather than a number quoted from a
+scratchpad.
+
+**What resolves it is that `D` is a norm.** `D = mean_i |μ_i − gray_i|` is L1, so
+λ measures whether the response's *magnitude* is a power of contrast, not
+whether the response is. A mean-shift vector that grows exactly like `c` while
+redistributing across units reads λ = 1 and is strongly nonlinear — and a
+rectifier, being per-unit, reads out exactly the information the norm discards.
+So `classifier.3` at λ = 1.11 does not license "the input to that ReLU is
+linear in contrast"; it licenses "its L1 norm is".
+
+This is a caveat on **every λ in this repo**, not only on the head, and it is
+what [`--unit-taps`](Method.md#per-unit-detail-for-the-taps-that-ask-for-it) was
+built to test: `carrier_overlap` separates a fixed carrier set from a rotating
+one, which no scalar here can. Nothing has been measured with it yet — the
+prediction on record is that the conv stack is high-overlap and the head is not.
 
 ### Skip connections do not hold the response linear
 

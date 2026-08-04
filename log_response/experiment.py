@@ -53,6 +53,27 @@ The gray gate-open fraction is recorded per layer alongside it. That is the
 repo is where units sit relative to their nonlinearity, and it has been argued
 across 29 architecture/checkpoint combinations without once being measured.
 
+All three collapse the layer to one number per cell, and that is a real limit
+rather than a presentational one. ``D = mean_i |mu_i - gray_i|`` is an **L1
+norm** of the mean-shift vector, so lambda measures whether the response's
+*magnitude* grows as a power of contrast -- not whether the response does. A
+mean shift that grows exactly proportionally to c while rotating through
+different units reads lambda = 1 and is strongly nonlinear; a rectifier, being
+per-unit, reads out exactly the information the norm discards.
+
+``unit_taps`` therefore keeps the per-unit vector for a named handful of taps,
+instead of collapsing it:
+
+    shift_i(c,f)    = | mu_i(c,f) - a_i(gray) |        -- D is its mean over i
+    distance_i(c,f) = mean_r | a_i(x_r) - a_i(gray) |  -- D_mod is its mean over i
+    gray_i          = a_i(gray)                        -- the operating point
+
+It costs **no extra forward passes** (mu is already accumulated; the per-image
+absolute deviation is already computed for D_mod) but it is not free in storage:
+a 4096-unit tap on the standard grid is 3.4 MB compressed, against a few KB for
+the whole of an ordinary run. Hence a byte budget and an explicit tap list -- naming taps
+is deliberate, and `--layers all` must never reach this.
+
 Produces, per layer: the L1 surface D(freq, contrast); per-frequency and pooled
 linear fits of D vs log10(contrast) with R^2; and optional figures.
 """
@@ -77,6 +98,47 @@ from .fit import (
 )
 
 
+# Per-unit detail is stored float32: it is 10-100x the rest of a run directory,
+# and nothing read off it needs more than 7 digits. The arrays are computed in
+# float64 and cast on save, so an in-memory result reproduces D exactly and a
+# reloaded one to float32 precision.
+UNIT_DTYPE = np.float32
+# Refuse rather than silently write 1.4 GB: a single conv tap on VGG-19 is
+# 64x224x224 units, which is what `--unit-taps features.0` would cost.
+DEFAULT_UNIT_BUDGET_MB = 32.0
+
+
+@dataclass
+class UnitSurfaces:
+    """Per-unit surfaces for a named subset of taps -- see the module docstring.
+
+    ``shift[layer]`` and ``distance[layer]`` are ``(n_units, n_freq,
+    n_contrast)``, flattened over whatever shape the tap had; their means over
+    axis 0 are exactly ``surfaces[layer]`` and ``mean_of_distances[layer]``.
+    ``gray[layer]`` is ``(n_units,)``, the activation at the gray reference.
+
+    What the three are for. ``shift`` says *which* units carry D and whether
+    that set turns over with contrast -- a norm that grows linearly while its
+    carriers rotate is the one case lambda cannot see. ``gray`` at a
+    pre-activation tap **is** z0, the operating point of the rectifier that
+    follows it, and ``distance`` is the scale the perturbation actually
+    traverses there; the surviving explanation for lambda < 1 is that the two
+    are comparable, which no scalar in this repo can test.
+    """
+
+    layers: list[str]
+    shift: dict[str, np.ndarray]
+    distance: dict[str, np.ndarray]
+    gray: dict[str, np.ndarray]
+
+    def nbytes(self) -> int:
+        return sum(
+            self.shift[name].nbytes + self.distance[name].nbytes
+            + self.gray[name].nbytes
+            for name in self.layers
+        )
+
+
 @dataclass
 class ExperimentResult:
     config: GratingConfig
@@ -97,6 +159,9 @@ class ExperimentResult:
     # 2026-08-02.
     gate_flips: dict[str, np.ndarray] | None = None
     gate_open: dict[str, float] | None = None
+    # Per-unit detail for the taps named by --unit-taps, or None (the default,
+    # and every run committed before 2026-08-04).
+    units: UnitSurfaces | None = None
 
     def flip_fraction(self, layer: str, ci: int = -1) -> float:
         """Median over frequencies of G at one contrast (default: the highest).
@@ -254,7 +319,64 @@ class ExperimentResult:
                 "flip% is 0, so read the two together -- that is the test of the "
                 "perturbation reading, not a second metric."
             )
+        if self.units is not None:
+            lines.append("")
+            for name in self.units.layers:
+                s = unit_summary(self.units, name)
+                lines.append(
+                    # Not always literally 1%: the top-k set is at least one
+                    # unit, so a small tap rounds up and must say so.
+                    f"per-unit {name}: {s['n_units']} units, top "
+                    f"{s['top_fraction']:.1%} carry "
+                    f"{s['top_share_at_min_contrast']:.1%} of D at the lowest "
+                    f"contrast and {s['top_share_at_max_contrast']:.1%} at the "
+                    f"highest, overlap {s['carrier_overlap']:.1%}; "
+                    f"{s['scale_matched']:.1%} of units have |gray| inside the "
+                    "range the sweep traverses."
+                )
         return "\n".join(lines)
+
+
+def _plan_unit_taps(
+    unit_taps, ref_rep: dict, n_cells: int, budget_mb: float
+) -> list[str]:
+    """Validate ``--unit-taps`` against the taps that exist and the byte budget.
+
+    Both failures are raised rather than warned. A mistyped tap name that
+    quietly produced no per-unit array would be the repo's recurring bug -- you
+    asked for a measurement and got a run that looks complete without it -- and
+    a tap whose size is a surprise is worth learning about before the grid runs
+    rather than at the write step hours later.
+    """
+    names = [str(name).strip() for name in unit_taps if str(name).strip()]
+    if not names:
+        return []
+    unknown = [name for name in names if name not in ref_rep]
+    if unknown:
+        raise ValueError(
+            f"--unit-taps names {len(unknown)} tap(s) this model does not have: "
+            f"{', '.join(unknown)}. Available: {', '.join(list(ref_rep)[:8])}"
+            + (f", ... (+{len(ref_rep) - 8} more)" if len(ref_rep) > 8 else "")
+        )
+    per_tap = {
+        name: (
+            ref_rep[name].size * n_cells * 2 * np.dtype(UNIT_DTYPE).itemsize
+            + ref_rep[name].size * np.dtype(UNIT_DTYPE).itemsize
+        )
+        for name in names
+    }
+    total_mb = sum(per_tap.values()) / 1e6
+    if total_mb > budget_mb:
+        worst = sorted(per_tap.items(), key=lambda kv: -kv[1])[:3]
+        raise ValueError(
+            f"--unit-taps would store {total_mb:.1f} MB, over the {budget_mb:g} MB "
+            "budget. Per-unit arrays are n_units x n_freq x n_contrast, so a conv "
+            "tap costs GB where a classifier tap costs MB. Largest: "
+            + ", ".join(f"{n} ({b / 1e6:.1f} MB, {ref_rep[n].size} units)"
+                        for n, b in worst)
+            + ". Name fewer taps, or raise --unit-budget-mb deliberately."
+        )
+    return names
 
 
 def run_experiment(
@@ -264,8 +386,14 @@ def run_experiment(
     seed: int = 0,
     verbose: bool = True,
     noise_blocks: int = 0,
+    unit_taps=(),
+    unit_budget_mb: float = DEFAULT_UNIT_BUDGET_MB,
 ) -> ExperimentResult:
     """Measure D(freq, contrast) per layer.
+
+    ``unit_taps`` additionally keeps the per-unit vectors behind D and D_mod for
+    those taps (see the module docstring and ``UnitSurfaces``). No extra forward
+    passes; the cost is storage, which ``unit_budget_mb`` bounds.
 
     ``noise_blocks`` > 1 additionally splits the repetitions round-robin into
     that many blocks and reports the standard error of D from their spread. It
@@ -329,6 +457,17 @@ def run_experiment(
         {layer: np.zeros((len(freqs), len(contrasts))) for layer in layers}
         if nblocks else None
     )
+    unit_layers = _plan_unit_taps(
+        unit_taps, ref_rep, len(freqs) * len(contrasts), unit_budget_mb
+    )
+    unit_shift = {
+        layer: np.zeros((ref_rep[layer].size, len(freqs), len(contrasts)))
+        for layer in unit_layers
+    }
+    unit_dist = {
+        layer: np.zeros((ref_rep[layer].size, len(freqs), len(contrasts)))
+        for layer in unit_layers
+    }
 
     total = len(freqs) * len(contrasts)
     done = 0
@@ -344,6 +483,13 @@ def run_experiment(
             # collapses to a scalar immediately, so this is an accumulator
             # number per layer and not an accumulator array.
             gate_sums = {layer: 0.0 for layer in layers}
+            # The one accumulator array the per-unit detail adds: D_mod's
+            # per-image deviation before it is collapsed to a scalar. D's own
+            # per-unit vector needs no accumulator at all -- sums[layer] is
+            # already it.
+            dist_sums = {
+                layer: np.zeros(ref_rep[layer].shape) for layer in unit_layers
+            }
             blocks = (
                 [{layer: np.zeros_like(ref_rep[layer]) for layer in layers}
                  for _ in range(nblocks)]
@@ -361,6 +507,12 @@ def run_experiment(
                     gate_sums[layer] += float(
                         np.mean((value > 0) != ref_gate[layer])
                     )
+                    # Deliberately recomputed rather than shared with the
+                    # l1_distance call above: D_mod must stay bit-identical to
+                    # what a run without --unit-taps produces, and a few taps'
+                    # worth of extra abs() is nothing against a forward pass.
+                    if layer in dist_sums:
+                        dist_sums[layer] += np.abs(value - ref_rep[layer])
                     if blocks is not None:
                         blocks[idx % nblocks][layer] += value
                 if blocks is not None:
@@ -373,6 +525,14 @@ def run_experiment(
                 mod[layer][fi, ci] = mod_sums[layer] / reps
                 # G = mean_r fraction_i [ sign a_i(x_r) != sign gray_i ]
                 gate[layer][fi, ci] = gate_sums[layer] / reps
+                if layer in unit_shift:
+                    # The same two quantities, one step before the mean over i.
+                    unit_shift[layer][:, fi, ci] = np.abs(
+                        mu - ref_rep[layer]
+                    ).reshape(-1)
+                    unit_dist[layer][:, fi, ci] = (
+                        dist_sums[layer] / reps
+                    ).reshape(-1)
                 if blocks is not None:
                     per_block = [
                         l1_distance(blocks[b][layer] / counts[b], ref_rep[layer])
@@ -399,10 +559,22 @@ def run_experiment(
         )
         for layer in layers
     }
+    units = (
+        UnitSurfaces(
+            layers=unit_layers,
+            shift=unit_shift,
+            distance=unit_dist,
+            gray={
+                layer: np.asarray(ref_rep[layer]).reshape(-1).copy()
+                for layer in unit_layers
+            },
+        )
+        if unit_layers else None
+    )
     return ExperimentResult(
         config=cfg, repetitions=reps, layers=layers, surfaces=surfaces,
         results=results, noise=noise, mean_of_distances=mod,
-        gate_flips=gate, gate_open=gate_open,
+        gate_flips=gate, gate_open=gate_open, units=units,
     )
 
 
@@ -415,6 +587,62 @@ def _finite(x) -> float | None:
     """JSON-safe float: NaN/inf (degenerate layers) become null."""
     x = float(x)
     return x if math.isfinite(x) else None
+
+
+def unit_summary(units: UnitSurfaces, layer: str) -> dict:
+    """Four numbers a per-unit tap can state that no scalar metric can.
+
+    ``top_share`` is the fraction of D carried by the loudest 1% of units, at
+    the lowest and highest contrast (``top_fraction`` records what that 1%
+    actually rounded to -- the set is never smaller than one unit).
+    ``carrier_overlap`` is how much of that set at the lowest contrast is still
+    in it at the highest: 1.0 means the same units carry the response
+    throughout, low means the norm grows while its carriers turn over -- the one
+    nonlinearity lambda cannot see, because D is a norm.
+
+    ``scale_matched`` is the operating-point instrument. A unit counts if the
+    perturbation scale the sweep traverses brackets its own |gray| value, i.e.
+    ``distance_i(c_min) <= |gray_i| <= distance_i(c_max)``: neither frozen
+    (|z0| far above the perturbation, lambda = 1) nor homogeneous (|z0| ~ 0,
+    lambda = 1 again). It reads as z0 only at a tap that is a rectifier's input
+    -- after a ReLU, ``gray`` is ``max(z0, 0)`` and everything below threshold
+    has already been folded to zero.
+
+    All four are medians over the frequency axis.
+    """
+    shift = np.asarray(units.shift[layer], dtype=np.float64)
+    dist = np.asarray(units.distance[layer], dtype=np.float64)
+    gray = np.abs(np.asarray(units.gray[layer], dtype=np.float64))
+    n_units, n_freq, _ = shift.shape
+    k = max(1, int(round(0.01 * n_units)))
+
+    def share(col: np.ndarray) -> float:
+        total = float(col.sum())
+        if not math.isfinite(total) or total <= 0:
+            return float("nan")
+        return float(np.sort(col)[-k:].sum() / total)
+
+    def carriers(col: np.ndarray) -> set:
+        return set(np.argpartition(col, n_units - k)[-k:].tolist())
+
+    lo = [share(shift[:, fi, 0]) for fi in range(n_freq)]
+    hi = [share(shift[:, fi, -1]) for fi in range(n_freq)]
+    overlap = [
+        len(carriers(shift[:, fi, 0]) & carriers(shift[:, fi, -1])) / k
+        for fi in range(n_freq)
+    ]
+    matched = [
+        float(np.mean((dist[:, fi, 0] <= gray) & (gray <= dist[:, fi, -1])))
+        for fi in range(n_freq)
+    ]
+    return {
+        "n_units": int(n_units),
+        "top_fraction": k / n_units,
+        "top_share_at_min_contrast": _finite(np.median(lo)),
+        "top_share_at_max_contrast": _finite(np.median(hi)),
+        "carrier_overlap": _finite(np.median(overlap)),
+        "scale_matched": _finite(np.median(matched)),
+    }
 
 
 def result_summary(result: ExperimentResult, metadata: dict | None = None) -> dict:
@@ -451,6 +679,11 @@ def result_summary(result: ExperimentResult, metadata: dict | None = None) -> di
                     "flip_at_min_contrast": _finite(result.flip_fraction(name, 0)),
                     "flip_at_max_contrast": _finite(result.flip_fraction(name, -1)),
                 }}),
+                # Present only for the taps --unit-taps named. The arrays behind
+                # these four are in result.units.npz; they are summarised here so
+                # the committed directory states the finding without a re-fit.
+                **({} if result.units is None or name not in result.units.shift
+                   else {"units": unit_summary(result.units, name)}),
                 "mean_r2": _finite(res.mean_r2),
                 # The headline statistic. Recorded here as well as recomputed on
                 # load, so a committed directory states its own result rather
@@ -547,7 +780,30 @@ def save_result(
     json_path = base + ".json"
     with open(json_path, "w", encoding="utf-8") as fh:
         json.dump(result_summary(result, metadata), fh, indent=2)
-    return {"npz": npz_path, "json": json_path}
+    written = {"npz": npz_path, "json": json_path}
+
+    # A separate file on purpose: it is 10-100x result.npz, and every --load,
+    # every re-fit and every test that walks results/ would otherwise pay for it.
+    # Keys are indexed rather than named so a layer name cannot collide with the
+    # npz's own member naming.
+    if result.units is not None:
+        unit_arrays: dict[str, np.ndarray] = {
+            "unit_layers": np.asarray(result.units.layers)
+        }
+        for i, name in enumerate(result.units.layers):
+            unit_arrays[f"shift_{i}"] = np.asarray(
+                result.units.shift[name], dtype=UNIT_DTYPE
+            )
+            unit_arrays[f"distance_{i}"] = np.asarray(
+                result.units.distance[name], dtype=UNIT_DTYPE
+            )
+            unit_arrays[f"gray_{i}"] = np.asarray(
+                result.units.gray[name], dtype=UNIT_DTYPE
+            )
+        units_path = base + ".units.npz"
+        np.savez_compressed(units_path, **unit_arrays)
+        written["units"] = units_path
+    return written
 
 
 NOTES_TEMPLATE = """# {slug}
@@ -682,11 +938,28 @@ def load_result(path: str) -> tuple[ExperimentResult, dict]:
         open_arr = np.asarray(data["gate_open"], dtype=np.float64)
         gate_flips = {name: gate_arr[i] for i, name in enumerate(layers)}
         gate_open = {name: float(open_arr[i]) for i, name in enumerate(layers)}
+    # Written only when --unit-taps was used, and read back only if the file is
+    # sitting next to the npz -- a run directory carrying just result.npz loads
+    # exactly as it always did.
+    units = None
+    units_path = npz_path[: -len(".npz")] + ".units.npz"
+    if os.path.exists(units_path):
+        udata = np.load(units_path, allow_pickle=False)
+        unit_layers = [str(name) for name in udata["unit_layers"]]
+        units = UnitSurfaces(
+            layers=unit_layers,
+            shift={n: np.asarray(udata[f"shift_{i}"], dtype=np.float64)
+                   for i, n in enumerate(unit_layers)},
+            distance={n: np.asarray(udata[f"distance_{i}"], dtype=np.float64)
+                      for i, n in enumerate(unit_layers)},
+            gray={n: np.asarray(udata[f"gray_{i}"], dtype=np.float64)
+                  for i, n in enumerate(unit_layers)},
+        )
     reps = int(meta.get("repetitions", cfg.repetitions))
     result = ExperimentResult(
         config=cfg, repetitions=reps, layers=layers, surfaces=surfaces,
         results=results, mean_of_distances=mod,
-        gate_flips=gate_flips, gate_open=gate_open,
+        gate_flips=gate_flips, gate_open=gate_open, units=units,
     )
     return result, meta
 

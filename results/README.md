@@ -24,6 +24,18 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 > `gates`. Earlier runs lack them and load unchanged; no committed surface
 > moved.
 
+> **Some runs from 2026-08-04 add a fifth file, `result.units.npz`.** Only those
+> dispatched with `--unit-taps`, and only for the taps it named. `D` is an L1
+> **norm**, so λ measures whether the response's *magnitude* is a power of
+> contrast, not whether the response is — a mean shift growing exactly like `c`
+> while rotating through different units reads λ = 1. This file holds the
+> per-unit vectors behind `D` and `D_mod` plus the gray operating point, so that
+> question can be asked; `result.json` summarises them per tap under `units`
+> (`carrier_overlap`, `scale_matched`). It is a separate file because it is
+> 10–100× the rest of the directory — 3.4 MB per 4096-unit tap — and nothing
+> that only wants the surfaces should have to read it. Runs without it load
+> exactly as before.
+
 > **Runs from 2026-07-28 are the first that are not VGG-19.** `alexnet`,
 > `vgg19_bn`, `resnet50` and `vit_b_16` — all `--layers all`, each with its
 > scrambled control and its reps companion. `prob` λ across the six

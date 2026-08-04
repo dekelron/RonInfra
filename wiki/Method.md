@@ -224,6 +224,58 @@ gray has no contrast or frequency) and `flip_at_min_contrast` /
 before this date have neither and load unchanged, with the report columns
 absent.
 
+### Per-unit detail, for the taps that ask for it
+
+All three quantities above collapse a layer to one number per cell, and that is
+a limit on what λ can mean. `D = (1/N_ℓ) Σ_i |μ_ℓi − b_ℓi|` is an **L1 norm** of
+the mean-shift vector, so λ says whether the response's *magnitude* is a power
+of contrast — not whether the response is. A mean shift that grows exactly
+proportionally to `c` while rotating through different units reads λ = 1 and is
+strongly nonlinear. A rectifier, being per-unit, reads out precisely the
+information the norm throws away.
+
+`--unit-taps <names>` keeps the vectors for a named handful of taps instead of
+collapsing them:
+
+```
+shift_i(c,f)    = | μ_ℓi(c,f) − b_ℓi |            D    is its mean over i
+distance_i(c,f) = (1/250) Σ_r | a_ℓi(x_r) − b_ℓi |  D_mod is its mean over i
+gray_i          = b_ℓi                            the operating point itself
+```
+
+Those identities are the point and are pinned offline
+(`test_per_unit_surfaces_reproduce_the_scalar_metrics_exactly`): it is the same
+measurement one step earlier, and asking for it leaves `D` and `D_mod`
+bit-identical.
+
+Two things it can answer that nothing else here can.
+
+* **Does the carrier set turn over with contrast?** `carrier_overlap` is how
+  much of the loudest 1% of units at the lowest contrast is still in the loudest
+  1% at the highest. 1.0 is one fixed set carrying the response throughout; low
+  is a norm that grows while its carriers rotate — the nonlinearity λ = 1 hides.
+  Calibrated against two synthetic models that produce the *identical* surface
+  and differ only here.
+* **Is the operating point comparable to the perturbation?** `scale_matched` is
+  the fraction of units with `distance_i(c_min) ≤ |gray_i| ≤ distance_i(c_max)`,
+  i.e. whose own |z₀| the sweep actually traverses. This is the surviving
+  reading of λ < 1 after gate-freezing was falsified: neither frozen (|z₀| ≫ the
+  perturbation, λ = 1) nor positively homogeneous (|z₀| ≈ 0, λ = 1 again). It
+  reads as z₀ **only at a tap that is a rectifier's input** — after a ReLU,
+  `gray` is `max(z₀, 0)` and everything below threshold has already been folded
+  to zero, so pair `classifier.3` with `classifier.4` rather than reading the
+  latter alone.
+
+Cost is storage, not compute: no extra forward passes, but the arrays are
+`n_units × n_freq × n_contrast` and land in git. A 4096-unit classifier tap is
+**3.4 MB compressed**; a single VGG conv tap would be **1.4 GB**, so a byte
+budget (default 32 MB) refuses an over-large tap list *before* the grid runs,
+and `--layers all` must never reach this. They go in `result.units.npz`, beside
+`result.npz` rather than inside it, so every `--load` and every re-fit that does
+not want them does not pay for them. `result.json` carries the four summary
+numbers per tap under `units`, so a committed directory states the finding
+without unpacking the arrays.
+
 ## Log-response regression
 
 Per layer ℓ and per frequency f_k:

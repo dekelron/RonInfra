@@ -70,6 +70,7 @@ python -m log_response.run --model data --reps 50        # noise floor
 | `--weights PATH` | Local `state_dict`. Required in this sandbox, where weight hosts are blocked. |
 | `--device` / `--dtype` | Placement, and the **model's** weight dtype — not the accumulator, which is float64 in every run regardless. Leave it alone on the torchvision back-ends. On `hf:` it is worth setting explicitly so the run records which dtype it used: VLM per-pass cost has been seen to vary ~9× across runs of the same model, and whether dtype or runner variance drives that is [unresolved](Results.md). |
 | `--noise-blocks K` | Split the reps K ways round-robin and report the standard error of D from their spread. Costs no extra forward passes, only K extra accumulators. This is what turns "which law fits better" into "does *any* law fit within measurement error" — it adds a `chi2/dof` column. **No committed run has used it yet.** |
+| `--unit-taps a,b,c` | Keep the **per-unit** vectors behind `D` and `D_mod` for those taps, plus each unit's gray value, in `result.units.npz`. `D` is an L1 *norm*, so λ says whether the response's magnitude is a power of contrast, not whether the response is — a mean shift growing exactly like `c` while its carriers rotate reads λ = 1. No extra forward passes; the cost is storage, ~3.4 MB per 4096-unit tap in git. A single VGG conv tap would be **1.4 GB**, so `--unit-budget-mb` (default 32) refuses an over-large list before the grid runs, and `all` is never appropriate here. See [Method](Method.md#per-unit-detail-for-the-taps-that-ask-for-it). |
 | `--save` / `--save-run` / `--load` | See *Storing a run* below. |
 | `--notes "..."` | Prose written into the run directory's `notes.md`. `--save-run` never overwrites an existing `notes.md`. |
 | `--allow-random-init` | Deliberate opt-in for an untrained control; stamps `pretrained_verified: false`. |
@@ -196,6 +197,12 @@ the other order of operations). Both are re-fitted on load, and `report()` gains
 and load with `mean_of_distances` set to `None` — nothing else changes, and no
 committed surface moved when it was added. Why both:
 [Method](Method.md#the-other-ordering-recorded-alongside).
+
+`--unit-taps` adds a **fifth** file, `result.units.npz`, and it is the one
+exception to "a run directory is a few KB": 3.4 MB per 4096-unit tap, because it
+stores the per-unit vectors rather than their mean. It sits beside `result.npz`
+instead of inside it precisely so that `--load`, the re-fits and the test that
+walks every committed run do not pay for it. Runs without it are unchanged.
 
 `--save <base>` writes `<base>.npz` (the surfaces) plus `<base>.json` (the fit
 summary). Pass it on any long run.

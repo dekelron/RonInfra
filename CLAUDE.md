@@ -18,9 +18,9 @@ adding a new one.
 ## Working on this repo
 
 - Run from the repo root: `python -m log_response.run`, never as a script.
-- `python -m log_response.test_pipeline` is the fast check — 58 tests, no
+- `python -m log_response.test_pipeline` is the fast check — 65 tests, no
   downloaded weights, runs anywhere. 14 of them need torch installed and skip
-  without it, so the sandbox sees 44 and the runner sees all 58. Not fast in the
+  without it, so the sandbox sees 51 and the runner sees all 65. Not fast in the
   wall-clock sense: `test_committed_runs_predate_the_second_metric` re-fits every
   tap of every committed run, and that grows with `results/`. It was measured at
   **16 min** on a 4-core runner against 94 runs — where the workflow makes it
@@ -213,16 +213,61 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
 7. **Measure `z₀` against the perturbation scale.** The falsification leaves one
    live reading: λ < 1 needs `|z₀|`, the gray pre-activation, to be **comparable
    to** `c·|g|` over the sampled contrasts — neither ≫ it (gate frozen, λ = 1)
-   nor ≈ 0 (homogeneous, also λ = 1). Nothing measures that yet, and `G` and
-   `open` cannot: both count *signs*, and this is a question about *scale*. The
-   instrument wanted is per-tap distributional — e.g. the fraction of units
-   whose `|z₀|` falls inside the range the sweep actually traverses — and it is
-   computable in the same accumulator style from `|a(gray)|` against the
-   measured per-image deviation, at no extra forward pass. Prediction to beat:
-   it must order Caffe (λ +1.06) above IN1K (+0.76) above `vgg19_bn` (+0.15),
+   nor ≈ 0 (homogeneous, also λ = 1). `G` and `open` cannot answer it: both
+   count *signs*, and this is a question about *scale*. Prediction to beat: it
+   must order Caffe (λ +1.06) above IN1K (+0.76) above `vgg19_bn` (+0.15),
    which `G` conspicuously does not.
+   - **Instrument built 2026-08-04, not yet read on a net.** `--unit-taps`
+     keeps the per-unit vectors behind `D` and `D_mod` for named taps, plus each
+     unit's gray value; `scale_matched` in `result.json` is the fraction with
+     `distance_i(c_min) ≤ |gray_i| ≤ distance_i(c_max)`, calibrated offline
+     against a closed form. No extra forward passes, ~3.4 MB per 4096-unit tap
+     in git. It reads as `z₀` **only at a rectifier's input** — after a ReLU,
+     `gray` is `max(z₀, 0)` — so the pair to read is `classifier.3` (fc7, the
+     z₀) with `classifier.4` (the ReLU), not either alone.
 
 ## Open threads
+
+- **The "1→0 skip near `prob`" is two fc ReLUs, and every VGG has them**
+  (2026-08-04, from committed runs). Caffe VGG-19's flat λ ≈ 1 conv stack does
+  not fall gradually — it drops at one tap. Per-tap through the head, `--layers
+  all` r50 runs, intervals non-overlapping at the bold step:
+
+  | | fc6 | ReLU | fc7 | **ReLU** | fc8 | prob |
+  |---|---|---|---|---|---|---|
+  | VGG-19 Caffe | +1.004 | +0.707 | +1.110 | **+0.231** | +0.258 | +0.059 |
+  | VGG-19 torchvision | +0.568 | +0.321 | +0.675 | **−0.022** | +0.187 | +0.116 |
+  | VGG-16 Caffe | +0.970 | +0.769 | +1.140 | **+0.258** | +0.401 | +0.135 |
+  | VGG-16 torchvision | +0.477 | +0.152 | +0.365 | **−0.078** | +0.209 | +0.093 |
+
+  Note fc7 *raises* λ back above 1 first, so the head is a zigzag, not one edge.
+  And the two checkpoints' fc ReLUs compress by nearly the same amount at the
+  same two taps — mean Δλ **−0.588** (Caffe) vs **−0.472** (torchvision) over
+  the 2 fc→ReLU transitions, against **+0.026** vs **−0.140** over the 16
+  conv→ReLU ones. **So it is not "Caffe skips 1→0"**: Caffe's conv ReLUs spend
+  nothing, leaving the whole drop to the two head ReLUs that both checkpoints
+  have. This also sharpens "Caffe has no sawtooth" below — true of its conv
+  stack, false of its head.
+  - Two explanations are **eliminated**, both from committed runs. *Sampling
+    noise*: the r250/r50 Caffe pair puts every head tap at **≤ 2.8%** noise
+    fraction at every cell, including `c = 1/128` (√5 would be 100%). *Phase
+    cancellation*: `D_mod`, which never averages across images, agrees with `D`
+    to |Δλ| ≤ **0.04** at every head tap on Caffe and ≤ 0.06 on torchvision.
+  - **And the naive "the ReLU compresses" reading is falsified offline.** Feed a
+    ReLU a genuinely contrast-proportional pre-activation (`z₀ + c·μ + c·h`, both
+    parts scaling, which is what λ ≈ 1 at `classifier.3` means) and the metric
+    returns λ ∈ **[+0.74, +1.80]** at R² ≥ 0.996 over 36 configurations spanning
+    the (μ, h, z₀) space. It cannot reach +0.23; the lowest value is a clipping
+    regime nothing like fc7's. Pinned by
+    `test_a_relu_on_a_contrast_linear_input_cannot_reach_the_head_lambda`.
+  - **What resolves the contradiction is that `D` is a norm.** `D = mean_i |μ_i
+    − gray_i|` is L1, so λ measures whether the response's *magnitude* is a
+    power of contrast, not whether the response is. A mean shift growing exactly
+    like `c` while redistributing across units reads λ = 1 and is strongly
+    nonlinear — and a rectifier, being per-unit, reads out exactly what the norm
+    discards. **This is a caveat on every λ in this repo**, not only on the head.
+    `--unit-taps` (item 7 above) is the instrument for it; nothing has been
+    measured with it yet.
 
 - **Weight lineage moves λ on every architecture tested — 11 pairs, 8
   architectures** (2026-08-04). The one-pair evidence below confounded framework,

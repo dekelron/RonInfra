@@ -94,6 +94,7 @@ from .features import (
     parse_timm_spec,
 )
 from .experiment import (
+    DEFAULT_UNIT_BUDGET_MB,
     run_experiment,
     save_figures,
     save_result,
@@ -174,6 +175,12 @@ def build_metadata(args, model, result, wall_seconds: float) -> dict:
     }
     if args.notes:
         metadata["notes"] = args.notes
+    if result.units is not None:
+        # Which taps carry per-unit detail is part of what the directory is, not
+        # a detail of how it was made: result.units.npz is only interpretable
+        # against this list, and result.json's per-layer "units" block only
+        # exists for these.
+        metadata["unit_taps"] = list(result.units.layers)
     if isinstance(model, CLIPModel):
         metadata["prompts"] = len(model.prompts)
     if isinstance(model, HFVLMModel):
@@ -376,6 +383,26 @@ def main(argv=None):
         "measurement error'",
     )
     p.add_argument(
+        "--unit-taps",
+        default=None,
+        help="comma-separated taps to keep PER-UNIT surfaces for, written to "
+        "<base>.units.npz. D is an L1 norm, so lambda says whether the "
+        "response's magnitude is a power of contrast, not whether the response "
+        "is: a mean shift growing exactly like c while rotating through "
+        "different units reads lambda = 1. These arrays are what that question "
+        "is asked of, plus the gray operating point behind each unit. No extra "
+        "forward passes; the cost is storage, so name a handful of taps -- a "
+        "single VGG conv tap is 1.4 GB and 'all' is never appropriate",
+    )
+    p.add_argument(
+        "--unit-budget-mb",
+        type=float,
+        default=None,
+        help=f"cap on the per-unit arrays (default {DEFAULT_UNIT_BUDGET_MB:g} MB). "
+        "Exceeding it is an error before the grid runs, not a surprise at the "
+        "write step",
+    )
+    p.add_argument(
         "--scramble-seed",
         type=int,
         default=None,
@@ -501,10 +528,21 @@ def main(argv=None):
             )
         )
     started = time.time()
-    result = run_experiment(
-        model, cfg, repetitions=args.reps, seed=args.seed, verbose=not args.quiet,
-        noise_blocks=args.noise_blocks,
-    )
+    unit_taps = [s.strip() for s in (args.unit_taps or "").split(",") if s.strip()]
+    try:
+        result = run_experiment(
+            model, cfg, repetitions=args.reps, seed=args.seed,
+            verbose=not args.quiet, noise_blocks=args.noise_blocks,
+            unit_taps=unit_taps,
+            unit_budget_mb=(
+                DEFAULT_UNIT_BUDGET_MB if args.unit_budget_mb is None
+                else args.unit_budget_mb
+            ),
+        )
+    except ValueError as exc:
+        # A bad --unit-taps is caught after the reference pass and before the
+        # grid, so report it as a CLI failure rather than a traceback.
+        raise SystemExit(f"error: {exc}")
     wall_seconds = time.time() - started
     print()
     print(result.report())
@@ -527,8 +565,9 @@ def main(argv=None):
             written = save_run_dir(result, args.save_run, metadata, notes=args.notes)
             print()
             print(f"saved run: {args.save_run}/")
-            for key in ("npz", "json", "run", "notes"):
-                print(f"  {os.path.basename(written[key])}")
+            for key in ("npz", "json", "units", "run", "notes"):
+                if key in written:
+                    print(f"  {os.path.basename(written[key])}")
 
     # Reuse the saved metadata when there is one, so a figure's weight-state
     # stamp matches what was persisted.

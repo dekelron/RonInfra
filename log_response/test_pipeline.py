@@ -75,6 +75,7 @@ from .experiment import (
     load_result,
     save_figures,
     result_summary,
+    unit_summary,
 )
 from .provenance import git_provenance, package_versions
 
@@ -1682,6 +1683,238 @@ def test_result_json_records_the_lambdas_the_median_is_taken_over():
             assert lo <= cell["lambda"] <= hi, (entry["layer"], cell["frequency"])
             # The log fit's r2 is a different statistic and keeps its own key.
             assert "r2" in cell and "lambda_r2" in cell
+
+
+class _Carriers(FeatureModel):
+    """800 units; ``block`` of them carry a shift proportional to contrast.
+
+    ``rotating`` decides whether the carriers are the same units at every
+    contrast or a different disjoint block per contrast. Either way D is the
+    same number -- it is a mean over all 800 -- so the two are indistinguishable
+    to every scalar in this repo and differ only per unit.
+    """
+
+    def __init__(self, rotating: bool, n_units: int = 800, block: int = 8):
+        self.layers = ["units"]
+        self.rotating = rotating
+        self.n_units = n_units
+        self.block = block
+        self.weights_ok = None
+        self.weights_source = "synthetic carriers"
+
+    def represent(self, image):
+        # A mean-0.5 grating of Michelson contrast c spans exactly c.
+        c = float(np.max(image) - np.min(image))
+        out = np.zeros(self.n_units)
+        if c <= 0:
+            return {"units": out}
+        start = (int(round(-np.log2(c))) % 4) * self.block if self.rotating else 0
+        idx = np.arange(start, start + self.block)
+        # Distinct amplitudes so the top-k set is unambiguous under ties.
+        out[idx] = c * (1.0 + np.arange(self.block) / self.block)
+        return {"units": out}
+
+
+def test_per_unit_surfaces_reproduce_the_scalar_metrics_exactly():
+    """D and D_mod must be the means over units of what --unit-taps stores.
+
+    The per-unit arrays are only worth anything if they are the same
+    measurement one step earlier, so this is the invariant the whole feature
+    rests on -- and, in the other direction, it pins that asking for them
+    changes neither surface by a bit.
+    """
+    cfg = GratingConfig(size=48, frequencies_cpi=(4.0, 16.0), contrasts=(0.125, 0.5, 1.0))
+    plain = run_experiment(RawPixelModel(), cfg, repetitions=6, seed=0, verbose=False)
+    detailed = run_experiment(
+        RawPixelModel(), cfg, repetitions=6, seed=0, verbose=False, unit_taps=["data"]
+    )
+
+    # Bit-identical, not merely close: the accumulator for D_mod is deliberately
+    # left alone and the per-unit one added beside it.
+    assert np.array_equal(plain.surfaces["data"], detailed.surfaces["data"])
+    assert np.array_equal(
+        plain.mean_of_distances["data"], detailed.mean_of_distances["data"]
+    )
+
+    units = detailed.units
+    assert units is not None and units.layers == ["data"]
+    assert np.allclose(units.shift["data"].mean(axis=0), detailed.surfaces["data"])
+    assert np.allclose(
+        units.distance["data"].mean(axis=0), detailed.mean_of_distances["data"]
+    )
+    # gray is the reference representation itself, flattened.
+    assert units.gray["data"].shape == (units.shift["data"].shape[0],)
+
+
+def test_per_unit_detail_separates_a_rotating_carrier_set_from_a_fixed_one():
+    """The measurement lambda cannot make, and the reason --unit-taps exists.
+
+    D = mean_i |mu_i - gray_i| is an L1 *norm*, so a response whose magnitude
+    grows exactly like c reads lambda = 1 whether the same units carry it
+    throughout or the carriers turn over completely with contrast. Both models
+    below produce the identical surface; only ``carrier_overlap`` tells them
+    apart.
+    """
+    cfg = GratingConfig(size=48, frequencies_cpi=(4.0,), contrasts=(0.125, 0.25, 0.5, 1.0))
+    fixed = run_experiment(
+        _Carriers(rotating=False), cfg, repetitions=3, seed=0, verbose=False,
+        unit_taps=["units"],
+    )
+    rotating = run_experiment(
+        _Carriers(rotating=True), cfg, repetitions=3, seed=0, verbose=False,
+        unit_taps=["units"],
+    )
+
+    # Same surface, same exponent: nothing at the layer level distinguishes them.
+    assert np.allclose(fixed.surfaces["units"], rotating.surfaces["units"])
+    for result in (fixed, rotating):
+        res = result.results["units"]
+        assert abs(res.lam - 1.0) < 0.1, res.lam
+        assert res.lam_r2 > 0.99, res.lam_r2
+
+    assert unit_summary(fixed.units, "units")["carrier_overlap"] == 1.0
+    assert unit_summary(rotating.units, "units")["carrier_overlap"] == 0.0
+
+
+def test_scale_matched_hits_the_closed_form_it_is_defined_by():
+    """``scale_matched`` = the fraction of units the sweep's range brackets.
+
+    Calibrated rather than asserted: build units whose gray values are known and
+    whose perturbation is exactly c, so the answer is the fraction of gray
+    values inside [c_min, c_max] and can be written down. It is the instrument
+    for the surviving reading of lambda < 1 -- |z0| comparable to the
+    perturbation scale -- so it has to mean exactly what it says.
+    """
+
+    class _Offsets(FeatureModel):
+        def __init__(self, gray):
+            self.layers = ["z"]
+            self.gray = np.asarray(gray, dtype=np.float64)
+            self.weights_ok = None
+            self.weights_source = "synthetic offsets"
+
+        def represent(self, image):
+            c = float(np.max(image) - np.min(image))
+            return {"z": self.gray + c}
+
+    gray = np.logspace(-3.0, 0.0, 999)  # decades [-3, 0], evenly in log
+    cfg = GratingConfig(size=48, frequencies_cpi=(4.0,), contrasts=(0.01, 0.1, 1.0))
+    result = run_experiment(
+        _Offsets(gray), cfg, repetitions=2, seed=0, verbose=False, unit_taps=["z"]
+    )
+    # distance_i(c) = c for every unit, so a unit counts iff 0.01 <= gray_i <= 1,
+    # which is the top two of the three decades.
+    got = unit_summary(result.units, "z")["scale_matched"]
+    assert abs(got - 2.0 / 3.0) < 0.01, got
+
+
+def test_a_relu_on_a_contrast_linear_input_cannot_reach_the_head_lambda():
+    """One ReLU does not explain the drop at `classifier.4`. Pinned offline.
+
+    Caffe VGG-19 reads λ +1.110 at `classifier.3` and +0.231 one rectifier
+    later. λ ≈ 1 at fc7 says the pre-activation arriving there is proportional
+    to contrast in *both* its parts -- the deterministic per-unit mean shift
+    that D measures and the per-image spread about it:
+
+        z_ir(c) = z0_i + c*mu_i + c*h_ir
+
+    Push that through a ReLU and compute this repo's metric on the standard
+    14-contrast grid. Over the whole (mu, h, z0) space the exponent stays near
+    or above 1; it cannot land at +0.23. So "the ReLU compresses" is not
+    available as a reading, and what is left is that D is an L1 *norm* -- see
+    the per-unit tests above and wiki/Results.md.
+    """
+    rng = np.random.default_rng(0)
+    cs = np.asarray(CONTRASTS, dtype=np.float64)
+    n_units, reps = 2048, 200
+
+    lams = []
+    for z0_mean in (0.0, 2.0, 3.0):
+        for m in (0.03, 0.3, 3.0, 10.0):
+            for s in (0.03, 0.3, 3.0):
+                z0 = rng.normal(z0_mean, 1.0, n_units)
+                mu = rng.normal(0.0, m, n_units)
+                h = rng.normal(0.0, s, (reps, n_units))
+                base = np.maximum(z0, 0.0)
+                # D = mean_i | mean_r ReLU(z_ir) - ReLU(z0_i) |
+                response = np.array([
+                    np.abs(
+                        np.maximum(z0 + c * (mu + h), 0.0).mean(axis=0) - base
+                    ).mean()
+                    for c in cs
+                ])
+                fit = fit_power_lambda(cs, response)
+                assert fit.r2 > 0.99, (z0_mean, m, s, fit.r2)
+                lams.append(fit.lam)
+
+    # The measured step is +1.110 -> +0.231. Nothing here comes near the lower
+    # value; the whole space sits at or above a square-root law.
+    assert min(lams) > 0.7, (min(lams), max(lams))
+
+
+def test_a_mistyped_unit_tap_is_an_error_not_a_silent_omission():
+    """The repo's recurring bug shape: a run that looks complete and is not."""
+    cfg = GratingConfig(size=48, frequencies_cpi=(4.0,), contrasts=(0.25, 0.5, 1.0))
+    try:
+        run_experiment(
+            RawPixelModel(), cfg, repetitions=2, seed=0, verbose=False,
+            unit_taps=["dta"],
+        )
+    except ValueError as exc:
+        assert "does not have" in str(exc)
+        assert "data" in str(exc)  # ...and says what was available
+    else:
+        raise AssertionError("expected ValueError for an unknown tap name")
+
+
+def test_unit_taps_refuse_to_blow_the_storage_budget():
+    """A conv tap costs GB. Refuse before the grid, not at the write step."""
+    cfg = GratingConfig(size=256, frequencies_cpi=(4.0,), contrasts=(0.25, 0.5, 1.0))
+    try:
+        run_experiment(
+            RawPixelModel(), cfg, repetitions=1, seed=0, verbose=False,
+            unit_taps=["data"], unit_budget_mb=0.5,
+        )
+    except ValueError as exc:
+        assert "budget" in str(exc)
+    else:
+        raise AssertionError("expected ValueError for an over-budget tap list")
+
+
+def test_per_unit_arrays_survive_a_save_load_round_trip():
+    """...into their own file, leaving result.npz byte-identical without them."""
+    import os
+    import tempfile
+
+    cfg = GratingConfig(size=48, frequencies_cpi=(4.0,), contrasts=(0.25, 0.5, 1.0))
+    result = run_experiment(
+        _Carriers(rotating=True), cfg, repetitions=3, seed=0, verbose=False,
+        unit_taps=["units"],
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        base = os.path.join(tmp, "run")
+        written = save_result(result, base, metadata={"model": "carriers"})
+        assert written["units"].endswith(".units.npz")
+        assert os.path.exists(written["units"])
+
+        loaded, _ = load_result(base)
+        assert loaded.units is not None
+        assert loaded.units.layers == ["units"]
+        # Stored float32, so compare at float32 precision -- and the invariant
+        # that matters must still hold after the cast.
+        for name in ("units",):
+            assert np.allclose(
+                loaded.units.shift[name], result.units.shift[name], rtol=1e-6, atol=1e-12
+            )
+            assert np.allclose(
+                loaded.units.shift[name].mean(axis=0), loaded.surfaces[name], rtol=1e-5
+            )
+        assert unit_summary(loaded.units, "units")["carrier_overlap"] == 0.0
+
+        # A run directory without the file loads exactly as it always did.
+        os.remove(written["units"])
+        again, _ = load_result(base)
+        assert again.units is None
 
 
 def _run_all():
