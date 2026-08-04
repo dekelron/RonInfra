@@ -52,6 +52,7 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 
 | Run | Model | Reps | Weights | Headline | Notes |
 |---|---|---|---|---|---|
+| [`vgg19-r50-s0-alllayers-units-caffe`](vgg19-r50-s0-alllayers-units-caffe/notes.md) | VGG-19, trained | 50 | converted Caffe | **first per-unit run** | Layer surfaces byte-identical to `-alllayers-caffe`. Layer λ is within 0.14 of the amplitude-weighted mean of the per-unit λ, so the norm is faithful — but `classifier.4`'s *median* unit reads λ −0.159 against the layer's +0.352, and a ReLU fans the unit-λ IQR out 0.42 → 1.71 rather than translating it. Carriers rotate most at the **most linear** tap (`classifier.3`, Spearman 0.06), the opposite of the prediction. |
 | [`vgg19-r50-s0-alllayers-caffe-gates`](vgg19-r50-s0-alllayers-caffe-gates/notes.md) | VGG-19, trained | 50 | converted Caffe | **gate-freezing falsified** | First run carrying `G`. λ ≈ 1 across 33/37 conv taps with **median 35% of units flipping sign**; 36 taps near-linear-but-flipping, 0 near-linear-and-quiet. |
 | [`vgg19-r50-s0-alllayers-in1k-gates`](vgg19-r50-s0-alllayers-in1k-gates/notes.md) | VGG-19, trained | 50 | `IMAGENET1K_V1` | `G` does not track λ | Matched to the Caffe run: λ +1.055 → +0.759 while `G` 31.3% → 28.1%, r(Δλ, ΔG) = −0.209. |
 | [`vgg19-bn-r50-s0-alllayers-gates`](vgg19-bn-r50-s0-alllayers-gates/notes.md) | VGG-19+BN, trained | 50 | `IMAGENET1K_V1` | r(log `G`, λ) = **−0.003** | Same rectifiers, same flip rates, λ +0.150 against Caffe's +1.055. Separates operating point from switch count. |

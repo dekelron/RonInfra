@@ -601,9 +601,67 @@ linear in contrast"; it licenses "its L1 norm is".
 
 This is a caveat on **every λ in this repo**, not only on the head, and it is
 what [`--unit-taps`](Method.md#per-unit-detail-for-the-taps-that-ask-for-it) was
-built to test: `carrier_overlap` separates a fixed carrier set from a rotating
-one, which no scalar here can. Nothing has been measured with it yet — the
-prediction on record is that the conv stack is high-overlap and the head is not.
+built to test. Measured below.
+
+#### Measured per unit — the norm is faithful, the median unit is not the layer
+
+[`vgg19-r50-s0-alllayers-units-caffe`](../results/vgg19-r50-s0-alllayers-units-caffe/notes.md),
+the first run carrying per-unit surfaces: same model, seed and grid as the r50
+Caffe run above, and its 45 layer surfaces come back **byte-identical**, so
+asking for the detail changed nothing. Per-unit λ is fitted at 14 cyc/img (the
+layer column is the same frequency, not the 8-frequency median).
+
+| tap | layer λ | median unit | amplitude-weighted mean | unit λ IQR | top 400 units | their share of D |
+|---|---|---|---|---|---|---|
+| fc6 `classifier.0` | +1.045 | +1.030 | **+1.055** | [+0.94, +1.16] | +1.020 | 26% |
+| ReLU `.1` | +0.843 | +0.709 | **+0.825** | [−0.43, +1.11] | +1.039 | 42% |
+| fc7 `.3` | +1.153 | +1.116 | **+1.146** | [+0.96, +1.38] | +1.011 | 23% |
+| ReLU `.4` | +0.352 | −0.159 | **+0.249** | [−1.17, +0.54] | +0.621 | 52% |
+| `prob` | +0.116 | −0.035 | **−0.023** | [−0.28, +0.23] | +0.110 | 90% |
+
+**The norm turns out to be faithful here, which is a partial correction to the
+paragraph above.** The layer's λ sits within 0.14 of the amplitude-weighted mean
+of the per-unit λ at all five taps, and within 0.03 at the three where the fit
+is clean. The synthetic counterexample stands — a norm *can* hide a rotating
+response, and `test_per_unit_detail_separates_a_rotating_carrier_set_from_a_fixed_one`
+builds one — but at these five taps it does not. λ is a weighted summary of the
+per-unit exponents, not something detached from them.
+
+**What is genuinely misleading is the median unit.** At `classifier.4` the
+typical unit reads λ = **−0.159**, well past the log law, while the layer reads
++0.352; the layer is carried by a loud minority (top 400 of 4096 = 52% of D,
+λ +0.621). At `prob` the top 400 of 1000 carry **90%**. So a layer λ is a
+statement about the loud tail, and "this layer responds like *x*" does not
+transfer to a unit drawn at random from it.
+
+**And a rectifier fans the exponents out rather than translating them.** IQR
+width goes 0.22 → 1.54 across the ReLU at `classifier.1`, and 0.42 → **1.71**
+across the one at `classifier.4`. The layer's drop is the weighted mean of a
+distribution that has spread by ~4×, not every unit moving down together.
+
+**The carriers do rotate — and not where predicted.** Spearman rank correlation
+of per-unit shift between the lowest and highest contrast: **0.42 / 0.42 / 0.06
+/ 0.64 / 0.71** down the table. It is not a low-contrast noise artifact:
+*adjacent* contrast columns correlate at 0.85–0.92 including the two lowest
+(c = 0.008 vs 0.016), where noise would decorrelate them as badly as distant
+ones, and restricting to units in the top quartile at *both* ends still gives
+0.19–0.32 at the fc taps. The prediction on record was that rotation tracks the
+departure from λ = 1. **It does not**: `classifier.3` is the most linear tap
+here (λ +1.15, narrowest unit IQR) and by far the most rotating (0.060), while
+`classifier.4` at λ +0.35 is the more stable (0.641).
+
+**`scale_matched` gets its first read, and it is two points with the wrong
+sign.** At the two taps that are actually a rectifier's input: fc6 has 77.2% of
+units with |z₀| inside the traversed range and its ReLU costs Δλ −0.297; fc7 has
+62.5% and its ReLU costs **−0.879**. Fewer scale-matched units, larger drop — the
+opposite of what the operating-point reading predicts. With n = 2, one
+checkpoint and no conv taps this is a flag, not a result; the test it was built
+for is the cross-checkpoint ordering (Caffe > IN1K > `vgg19_bn`), which needs
+runs that do not exist yet.
+
+**Caveats.** One run, one seed, `--reps 50`, per-unit λ at one frequency, and
+head taps only — the conv stack is unmeasured per unit and cannot be measured
+this way (a single VGG conv tap is 1.4 GB).
 
 ### Skip connections do not hold the response linear
 

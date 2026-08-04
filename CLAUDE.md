@@ -217,7 +217,16 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
    count *signs*, and this is a question about *scale*. Prediction to beat: it
    must order Caffe (λ +1.06) above IN1K (+0.76) above `vgg19_bn` (+0.15),
    which `G` conspicuously does not.
-   - **Instrument built 2026-08-04, not yet read on a net.** `--unit-taps`
+   - **Instrument built 2026-08-04; first read is two points with the wrong
+     sign.** At the two VGG-19 Caffe taps that are actually a rectifier's input,
+     fc6 has `scale_matched` **77.2%** and its ReLU costs Δλ −0.297; fc7 has
+     **62.5%** and its ReLU costs **−0.879**. Fewer scale-matched units, larger
+     drop — the opposite of the prediction. n = 2, one checkpoint, head taps
+     only, so this is a flag. **The test it was built for is still the
+     cross-checkpoint ordering** (Caffe +1.06 > IN1K +0.76 > `vgg19_bn` +0.15),
+     which needs `--unit-taps` runs on the other two checkpoints; those are the
+     next dispatch.
+   - `--unit-taps`
      keeps the per-unit vectors behind `D` and `D_mod` for named taps, plus each
      unit's gray value; `scale_matched` in `result.json` is the fraction with
      `distance_i(c_min) ≤ |gray_i| ≤ distance_i(c_max)`, calibrated offline
@@ -266,8 +275,31 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     like `c` while redistributing across units reads λ = 1 and is strongly
     nonlinear — and a rectifier, being per-unit, reads out exactly what the norm
     discards. **This is a caveat on every λ in this repo**, not only on the head.
-    `--unit-taps` (item 7 above) is the instrument for it; nothing has been
-    measured with it yet.
+  - **Measured 2026-08-04** (`vgg19-r50-s0-alllayers-units-caffe`, the first
+    per-unit run; its 45 layer surfaces come back byte-identical). Three
+    findings and a partial correction:
+    - **The norm is faithful at these taps — correcting the bullet above.** The
+      layer λ sits within **0.14** of the amplitude-weighted mean of the
+      per-unit λ at all five head taps, within 0.03 at the three clean ones. A
+      norm *can* hide a rotating response (the synthetic pair in
+      `test_per_unit_detail_separates_...` does), but here it does not.
+    - **The median unit is not the layer.** `classifier.4`: typical unit
+      λ **−0.159** against the layer's +0.352, because a loud minority carries
+      it — top 400 of 4096 = **52%** of D at λ +0.621, and at `prob` the top 400
+      of 1000 carry **90%**. A layer λ describes the loud tail, not a random
+      unit.
+    - **A rectifier fans the exponents out, it does not translate them.** Unit-λ
+      IQR width 0.22 → 1.54 across the ReLU at `classifier.1`, 0.42 → **1.71**
+      across `classifier.4`.
+    - **Carriers rotate, but not where predicted.** Spearman(c_min, c_max) of
+      per-unit shift: 0.42 / 0.42 / **0.06** / 0.64 / 0.71 down the head. Not
+      low-contrast noise — *adjacent* columns correlate 0.85–0.92 including the
+      two lowest, and top-quartile-at-both-ends still gives 0.19–0.32. The
+      prediction was that rotation tracks departure from λ = 1; **it does not** —
+      `classifier.3` is the most linear tap and by far the most rotating.
+    - Caveats: one run, one seed, r50, per-unit λ at one frequency (14 cyc/img),
+      head taps only. The conv stack cannot be measured this way — one VGG conv
+      tap is 1.4 GB.
 
 - **Weight lineage moves λ on every architecture tested — 11 pairs, 8
   architectures** (2026-08-04). The one-pair evidence below confounded framework,
