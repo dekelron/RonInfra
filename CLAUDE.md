@@ -18,10 +18,15 @@ adding a new one.
 ## Working on this repo
 
 - Run from the repo root: `python -m log_response.run`, never as a script.
-- `python -m log_response.test_pipeline` is the fast check — 55 tests, no
-  downloaded weights, runs anywhere. 13 of them need torch installed and skip
-  without it, so the sandbox sees 42 and the runner sees all 55. Not fast in the
-  wall-clock sense: it re-fits every committed run, which is minutes.
+- `python -m log_response.test_pipeline` is the fast check — 58 tests, no
+  downloaded weights, runs anywhere. 14 of them need torch installed and skip
+  without it, so the sandbox sees 44 and the runner sees all 58. Not fast in the
+  wall-clock sense: `test_committed_runs_predate_the_second_metric` re-fits every
+  tap of every committed run, and that grows with `results/`. It was measured at
+  **16 min** on a 4-core runner against 94 runs — where the workflow makes it
+  *gate* a measurement of about the same length — so it now runs across cores
+  (≈4.6 min in the sandbox). Coverage is unchanged; if it creeps back up, that is
+  the test to look at first.
 - Long runs: background them and wait on the output file rather than watching
   (see the cost table in `wiki/Running.md`). Always `--save-run`; the `D(freq,
   contrast)` surfaces are the expensive product and `--load` re-fits without a
@@ -219,6 +224,40 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
 
 ## Open threads
 
+- **Weight lineage moves λ on every architecture tested — 10 pairs, 7
+  architectures** (2026-08-04). The one-pair evidence below confounded framework,
+  conversion and recipe; these separate them.
+  - **The back-end is excluded by an exact control.** `timm:resnet50.tv_in1k`
+    *is* torchvision `IMAGENET1K_V1` re-hosted, and returns **mean |Δλ| = 0.000
+    over all 110 shared taps**, r = +1.000. Different library, different module
+    names, same numbers to three decimals. So the spread across the other tags
+    is the weights and nothing else — quote this row before any other.
+  - **Recipe alone, no conversion anywhere**: torchvision `IMAGENET1K_V1` vs
+    `IMAGENET1K_V2` on five architectures gives mean |Δλ| **0.295** at `logits`
+    and **0.213** at `prob`, against a three-seed sampling sd of 0.043 / 0.007 —
+    **7× and 29×**. `resnet50` moves −0.476 at `logits`.
+  - **The direction is not uniform.** ResNet-50/ResNeXt-50/RegNet-Y all move
+    −0.40 to −0.48 at `logits`; both MobileNets move **+0.07**. "Better training
+    → more log-like" is false as stated. Nor does the ordering track top-1:
+    across five ResNet-50 lineages, A1 (80.4%) sits between V1 (76.1%) and V2
+    (80.9%).
+  - **VGG-16 reproduces the VGG-19 result**: conv-stack median λ +0.664
+    (torchvision) → **+1.025** (Caffe), mean |Δλ| **0.353** over 39 taps, against
+    VGG-19's +0.690 → +1.045 and 0.328. Caffe holds λ ≈ 1 through the conv stack
+    of *both*, so the flat conv stack belongs to the **Oxford recipe**, not to
+    VGG-19.
+  - **AlexNet has no matched pair and cannot have one.** torchvision's `alexnet`
+    follows *"One weird trick"* (2014), not the 2012 paper — widths
+    64/192/384/256/256 against 96/256/384/384/256, no grouping, no LRN — so the
+    Caffe AlexNet weights will not load, and only one weights tag exists.
+    `results/alexnet-*` measures the 2014 variant and nothing in those
+    directories says so.
+  - Caveats that must ride along: **one seed each** (the noise scale is borrowed
+    from the older three-seed sweeps); the V2 fits are systematically *worse*
+    (`resnet50` `prob` λ-R² 0.966 → 0.796); and every non-VGG pair is a BN net,
+    so those have **no scrambled control**. Recipe deltas are bundles — weight
+    decay and `RandomResizedCrop` are the two that bear on `D`, and neither is
+    isolated by these runs.
 - **The paper's checkpoint is the converted Caffe one, and on it the paper
   reproduces.** §8.1 used MatConvNet's imported *original* VGG-19. Measured:
   `prob` 0.980 vs the documented 98%, `prob` the peak of 45 taps, fc7 0.750

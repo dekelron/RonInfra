@@ -8,7 +8,7 @@ Checkpoint lineage, cleanest available isolation: same architecture, same framew
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+The recipe change alone moves λ well past the sampling noise. Against [`resnet50-r50-s0`](../resnet50-r50-s0/notes.md): `logits` λ **+0.044** (R² 0.949) → **-0.432** (R² 0.920), `prob` **-0.223** (R² 0.966) → **-0.426** (R² 0.796). The three-seed sweep on `resnet50` puts the sampling sd at 0.043 (`logits`) and 0.007 (`prob`), so these are large. No conversion is involved anywhere — same architecture, same framework, same file format, only the training run differs. See `wiki/Results.md`, "One architecture, several training runs".
 
 ## Reproduce
 

@@ -134,6 +134,32 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks`](hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks/notes.md) | SmolVLM-256M, trained | **2** | transformers | vision **+0.679 → −0.114**, decoder +0.115 → −0.120 | **The VLM depth profile**, 44 taps. The compression is built in the *vision tower* (0.79 over 12 blocks); the 30-layer decoder moves 0.27. λ-R² 0.935–0.988 across all 42 blocks. |
 | [`hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks-contrastprompt`](hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks-contrastprompt/notes.md) | SmolVLM-256M, trained | **2** | transformers | mean \|Δλ\| **0.0000** / **0.0006** | Same run with the instruction `'How much contrast does this pattern have?'`. **The prompt changes nothing** in vision (bit-identical) or decoder (≤0.0020) — causal masking puts image tokens before the prompt. Readout moves but is unresolved. |
 
+> **Thirteen lineage runs landed on 2026-08-04.** One architecture, several
+> training runs — the generalisation of the VGG-19 checkpoint result. Torchvision
+> ships a second ImageNet checkpoint for **26** architectures, and a timm tag *is*
+> a lineage, so `--model resnet50:IMAGENET1K_V2` and `--model timm:resnet50.a1_in1k`
+> now reach them. **Read the control row first**: `timm:resnet50.tv_in1k` is
+> torchvision's `IMAGENET1K_V1` re-hosted and returns mean |Δλ| **0.000** over 110
+> taps, so back-end and preprocessing are excluded and every other difference here
+> is the weights. All are **one seed**; the noise scale comes from the older
+> three-seed sweeps. The BN nets (everything but the VGGs) cannot take the
+> scramble, so those pairs have no untrained control. See `wiki/Results.md`,
+> "One architecture, several training runs".
+
+| [`resnet50-r50-s0-v2`](resnet50-r50-s0-v2/notes.md) | ResNet-50, trained | 50 | `IMAGENET1K_V2` | `logits` Δλ **-0.476** | Lineage pair with [`resnet50-r50-s0`](resnet50-r50-s0/notes.md): same architecture and framework, **no conversion**, only the training recipe. `logits` +0.044 → -0.432 (R² 0.95 → 0.92); `prob` λ -0.426 at R² 0.80. |
+| [`resnext50-32x4d-r50-s0-v2`](resnext50-32x4d-r50-s0-v2/notes.md) | ResNeXt-50, trained | 50 | `IMAGENET1K_V2` | `logits` Δλ **-0.451** | Lineage pair with [`resnext50-32x4d-r50-s0`](resnext50-32x4d-r50-s0/notes.md): same architecture and framework, **no conversion**, only the training recipe. `logits` -0.031 → -0.482 (R² 0.96 → 0.96); `prob` λ -0.354 at R² 0.96. |
+| [`regnet-y-400mf-r50-s0-v2`](regnet-y-400mf-r50-s0-v2/notes.md) | RegNet-Y-400MF, trained | 50 | `IMAGENET1K_V2` | `logits` Δλ **-0.403** | Lineage pair with [`regnet-y-400mf-r50-s0`](regnet-y-400mf-r50-s0/notes.md): same architecture and framework, **no conversion**, only the training recipe. `logits` +0.354 → -0.050 (R² 0.95 → 0.86); `prob` λ -0.296 at R² 0.89. |
+| [`mobilenet-v2-r50-s0-v2`](mobilenet-v2-r50-s0-v2/notes.md) | MobileNet-V2, trained | 50 | `IMAGENET1K_V2` | `logits` Δλ **+0.074** | Lineage pair with [`mobilenet-v2-r50-s0`](mobilenet-v2-r50-s0/notes.md): same architecture and framework, **no conversion**, only the training recipe. `logits` +0.057 → +0.131 (R² 0.96 → 0.95); `prob` λ +0.163 at R² 0.92. |
+| [`mobilenet-v3-large-r50-s0-v2`](mobilenet-v3-large-r50-s0-v2/notes.md) | MobileNet-V3-L, trained | 50 | `IMAGENET1K_V2` | `logits` Δλ **+0.071** | Lineage pair with [`mobilenet-v3-large-r50-s0`](mobilenet-v3-large-r50-s0/notes.md): same architecture and framework, **no conversion**, only the training recipe. `logits` -0.273 → -0.203 (R² 0.90 → 0.87); `prob` λ -0.585 at R² 0.78. |
+| [`timm-resnet50-tv-in1k-r50-s0`](timm-resnet50-tv-in1k-r50-s0/notes.md) | ResNet-50, trained | 50 | timm `.tv_in1k` | mean \|Δλ\| **0.000** | **The back-end control.** Torchvision `IMAGENET1K_V1` re-hosted: identical to [`resnet50-r50-s0`](resnet50-r50-s0/notes.md) at all 110 shared taps, r = +1.000. Excludes library and preprocessing as explanations for the lineage spread. |
+| [`timm-resnet50-gluon-in1k-r50-s0`](timm-resnet50-gluon-in1k-r50-s0/notes.md) | ResNet-50, trained | 50 | timm `.gluon_in1k` | `logits` λ **-0.393** | Gluon / Bag of Tricks. One of five lineages of the same 25.6 M parameters; λ spans 0.476 at `logits` across them (11× the 3-seed sd) while the duplicate returns 0.000. `prob` λ -0.313 at R² 0.95. |
+| [`timm-resnet50-a3-in1k-r50-s0`](timm-resnet50-a3-in1k-r50-s0/notes.md) | ResNet-50, trained | 50 | timm `.a3_in1k` | `logits` λ **-0.261** | RSB A3, 100 ep, LAMB/BCE. One of five lineages of the same 25.6 M parameters; λ spans 0.476 at `logits` across them (11× the 3-seed sd) while the duplicate returns 0.000. `prob` λ -0.381 at R² 0.95. |
+| [`timm-resnet50-a1-in1k-r50-s0`](timm-resnet50-a1-in1k-r50-s0/notes.md) | ResNet-50, trained | 50 | timm `.a1_in1k` | `logits` λ **-0.166** | RSB A1, 600 ep, LAMB/BCE. One of five lineages of the same 25.6 M parameters; λ spans 0.476 at `logits` across them (11× the 3-seed sd) while the duplicate returns 0.000. `prob` λ -0.347 at R² 0.89. |
+| [`vgg16-r50-s0`](vgg16-r50-s0/notes.md) | VGG-16, trained | 50 | `IMAGENET1K_V1` | conv-stack median λ **+0.664** | **The VGG-19 lineage result reproduces on VGG-16**: mean |Δλ| 0.353 over 39 taps against VGG-19's 0.328, and Caffe again holds λ ≈ 1 through the conv stack. `prob` λ +0.093 at R² 0.96. |
+| [`vgg16-r50-s0-caffe`](vgg16-r50-s0-caffe/notes.md) | VGG-16, trained | 50 | converted Caffe | conv-stack median λ **+1.025** | **The VGG-19 lineage result reproduces on VGG-16**: mean |Δλ| 0.353 over 39 taps against VGG-19's 0.328, and Caffe again holds λ ≈ 1 through the conv stack. `prob` λ +0.135 at R² 0.97. |
+| [`vgg16-scramble-r50-s0`](vgg16-scramble-r50-s0/notes.md) | VGG-16, scrambled | 50 | `IMAGENET1K_V1` | `prob` λ **+0.729** | **Valid control** — VGG-16 is BN-free. Against [`vgg16-r50-s0`](vgg16-r50-s0/notes.md)'s +0.093; mean log-R² separates too. |
+| [`vgg16-scramble-r50-s0-caffe`](vgg16-scramble-r50-s0-caffe/notes.md) | VGG-16, scrambled | 50 | converted Caffe | `prob` λ **+0.861** | **Valid control** — VGG-16 is BN-free. Against [`vgg16-r50-s0-caffe`](vgg16-r50-s0-caffe/notes.md)'s +0.135; mean log-R² separates too. |
+
 > **`logness` was removed on 2026-07-26 and replaced by `λ`.** Prose in any
 > `notes.md` written before that date quotes the retired statistic — a race
 > between `D = a + b·log c` and `D = a + b·c`, which measured nothing useful

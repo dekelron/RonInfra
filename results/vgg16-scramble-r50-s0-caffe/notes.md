@@ -8,7 +8,7 @@ VGG-16 on the original Oxford/Caffe weights (Keras HDF5 port), converted on the 
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Weight-scrambled control for [`vgg16-r50-s0-caffe`](../vgg16-r50-s0-caffe/notes.md): `prob` λ **+0.861** (R² 0.974) against the trained run's +0.135 (R² 0.969). VGG-16 has no BatchNorm, so unlike the ResNet/RegNet/MobileNet lineage pairs this control is valid — the permutation degrades rather than decalibrates.
 
 ## Reproduce
 

@@ -372,15 +372,48 @@ def test_mean_of_distances_round_trips_and_old_runs_still_load():
         old.report()  # must not raise with the columns absent
 
 
+def _reload_and_refit(npz):
+    """Load one committed run and re-fit every tap. Module level so it pickles."""
+    import os
+
+    result, _ = load_result(os.path.dirname(npz))
+    assert result.surfaces, npz
+    result.report()
+    return npz
+
+
 def test_committed_runs_predate_the_second_metric():
-    """Adding it must not have disturbed a single committed surface."""
+    """Adding it must not have disturbed a single committed surface.
+
+    This re-fits every tap of every committed run, which makes it by far the
+    slowest thing in the suite -- and it grows with ``results/``. Measured at
+    **16 min** on a 4-core runner against 94 runs, where the workflow makes it
+    gate a measurement of about the same length, so it was doubling the cost of
+    every run and getting worse with each one committed.
+
+    The runs are independent, so it goes across cores. Coverage is unchanged --
+    every run is still loaded and re-fitted; an assertion inside a worker
+    propagates out of ``pool.map``.
+    """
     import glob
     import os
 
-    for npz in sorted(glob.glob("results/*/result.npz")):
-        result, _ = load_result(os.path.dirname(npz))
-        assert result.surfaces, npz
-        result.report()
+    npzs = sorted(glob.glob("results/*/result.npz"))
+    workers = min(os.cpu_count() or 1, 8)
+    pool = None
+    if workers > 1:
+        try:
+            from concurrent.futures import ProcessPoolExecutor
+
+            pool = ProcessPoolExecutor(max_workers=workers)
+        except Exception:  # no fork, restricted sandbox, ...
+            pool = None
+    if pool is None:
+        for npz in npzs:
+            _reload_and_refit(npz)
+    else:
+        with pool:
+            list(pool.map(_reload_and_refit, npzs))
 
 
 class _ThresholdUnitModel(FeatureModel):

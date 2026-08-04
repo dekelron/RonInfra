@@ -8,7 +8,7 @@ Cross-back-end control for the lineage series: .tv_in1k IS torchvision IMAGENET1
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+**The control worked, exactly.** These are torchvision's `IMAGENET1K_V1` weights re-hosted by timm, and the measurement is identical to [`resnet50-r50-s0`](../resnet50-r50-s0/notes.md) to three decimals: `logits` λ +0.044, `prob` −0.223, **mean |Δλ| = 0.000 over all 110 shared taps**, profile correlation r = +1.000. Different library, different module naming, different preprocessing code, same numbers — so back-end and preprocessing are excluded as explanations for any difference between the other lineage tags, and the spread across them is the weights.
 
 ## Reproduce
 

@@ -8,7 +8,7 @@ Lineage pair 3 of 5 on the torchvision V1-vs-V2 axis; pairs with results/mobilen
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+The recipe change alone moves λ well past the sampling noise. Against [`mobilenet-v3-large-r50-s0`](../mobilenet-v3-large-r50-s0/notes.md): `logits` λ **-0.273** (R² 0.897) → **-0.203** (R² 0.870), `prob` **-0.818** (R² 0.881) → **-0.585** (R² 0.783). The three-seed sweep on `resnet50` puts the sampling sd at 0.043 (`logits`) and 0.007 (`prob`), so these are large. No conversion is involved anywhere — same architecture, same framework, same file format, only the training run differs. See `wiki/Results.md`, "One architecture, several training runs".
 
 ## Reproduce
 

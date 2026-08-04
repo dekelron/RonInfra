@@ -8,7 +8,7 @@ VGG-16 on torchvision IMAGENET1K_V1: the canonical half of the VGG-16 lineage pa
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+Weight-scrambled control for [`vgg16-r50-s0`](../vgg16-r50-s0/notes.md): `prob` λ **+0.729** (R² 0.633) against the trained run's +0.093 (R² 0.960). VGG-16 has no BatchNorm, so unlike the ResNet/RegNet/MobileNet lineage pairs this control is valid — the permutation degrades rather than decalibrates.
 
 ## Reproduce
 

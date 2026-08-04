@@ -1280,6 +1280,177 @@ the paper's claim, and our Caffe run lands on its digitised values. (The paper's
 `prob` at the lowest contrast has a curve that rounds onto the baseline, below
 the figure's own resolution, so there is no ratio to read there.)
 
+## One architecture, several training runs
+
+Everything above about weight lineage rests on **one** pair of checkpoints, and
+that pair confounds three things: the **framework** (Caffe against PyTorch),
+this repo's own **conversion**, and the **training recipe**. The conversion is
+closed to 2.9e-8, but the other two are entangled, and one pair cannot say
+whether any of it generalises.
+
+Twelve new runs hold the architecture fixed and change only the training run.
+All at `--reps 50`, `--seed 0`, `--layers all`, 224×224 — an identical stimulus,
+verified from each `result.json` (`size` 224, 8 frequencies, 14 contrasts).
+
+### First: the back-end is not the variable
+
+`timm:resnet50.tv_in1k` **is** torchvision's `IMAGENET1K_V1`, re-hosted. Running
+it through the other back-end — different library, different module naming,
+different preprocessing code — gives:
+
+| | torchvision `resnet50` | `timm:resnet50.tv_in1k` | Δ |
+|---|---|---|---|
+| `logits` λ | +0.044 (R² 0.949) | +0.044 (R² 0.949) | **0.000** |
+| `prob` λ | −0.223 (R² 0.966) | −0.223 (R² 0.966) | **0.000** |
+| 110 shared taps | — | — | mean \|Δλ\| **0.000**, r = **+1.000** |
+
+Identical to three decimals at every tap. So back-end, library and preprocessing
+are excluded by construction, and every difference below is the weights.
+[`resnet50-r50-s0`](../results/resnet50-r50-s0/notes.md),
+[`timm-resnet50-tv-in1k-r50-s0`](../results/timm-resnet50-tv-in1k-r50-s0/notes.md).
+
+### Recipe alone moves λ — five architectures, no conversion
+
+Torchvision ships a second ImageNet-1k checkpoint for 26 architectures.
+`IMAGENET1K_V1` against `IMAGENET1K_V2` is the cleanest isolation available:
+same architecture, same framework, same file format, no conversion, and both
+recipes are published. Five pairs, V1 halves already committed:
+
+| architecture | `logits` V1 → V2 | Δλ | `prob` V1 → V2 | Δλ | depth profile, mean \|Δλ\| |
+|---|---|---|---|---|---|
+| `resnet50` | +0.044 → −0.432 | **−0.476** | −0.223 → −0.426 | **−0.203** | 0.225 over 160 taps |
+| `resnext50_32x4d` | −0.031 → −0.482 | **−0.451** | −0.271 → −0.354 | −0.084 | 0.161 over 160 |
+| `regnet_y_400mf` | +0.354 → −0.050 | **−0.403** | +0.148 → −0.296 | **−0.444** | 0.356 over 237 |
+| `mobilenet_v2` | +0.057 → +0.131 | +0.074 | +0.060 → +0.163 | +0.103 | 0.284 over 142 |
+| `mobilenet_v3_large` | −0.273 → −0.203 | +0.071 | −0.818 → −0.585 | +0.233 | 0.222 over 166 |
+
+Mean \|Δλ\| is **0.295** at `logits` and **0.213** at `prob`. The scale to read
+that against is the seed sweep, which redraws every image and changes nothing
+else: over three seeds `resnet50` gives sd **0.0428** at `logits` and **0.0074**
+at `prob`. So the recipe moves λ by roughly **7×** and **29×** the sampling
+noise, with no conversion anywhere in the path.
+
+**The direction is not uniform.** ResNet-50, ResNeXt-50 and RegNet-Y all move
+−0.40 to −0.48 at `logits`; both MobileNets move +0.07. A better-trained
+checkpoint does not simply mean a more log-like one.
+
+### Five lineages of one architecture
+
+ResNet-50 with six checkpoints — the same 25.6 M parameters fitted by five
+distinct procedures, plus the duplicate as a control:
+
+| lineage | `logits` λ | `prob` λ | depth profile vs V1 |
+|---|---|---|---|
+| torchvision `IMAGENET1K_V1` — 90 ep, SGD, CE | +0.044 (R² 0.95) | −0.223 (R² 0.97) | — |
+| `timm:resnet50.tv_in1k` — *the same weights* | +0.044 (R² 0.95) | −0.223 (R² 0.97) | **0.000** |
+| `timm:resnet50.gluon_in1k` — Bag of Tricks | −0.393 (R² 0.94) | −0.313 (R² 0.95) | 0.295 |
+| `timm:resnet50.a3_in1k` — RSB A3, 100 ep, LAMB/BCE | −0.261 (R² 0.93) | −0.381 (R² 0.95) | — |
+| `timm:resnet50.a1_in1k` — RSB A1, 600 ep, LAMB/BCE | −0.166 (R² 0.90) | −0.347 (R² 0.89) | 0.204 |
+| torchvision `IMAGENET1K_V2` — 600 ep, TA/mixup/EMA | −0.432 (R² 0.92) | −0.426 (R² 0.80) | 0.225 |
+
+λ at `logits` spans **0.476** across the five lineages — 11× the seed sd — and
+at `prob` **0.203**, 27× it. The duplicate returns exactly 0.000, so the spread
+is not the instrument. **Every non-V1 lineage is more negative than V1 at both
+taps**, and the ordering does not track top-1 accuracy: A1 (80.4%) sits between
+V1 (76.1%) and V2 (80.9%) at `logits`.
+
+### VGG-16 reproduces the VGG-19 lineage result
+
+The original finding, on a different architecture through the same conversion
+path — Oxford/Caffe against torchvision, both BN-free so the scramble control is
+valid:
+
+| | VGG-16 | VGG-19 |
+|---|---|---|
+| conv-stack median λ, torchvision | +0.664 | +0.690 |
+| conv-stack median λ, Caffe | **+1.025** | **+1.045** |
+| mean \|Δλ\| over shared taps | **0.353** (39 taps) | **0.328** (45 taps) |
+| profile correlation | +0.671 | +0.700 |
+
+Caffe holds λ ≈ 1 — flatly linear in contrast — through the conv stack of
+**both** nets, and torchvision sits ~0.67–0.69 in both. The flat conv stack is a
+property of the Oxford training recipe, not of VGG-19. VGG-16's controls behave:
+mean log-R² 0.936 (torchvision) / 0.950 (Caffe) trained against 0.492 / 0.731
+scrambled.
+
+### AlexNet has no matched pair, and the reason is worse
+
+Attempted, and it cannot be done. **Torchvision's `alexnet` is not the 2012
+architecture**: its own docstring says the implementation follows *"One weird
+trick for parallelizing convolutional neural networks"* (2014), not *"ImageNet
+Classification with Deep Convolutional Neural Networks"*. The widths are
+64/192/384/256/256 against the 2012 paper's 96/256/384/384/256, and the grouped
+convolutions and LRN are gone, so the Caffe zoo's AlexNet weights would not
+load. `alexnet` also carries a single `IMAGENET1K_V1` entry.
+
+So for AlexNet the name does not denote one architecture across two sources, let
+alone one architecture with two lineages. `results/alexnet-*` measures the 2014
+variant, and nothing in those run directories says so.
+
+### The recipes, from the primary sources
+
+What "a different training run" means, per pair. Published recipes, not
+measurements.
+
+**Oxford VGG against torchvision VGG** (same input, architecture and task):
+
+| | Oxford (Simonyan & Zisserman §3.1) | torchvision |
+|---|---|---|
+| epochs | 74 (370K iterations) | 90 |
+| batch | 256 | 32 |
+| LR | 1e-2, ÷10 on val plateau (3×) | 1e-2, ÷10 every 30 epochs |
+| **weight decay** | **5e-4** | **1e-4** |
+| crop | rescale to S, random 224 crop; S fixed at 256/384 or jittered in [256,512] | `RandomResizedCrop(224)`, scale (0.08, 1.0) |
+| colour | random RGB shift | none |
+| init | pre-initialised from the shallower config A | default |
+
+**torchvision ResNet-50 V1 against V2:**
+
+| | `IMAGENET1K_V1` | `IMAGENET1K_V2` |
+|---|---|---|
+| epochs | 90 | 600 |
+| LR | 0.1, step ÷10 @30 | 0.5, cosine, 5-epoch linear warmup |
+| **weight decay** | **1e-4** | **2e-5**, and 0 on norm layers |
+| augmentation | flip + RRC | + TrivialAugment-wide, random-erase 0.1, mixup 0.2, cutmix 1.0 |
+| label smoothing | — | 0.1 |
+| EMA | — | yes |
+| train crop / val resize | 224 / 256 | 176 / 232 |
+| top-1 | 76.130 | 80.858 |
+
+Two deltas bear on what `D` measures, and they point opposite ways. **Weight
+decay sets the scale of the learned weights**, hence where a unit sits relative
+to its own rectifier — the operating point this repo has isolated as the
+variable controlling λ. Oxford used 5× *more* decay than torchvision's VGG
+recipe; torchvision's V2 uses 5× *less* than its V1. And **`RandomResizedCrop`
+changes the spatial-frequency content of the training distribution** (an
+0.08-area crop upsampled to 224 carries ~3.5× lower spatial frequencies), which
+is the axis `D(f)` resolves.
+
+Naming them is not testing them. Every pair here moves several ingredients at
+once, because published checkpoints come as bundles — so these are hypotheses
+the runs are consistent with, not conclusions from them.
+
+### What this shows, and what it does not
+
+**Shows.** Weight lineage moves λ generically, not only on VGG-19: **10 pairs
+across 7 architectures**, every one beyond the sampling noise, with the back-end
+excluded by an exact duplicate control and the conversion excluded entirely on
+the five torchvision pairs. The VGG result replicates on VGG-16 to within 0.03
+in mean \|Δλ\|.
+
+**Does not show.** *Which ingredient* is responsible — every recipe delta is a
+bundle. *A direction* — the sign is architecture-dependent, so "modern recipe →
+more log-like" is false as stated. And these are **one seed each**; the noise
+scale they are read against comes from the older three-seed sweeps on
+`resnet50`, `vgg19` and `vit_b_16`, which is a fair scale for `prob` and
+`logits` but has not been re-measured per architecture here.
+
+Two further caveats. The V2 fits are systematically *worse* — `resnet50` `prob`
+λ-R² drops 0.966 → 0.796 — so per the standing rule those λ are quoted with
+their R² and the poorer ones carry less weight. And the BN architectures
+(everything except the VGGs) cannot take the weight scramble, so those pairs
+have no untrained control.
+
 ## VGG-19, verified run
 
 14 contrasts × 8 frequencies, `--reps 50`, 224×224, CPU. Mean R² of

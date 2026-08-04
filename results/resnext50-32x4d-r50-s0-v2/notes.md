@@ -8,7 +8,7 @@ Lineage pair 2 of 5 on the torchvision V1-vs-V2 axis; pairs with results/resnext
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+The recipe change alone moves λ well past the sampling noise. Against [`resnext50-32x4d-r50-s0`](../resnext50-32x4d-r50-s0/notes.md): `logits` λ **-0.031** (R² 0.960) → **-0.482** (R² 0.964), `prob` **-0.271** (R² 0.958) → **-0.354** (R² 0.955). The three-seed sweep on `resnet50` puts the sampling sd at 0.043 (`logits`) and 0.007 (`prob`), so these are large. No conversion is involved anywhere — same architecture, same framework, same file format, only the training run differs. See `wiki/Results.md`, "One architecture, several training runs".
 
 ## Reproduce
 
