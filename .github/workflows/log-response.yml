@@ -162,6 +162,12 @@ jobs:
           case "$MODEL" in
             clip:*)         pip install open_clip_torch ;;
             hf:*|sam|sam:*) pip install transformers pillow ;;
+            # The committed timm runs came from a contributed environment, not
+            # from here, so this path was never installed. timm is where one
+            # architecture carries many checkpoint tags -- resnet50.a1_in1k
+            # against resnet50.tv_in1k is the same net trained twice -- which
+            # this workflow could not reach without it.
+            timm:*)         pip install timm ;;
           esac
 
       - name: Verify the pipeline offline
