@@ -1288,7 +1288,7 @@ this repo's own **conversion**, and the **training recipe**. The conversion is
 closed to 2.9e-8, but the other two are entangled, and one pair cannot say
 whether any of it generalises.
 
-Twelve new runs hold the architecture fixed and change only the training run.
+Fifteen new runs hold the architecture fixed and change only the training run.
 All at `--reps 50`, `--seed 0`, `--layers all`, 224×224 — an identical stimulus,
 verified from each `result.json` (`size` 224, 8 frequencies, 14 contrasts).
 
@@ -1373,6 +1373,42 @@ property of the Oxford training recipe, not of VGG-19. VGG-16's controls behave:
 mean log-R² 0.936 (torchvision) / 0.950 (Caffe) trained against 0.492 / 0.731
 scrambled.
 
+### ViT-B/16: the tightest pair here, and the largest effect
+
+`vit_base_patch16_224.orig_in21k_ft_in1k` and `.augreg_in21k_ft_in1k` share the
+architecture, the ImageNet-21k pretraining, the ImageNet-1k fine-tune and the
+objective. What differs is augmentation and regularization — dropout, stochastic
+depth, Mixup, RandAugment — which is exactly the variable the AugReg paper was
+written to sweep.
+
+| | `.orig` | `.augreg` | Δ |
+|---|---|---|---|
+| `logits` λ | −0.131 (R² 0.903) | +0.006 (R² 0.923) | +0.138 |
+| `prob` λ | −0.096 (R² 0.874) | **+0.232** (R² 0.924) | **+0.328** |
+| 189 shared taps | — | — | mean \|Δλ\| **0.380** |
+
+That is the **largest depth-profile shift of any pair here**, and at `prob` it is
+**46×** ViT-B/16's own three-seed sd (0.0072). The profile correlation is also
+the lowest of any pair, **+0.387** — AugReg does not shift the profile, it
+reshapes it, with the last blocks moving most (`blocks.11.attn.proj` −0.659 →
++1.262).
+
+With torchvision's from-scratch ImageNet-1k checkpoint that makes three lineages
+of one architecture:
+
+| ViT-B/16 lineage | `logits` λ | `prob` λ |
+|---|---|---|
+| torchvision `IMAGENET1K_V1` — 1k from scratch | −0.371 (R² 0.93) | −0.173 (R² 0.93) |
+| `timm .orig_in21k_ft_in1k` — original ViT | −0.131 (R² 0.90) | −0.096 (R² 0.87) |
+| `timm .augreg_in21k_ft_in1k` — AugReg | +0.006 (R² 0.92) | +0.232 (R² 0.92) |
+
+Caveat specific to this pair: both timm tags normalise natively at 0.5/0.5, and
+both were run under the repo's shared ImageNet constants. That is identical on
+the two sides so the *pair* is clean, but it is off-native for both — and this
+repo has measured preprocessing moving per-frequency λ by mean 0.320 elsewhere.
+The torchvision row is native, so the three-way column mixes the two regimes and
+should be read as three lineages, not as a calibrated ladder.
+
 ### AlexNet has no matched pair, and the reason is worse
 
 Attempted, and it cannot be done. **Torchvision's `alexnet` is not the 2012
@@ -1432,8 +1468,8 @@ the runs are consistent with, not conclusions from them.
 
 ### What this shows, and what it does not
 
-**Shows.** Weight lineage moves λ generically, not only on VGG-19: **10 pairs
-across 7 architectures**, every one beyond the sampling noise, with the back-end
+**Shows.** Weight lineage moves λ generically, not only on VGG-19: **11 pairs
+across 8 architectures**, every one beyond the sampling noise, with the back-end
 excluded by an exact duplicate control and the conversion excluded entirely on
 the five torchvision pairs. The VGG result replicates on VGG-16 to within 0.03
 in mean \|Δλ\|.

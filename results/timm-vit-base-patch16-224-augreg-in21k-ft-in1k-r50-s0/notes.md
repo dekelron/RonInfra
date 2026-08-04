@@ -8,7 +8,7 @@ ViT-B/16 lineage pair, half 2: the AugReg weights (Steiner et al. 2021) -- same 
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+AugReg against the original ViT weights moves `prob` λ -0.096 → **+0.232** (R² 0.874 → 0.924), a shift of **+0.328** — **46×** ViT-B/16's three-seed sampling sd of 0.0072 — and **mean |Δλ| 0.380 over 189 shared taps**, the largest depth-profile shift of any pair measured here. Profile correlation is also the lowest at **+0.387**: AugReg reshapes the profile rather than shifting it, with the last blocks moving most (`blocks.11.attn.proj` −0.659 → +1.262). Architecture, data and objective are all held fixed, so this is augmentation and regularization alone. Caveat: both tags normalise natively at 0.5/0.5 and both ran under the shared ImageNet constants — identical on the two sides, but off-native for both.
 
 ## Reproduce
 

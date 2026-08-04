@@ -224,7 +224,7 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
 
 ## Open threads
 
-- **Weight lineage moves λ on every architecture tested — 10 pairs, 7
+- **Weight lineage moves λ on every architecture tested — 11 pairs, 8
   architectures** (2026-08-04). The one-pair evidence below confounded framework,
   conversion and recipe; these separate them.
   - **The back-end is excluded by an exact control.** `timm:resnet50.tv_in1k`
@@ -246,6 +246,15 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
     VGG-19's +0.690 → +1.045 and 0.328. Caffe holds λ ≈ 1 through the conv stack
     of *both*, so the flat conv stack belongs to the **Oxford recipe**, not to
     VGG-19.
+  - **The tightest pair gives the biggest effect.** ViT-B/16
+    `.orig_in21k_ft_in1k` vs `.augreg_in21k_ft_in1k` hold architecture, 21k
+    pretraining, 1k fine-tune and objective all fixed — augmentation and
+    regularization are the only variable. `prob` λ **−0.096 → +0.232**, a shift
+    of 0.328 = **46×** the three-seed sd, and **mean |Δλ| 0.380 over 189 taps**,
+    the largest here. Profile correlation is the *lowest* of any pair (+0.387):
+    AugReg **reshapes** the depth profile rather than shifting it. Caveat: both
+    tags are natively 0.5/0.5 and both ran on shared ImageNet constants —
+    identical across the pair, off-native for both.
   - **AlexNet has no matched pair and cannot have one.** torchvision's `alexnet`
     follows *"One weird trick"* (2014), not the 2012 paper — widths
     64/192/384/256/256 against 96/256/384/384/256, no grouping, no LRN — so the

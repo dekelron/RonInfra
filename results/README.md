@@ -134,7 +134,7 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks`](hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks/notes.md) | SmolVLM-256M, trained | **2** | transformers | vision **+0.679 → −0.114**, decoder +0.115 → −0.120 | **The VLM depth profile**, 44 taps. The compression is built in the *vision tower* (0.79 over 12 blocks); the 30-layer decoder moves 0.27. λ-R² 0.935–0.988 across all 42 blocks. |
 | [`hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks-contrastprompt`](hf-HuggingFaceTB-SmolVLM-256M-Instruct-r2-s0-blocks-contrastprompt/notes.md) | SmolVLM-256M, trained | **2** | transformers | mean \|Δλ\| **0.0000** / **0.0006** | Same run with the instruction `'How much contrast does this pattern have?'`. **The prompt changes nothing** in vision (bit-identical) or decoder (≤0.0020) — causal masking puts image tokens before the prompt. Readout moves but is unresolved. |
 
-> **Thirteen lineage runs landed on 2026-08-04.** One architecture, several
+> **Fifteen lineage runs landed on 2026-08-04.** One architecture, several
 > training runs — the generalisation of the VGG-19 checkpoint result. Torchvision
 > ships a second ImageNet checkpoint for **26** architectures, and a timm tag *is*
 > a lineage, so `--model resnet50:IMAGENET1K_V2` and `--model timm:resnet50.a1_in1k`
@@ -159,6 +159,8 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 | [`vgg16-r50-s0-caffe`](vgg16-r50-s0-caffe/notes.md) | VGG-16, trained | 50 | converted Caffe | conv-stack median λ **+1.025** | **The VGG-19 lineage result reproduces on VGG-16**: mean |Δλ| 0.353 over 39 taps against VGG-19's 0.328, and Caffe again holds λ ≈ 1 through the conv stack. `prob` λ +0.135 at R² 0.97. |
 | [`vgg16-scramble-r50-s0`](vgg16-scramble-r50-s0/notes.md) | VGG-16, scrambled | 50 | `IMAGENET1K_V1` | `prob` λ **+0.729** | **Valid control** — VGG-16 is BN-free. Against [`vgg16-r50-s0`](vgg16-r50-s0/notes.md)'s +0.093; mean log-R² separates too. |
 | [`vgg16-scramble-r50-s0-caffe`](vgg16-scramble-r50-s0-caffe/notes.md) | VGG-16, scrambled | 50 | converted Caffe | `prob` λ **+0.861** | **Valid control** — VGG-16 is BN-free. Against [`vgg16-r50-s0-caffe`](vgg16-r50-s0-caffe/notes.md)'s +0.135; mean log-R² separates too. |
+| [`timm-vit-base-patch16-224-orig-in21k-ft-in1k-r50-s0`](timm-vit-base-patch16-224-orig-in21k-ft-in1k-r50-s0/notes.md) | ViT-B/16, trained | 50 | timm `.orig_in21k_ft_in1k` | `prob` λ **-0.096** | The original Dosovitskiy ViT weights (21k → 1k). Half of the tightest pair here: architecture, data and objective all fixed against the AugReg half. |
+| [`timm-vit-base-patch16-224-augreg-in21k-ft-in1k-r50-s0`](timm-vit-base-patch16-224-augreg-in21k-ft-in1k-r50-s0/notes.md) | ViT-B/16, trained | 50 | timm `.augreg_in21k_ft_in1k` | mean \|Δλ\| **0.380** | **Largest depth-profile shift of any lineage pair** (189 taps), and the lowest profile correlation (+0.387) — AugReg reshapes rather than shifts. `prob` λ -0.096 → +0.232, **46×** the 3-seed sd. |
 
 > **`logness` was removed on 2026-07-26 and replaced by `λ`.** Prose in any
 > `notes.md` written before that date quotes the retired statistic — a race

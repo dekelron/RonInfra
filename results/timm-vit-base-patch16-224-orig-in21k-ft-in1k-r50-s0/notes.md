@@ -8,7 +8,7 @@ ViT-B/16 lineage pair, half 1: the ORIGINAL Dosovitskiy et al. ViT weights, Imag
 
 ## What it showed
 
-_(fill in: the headline numbers, anything that disagreed with expectation)_
+The `orig` half of the tightest lineage pair in the repo: same architecture, same ImageNet-21k pretraining, same ImageNet-1k fine-tune, same objective as [`timm-vit-base-patch16-224-augreg-in21k-ft-in1k-r50-s0`](../timm-vit-base-patch16-224-augreg-in21k-ft-in1k-r50-s0/notes.md) — only augmentation and regularization differ. `logits` λ **-0.131** (R² 0.903), `prob` **-0.096** (R² 0.874).
 
 ## Reproduce
 
