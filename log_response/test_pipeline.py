@@ -1679,6 +1679,50 @@ def test_weight_shape_statistics_match_their_closed_forms():
     assert sum(int(b.shape[0]) for b in _row_chunks(layer.weight, budget=10_000)) == 512
 
 
+def test_margins_at_threshold_give_exactly_lambda_one():
+    """The margin model's anchor: units sitting *on* their ReLU are linear in contrast.
+
+    ``D(c) = c · mean_i h(m_i/c)``, and at ``m = 0`` the mean is the constant
+    ``h(0) = 1/sqrt(2*pi)``, so ``D`` is exactly proportional to contrast whatever
+    the grid. lambda has to come back 1. This is the fixed point the whole
+    operating-point reading hangs off, so it is pinned rather than assumed.
+    """
+    _require_torch()
+
+    from .operating_point import lambda_from_margins, margin_response
+
+    contrast = np.asarray(CONTRASTS)
+    at_threshold = np.zeros(4096)
+
+    response = margin_response(at_threshold, contrast)
+    assert np.allclose(response / contrast, 1.0 / np.sqrt(2 * np.pi), rtol=1e-9)
+
+    lam, r2 = lambda_from_margins(at_threshold, contrast)
+    assert abs(lam - 1.0) < 1e-3, lam
+    assert r2 > 0.9999, r2
+
+
+def test_lambda_rises_monotonically_as_units_leave_threshold():
+    """Bigger margins mean a more supralinear response, never a more log-like one.
+
+    This is the direction that makes the statistic diagnostic, and it is also the
+    reason a rectifier alone cannot produce lambda < 1: h is a decreasing function
+    of |m|/c, so growing the contrast can only recruit more units, never fewer.
+    """
+    _require_torch()
+
+    from .operating_point import lambda_from_margins
+
+    contrast = np.asarray(CONTRASTS)
+    rng = np.random.default_rng(0)
+    lams = [
+        lambda_from_margins(rng.uniform(-spread, spread, 4096), contrast)[0]
+        for spread in (0.0, 0.05, 0.25, 1.0)
+    ]
+    assert all(a < b for a, b in zip(lams, lams[1:])), lams
+    assert min(lams) >= 1.0 - 1e-3, lams
+
+
 def test_relu_taps_are_only_the_layers_a_relu_follows():
     """The probe measures gates, so it must tap exactly the pre-activations.
 

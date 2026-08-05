@@ -44,7 +44,11 @@ on:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # The probe itself is ~10 min for both checkpoints. The budget is for the
+    # offline suite, which re-fits every committed run and so grows with results/:
+    # measured at 46 min and still climbing, which killed the first attempt at a
+    # 60 min cap. Sized against that, not against the measurement.
+    timeout-minutes: 180
     permissions:
       contents: write
 

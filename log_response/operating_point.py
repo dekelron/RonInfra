@@ -236,6 +236,61 @@ def weight_shape(module) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# From a margin distribution to a lambda
+# --------------------------------------------------------------------------- #
+MARGIN_QUANTILES = (0.05, 0.25, 0.50, 0.75, 0.95)
+
+
+def margin_response(margins, contrasts) -> np.ndarray:
+    """``D(c)`` implied by a population of gate margins, under a Gaussian drive.
+
+    One rectified unit at pre-activation ``z``, driven by a zero-mean perturbation
+    of scale ``s·c``, contributes ``E[(z + s·c·u)^+] − z^+`` to the distance of
+    means. Writing the margin ``m = z/s`` and taking ``u`` standard normal, that
+    is ``s·c·h(m/c)`` with
+
+        h(m) = φ(m) − |m|·Φ(−|m|)
+
+    so the layer's response is ``D(c) = c · mean_i h(m_i / c)``, up to the overall
+    scale the metric cannot see anyway.
+
+    This is a **model**, not a measurement: it assumes the perturbation reaching
+    each unit is Gaussian, zero-mean and exactly proportional to contrast. The
+    first two hold well where the drive is a sum of many filter responses and fail
+    once earlier rectifications have skewed it. Its value is that it has no free
+    parameters -- feed in the measured margins and it returns a λ that can be put
+    next to the committed one.
+    """
+    import torch
+
+    m = torch.as_tensor(np.asarray(margins, dtype=np.float64)).abs()
+    out = []
+    for c in contrasts:
+        if c <= 0:
+            out.append(0.0)
+            continue
+        v = m / c
+        phi = torch.exp(-0.5 * v * v) / np.sqrt(2.0 * np.pi)
+        big_phi = 0.5 * torch.erfc(v / np.sqrt(2.0))
+        out.append(float(c * (phi - v * big_phi).mean()))
+    return np.asarray(out)
+
+
+def lambda_from_margins(margins, contrasts) -> tuple[float, float]:
+    """Fit the repo's own λ to the response a margin distribution implies."""
+    from .fit import fit_power_lambda
+
+    contrasts = np.asarray(contrasts, dtype=float)
+    response = margin_response(margins, contrasts)
+    # The fitter needs three positive-contrast points; a short diagnostic grid
+    # (or a degenerate response) reports itself missing rather than raising.
+    if (contrasts > 0).sum() < 3 or not np.all(np.isfinite(response)) or response.max() <= 0:
+        return float("nan"), float("nan")
+    fit = fit_power_lambda(contrasts, response)
+    return float(fit.lam), float(fit.r2)
+
+
+# --------------------------------------------------------------------------- #
 # The operating point
 # --------------------------------------------------------------------------- #
 @dataclass
@@ -250,6 +305,12 @@ class LayerOperatingPoint:
     off_fraction: float
     margin_median: float
     margin_below_one: float
+    margin_quantiles: list[float] = field(default_factory=list)
+    # λ the margin distribution implies under the Gaussian-drive model, and the
+    # quality of that family's fit to it. A model, not a measurement -- see
+    # margin_response().
+    predicted_lambda: float = float("nan")
+    predicted_lambda_r2: float = float("nan")
     flip_fraction: list[float] = field(default_factory=list)
     # Weight shape.
     dc_fraction: float = float("nan")
@@ -361,6 +422,15 @@ class OperatingPointProbe:
             ac_rms = (ac_sq[name].double() / max(ac_draws, 1)).sqrt()
             positive = ac_rms > 0
             margin = (z.abs()[positive] / ac_rms[positive]).cpu().numpy()
+            # The prediction is an average over units, so a subsample of a few
+            # hundred thousand of conv1's 3.2M is already exact to well past the
+            # precision anything downstream is quoted to.
+            sub = margin
+            if sub.size > 200_000:
+                sub = np.random.default_rng(seed).choice(sub, 200_000, replace=False)
+            predicted, predicted_r2 = (
+                lambda_from_margins(sub, contrasts) if sub.size else (float("nan"),) * 2
+            )
             results.append(
                 LayerOperatingPoint(
                     layer=name,
@@ -372,6 +442,13 @@ class OperatingPointProbe:
                     off_fraction=float((z <= 0).double().mean()),
                     margin_median=float(np.median(margin)) if margin.size else float("nan"),
                     margin_below_one=float((margin < 1.0).mean()) if margin.size else float("nan"),
+                    margin_quantiles=(
+                        [float(q) for q in np.quantile(margin, MARGIN_QUANTILES)]
+                        if margin.size
+                        else []
+                    ),
+                    predicted_lambda=predicted,
+                    predicted_lambda_r2=predicted_r2,
                     flip_fraction=list(flips[name] / np.maximum(counts, 1)),
                     **weight_shape(module),
                 )
@@ -481,16 +558,19 @@ def main(argv=None) -> None:
 
     if not args.quiet:
         print(f"{args.model}  {source}")
-        header = f"{'layer':<14}{'b/drive':>9}{'off':>7}{'margin':>9}{'flip@c=1':>10}{'DC':>7}{'sparse':>8}"
+        header = (
+            f"{'layer':<14}{'b/drive':>9}{'off':>7}{'margin':>9}{'flip@c=1':>10}"
+            f"{'DC':>7}{'sparse':>8}{'lam_pred':>10}"
+        )
         if args.compare:
             header += f"{'lambda':>9}"
         print(header)
         for entry in payload["layers"]:
             line = (
                 f"{entry['layer']:<14}{entry['bias_drive_ratio']:>9.3f}"
-                f"{entry['off_fraction']:>7.3f}{entry['margin_median']:>9.2f}"
+                f"{entry['off_fraction']:>7.3f}{entry['margin_median']:>9.3f}"
                 f"{entry['flip_fraction'][-1]:>10.4f}{entry['dc_fraction']:>7.3f}"
-                f"{entry['sparsity']:>8.3f}"
+                f"{entry['sparsity']:>8.3f}{entry['predicted_lambda']:>10.3f}"
             )
             if args.compare and entry.get("lambda") is not None:
                 line += f"{entry['lambda']:>9.3f}"
