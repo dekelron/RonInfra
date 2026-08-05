@@ -22,14 +22,24 @@ layer ``i`` is therefore multiplied by ``α_i``, and λ — an *exponent*, fitte
 ``a`` and ``b`` and leaves λ alone.
 
 That is a theorem, not a hypothesis, and it prunes the candidate list hard: **no
-recipe difference that acts only on the scale of the weights can be the cause.**
-Learning-rate scale, the overall strength of a weight decay applied uniformly,
-and — the one that looks most guilty and is most thoroughly innocent — the input
-normalisation, all fall to it. Caffe subtracts a mean pixel and stops;
-torchvision divides by a standard deviation as well. Dividing an input by a
-constant is a gauge transformation at conv1, so the two preprocessings cannot by
-themselves produce different λ. (`convert_weights.py` already folds one into the
-other exactly, which is the same statement from the other end.)
+difference between two finished checkpoints that is a move along this symmetry
+can produce different λ.** The one that looks most guilty is the input
+normalisation — Caffe subtracts a mean pixel and stops, torchvision divides by a
+standard deviation as well — and as a difference of *convention* it is almost
+exactly gauge: writing one input in terms of the other gives a per-channel gain
+`255·std` = (58.4, 57.1, 57.4), i.e. a single scale of ~57.6 (pure gauge, no
+effect whatever) times a channel imbalance of 2.2% between the widest and
+narrowest, plus an offset below 0.5 against inputs of scale ~128. `convert_weights.py` folds it exactly, which is
+the same statement from the other end.
+
+**What the argument does not say** is that these knobs had no influence during
+training. Weight decay penalises ‖W‖², and the symmetry is not a symmetry of that
+penalty — feeding inputs 57.6× larger makes the decay effectively weaker at conv1
+relative to the data term, so input scale and weight decay interact in the
+*objective* even though they cancel in the *function*. The claim is narrower and
+still useful: whatever those knobs did, it has to show up in the finished weights
+as something the symmetry cannot absorb. So look only at quantities it cannot
+absorb, which is what everything below measures.
 
 What survives the pruning is anything that changes weights *relative to each
 other*, and there are two families of it:
@@ -481,11 +491,22 @@ def load_net(model: str, weights: str | None, device: str = "cpu"):
     return net.eval().to(torch.device(device)), source
 
 
-def committed_lambdas(run_dir: str) -> dict[str, float]:
-    """Per-layer λ from a committed run, keyed by tap name."""
+def committed_lambdas(run_dir: str) -> tuple[dict[str, float], dict[str, str]]:
+    """Per-tap λ from a committed run, plus the map from a tap to the one after it.
+
+    Both are needed because the probe taps *pre*-activations while the margin model
+    predicts what the rectifier downstream of them does -- it computes
+    ``E[(z+δ)^+] − z^+``. So a tap's ``predicted_lambda`` belongs next to the
+    **next** tap's committed λ (``features.0`` against ``features.1``), and joining
+    it against its own would compare the model to the wrong measurement.
+    """
     with open(os.path.join(run_dir, "result.json")) as fh:
         payload = json.load(fh)
-    return {entry["layer"]: entry["lambda"] for entry in payload["layers"]}
+    order = [entry["layer"] for entry in payload["layers"]]
+    return (
+        {entry["layer"]: entry["lambda"] for entry in payload["layers"]},
+        dict(zip(order, order[1:])),
+    )
 
 
 def main(argv=None) -> None:
@@ -527,10 +548,14 @@ def main(argv=None) -> None:
     }
 
     if args.compare:
-        lambdas = committed_lambdas(args.compare)
+        lambdas, following = committed_lambdas(args.compare)
         payload["compare_run"] = args.compare
         for entry in payload["layers"]:
-            entry["lambda"] = lambdas.get(entry["layer"])
+            # `lambda_pre` is this tap's own committed λ; `lambda_relu` is the one
+            # `predicted_lambda` should be read against (see committed_lambdas).
+            entry["lambda_pre"] = lambdas.get(entry["layer"])
+            entry["relu_layer"] = following.get(entry["layer"])
+            entry["lambda_relu"] = lambdas.get(entry["relu_layer"])
 
     if args.gauge_check:
         rng = np.random.default_rng(args.seed + 1)
@@ -563,7 +588,7 @@ def main(argv=None) -> None:
             f"{'DC':>7}{'sparse':>8}{'lam_pred':>10}"
         )
         if args.compare:
-            header += f"{'lambda':>9}"
+            header += f"{'lam@relu':>10}{'diff':>8}"
         print(header)
         for entry in payload["layers"]:
             line = (
@@ -572,8 +597,11 @@ def main(argv=None) -> None:
                 f"{entry['flip_fraction'][-1]:>10.4f}{entry['dc_fraction']:>7.3f}"
                 f"{entry['sparsity']:>8.3f}{entry['predicted_lambda']:>10.3f}"
             )
-            if args.compare and entry.get("lambda") is not None:
-                line += f"{entry['lambda']:>9.3f}"
+            if args.compare and entry.get("lambda_relu") is not None:
+                line += (
+                    f"{entry['lambda_relu']:>10.3f}"
+                    f"{entry['predicted_lambda'] - entry['lambda_relu']:>+8.3f}"
+                )
             print(line)
         if "gauge_check" in payload:
             check = payload["gauge_check"]
