@@ -40,14 +40,22 @@ on:
           the IMAGENET1K_V1 half alone; vgg19 only."
         type: boolean
         default: true
+      compare_in1k:
+        description: "Committed --layers all run whose per-tap lambda is joined
+          onto the IMAGENET1K_V1 probe, so the artifact is self-contained.
+          Skipped if the directory does not exist."
+        default: results/vgg19-r250-s0-alllayers-fixed
+      compare_caffe:
+        description: "Same, for the Caffe probe."
+        default: results/vgg19-r250-s0-alllayers-fixed-caffe
 
 jobs:
   probe:
     runs-on: ubuntu-latest
-    # The probe itself is ~10 min for both checkpoints. The budget is for the
-    # offline suite, which re-fits every committed run and so grows with results/:
-    # measured at 46 min and still climbing, which killed the first attempt at a
-    # 60 min cap. Sized against that, not against the measurement.
+    # Measured end to end (run 31034992278): 25 min, of which the offline suite is
+    # 15m43s and the two probes 4m09s and 4m10s. The suite is the part that grows
+    # -- it re-fits every committed run in results/ -- so the cap is sized against
+    # that growing, not against the measurement.
     timeout-minutes: 180
     permissions:
       contents: write
@@ -59,6 +67,8 @@ jobs:
       # On a push the `inputs` context is empty, and `x || true` would also
       # override a deliberate false on dispatch. This reads correctly for both.
       CAFFE: ${{ github.event_name != 'workflow_dispatch' || inputs.caffe }}
+      COMPARE_IN1K: ${{ inputs.compare_in1k || 'results/vgg19-r250-s0-alllayers-fixed' }}
+      COMPARE_CAFFE: ${{ inputs.compare_caffe || 'results/vgg19-r250-s0-alllayers-fixed-caffe' }}
       CAFFE_H5: ${{ github.workspace }}/../caffe-cache/vgg19_keras.h5
       CAFFE_PTH: ${{ github.workspace }}/../caffe-cache/vgg19_caffe.pth
       OUT: results/operating-point
@@ -114,16 +124,21 @@ jobs:
       - name: Probe IMAGENET1K_V1
         run: |
           mkdir -p "$OUT"
-          python -m log_response.operating_point \
-            --model "$MODEL" --reps "$REPS" --seed "$SEED" --gauge-check \
-            --out "$OUT/$MODEL-in1k.json" 2>&1 | tee in1k.log
+          args=(--model "$MODEL" --reps "$REPS" --seed "$SEED" --gauge-check
+                --out "$OUT/$MODEL-in1k.json")
+          # Joining the committed lambda in makes the artifact readable on its
+          # own. Optional, because a probe of an arch with no committed run is
+          # still worth having.
+          if [ -d "$COMPARE_IN1K" ]; then args+=(--compare "$COMPARE_IN1K"); fi
+          python -m log_response.operating_point "${args[@]}" 2>&1 | tee in1k.log
 
       - name: Probe the converted Caffe checkpoint
         if: ${{ env.CAFFE == 'true' }}
         run: |
-          python -m log_response.operating_point \
-            --model "$MODEL" --weights "$CAFFE_PTH" --reps "$REPS" --seed "$SEED" \
-            --gauge-check --out "$OUT/$MODEL-caffe.json" 2>&1 | tee caffe.log
+          args=(--model "$MODEL" --weights "$CAFFE_PTH" --reps "$REPS" --seed "$SEED"
+                --gauge-check --out "$OUT/$MODEL-caffe.json")
+          if [ -d "$COMPARE_CAFFE" ]; then args+=(--compare "$COMPARE_CAFFE"); fi
+          python -m log_response.operating_point "${args[@]}" 2>&1 | tee caffe.log
 
       - name: Summarise on the run page
         if: always()

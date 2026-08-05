@@ -10,7 +10,7 @@
 | `wiki/Method.md` | The exact procedure — grating definition, contrast/frequency grids, the distance-of-means metric, the regression, caveats, and stronger tests to add. The spec the code is checked against. |
 | `wiki/1701.04674-adaptation-as-readout.pdf` | The source paper. Its "mean absolute change in DNN representation between a gray image and sinusoidal gratings" is our `D`, and its "R² = 98% … for prob" is the contested number in `Method.md`'s expected-results table. |
 | `results/` | Committed runs, one directory each: `result.npz` (surfaces), `result.json` (fits), `run.json` (provenance), `notes.md` (prose). `results/README.md` is the index and states the conventions. |
-| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends, incl. `RawPixelModel` = the noise floor), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure and the λ depth profile), `provenance.py` (commit/versions/weight digest), `convert_weights.py` (Caffe/Keras VGG-19 → torchvision, with the preprocessing fold), `figure3.py` (digitises the paper's Figure 3b and compares it to a run), `run.py` (CLI), `test_pipeline.py` (offline tests). |
+| `log_response/` | The implementation. `gratings.py` (stimuli), `features.py` (model back-ends, incl. `RawPixelModel` = the noise floor), `fit.py` (regression), `experiment.py` (driver + save/load), `panels.py` (the two-row per-layer figure and the λ depth profile), `provenance.py` (commit/versions/weight digest), `convert_weights.py` (Caffe/Keras VGG-19 → torchvision, with the preprocessing fold), `figure3.py` (digitises the paper's Figure 3b and compares it to a run), `operating_point.py` (gauge-invariant weight-space forensics: what a *training recipe* leaves in a checkpoint), `run.py` (CLI), `test_pipeline.py` (offline tests). |
 
 Docs are intentionally few and short. Prefer extending an existing page over
 adding a new one.
@@ -193,6 +193,48 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
 
 ## Open threads
 
+- **A gauge argument prunes the checkpoint question before any measurement**
+  (2026-08-05). ReLU is positively homogeneous and both poolings commute with
+  positive scaling, so rescaling layer `i`'s `(W, b)` by `α_i` and compensating
+  at `i+1` leaves **every gate and every logit** untouched while multiplying
+  layer `i`'s `D` by `α_i` — and λ, an exponent, does not move. **So no
+  difference between two finished checkpoints that is a move along this symmetry
+  can produce different λ.** The obvious suspect goes first: written in the other
+  one's terms, the two preprocessings differ by a per-channel gain
+  (58.4, 57.1, 57.4), i.e. a single scale of 57.6 that is pure gauge, a **2.2%**
+  channel imbalance and an offset below 0.5 against inputs of scale ~128.
+  - It does **not** say those knobs were idle during training — weight decay
+    penalises `‖W‖²` and the symmetry is not a symmetry of that penalty, so input
+    scale and decay interact in the objective while cancelling in the function.
+    It says the residue has to be something the symmetry cannot absorb. Hence
+    `operating_point.py` reports only ratios, and re-measures itself after a
+    random symmetry move: drift 2.2e-7 / 3.5e-7 on the two checkpoints.
+- **The two checkpoints' weight shapes differ exactly as 5× more weight decay
+  would leave them — but two checkpoints cannot isolate it.** Conv-stack medians:
+  Caffe is **4.1× more kurtotic** (7.80 vs 1.88), sparser (0.102 vs 0.086) and
+  **lower effective rank** (0.738 vs 0.892), and at conv1_1 its bias is
+  **0.048×** the image drive against IN1K's **3.0×** — a 62× difference in the
+  one ratio bias decay controls. Within `IMAGENET1K_V1` (λ spanning 0.641) λ
+  tracks sparsity at r = +0.810 and kurtosis at +0.744; within Caffe (λ spanning
+  0.225) nothing does, there being nothing to explain.
+  - **A second candidate fits just as well.** `RandomResizedCrop` resizes an
+    8%-area crop up to 224, training on far more low-frequency energy than scale
+    jittering over S ∈ [256, 512] — and IN1K's deep kernels are **1.8× more
+    DC-tuned** (4.78 vs 2.72), with DC fraction the second-best within-checkpoint
+    predictor of λ (r = −0.710). Decay and augmentation both fit; the recipes
+    differ in every row at once, and the layer-wise correlations are confounded
+    by depth. **The next thing to run is a controlled training experiment**, one
+    factor at a time, not another reading of these two checkpoints.
+- **`--bias-scale` is the matching intervention, and is deliberately not a gauge
+  move.** Multiplying biases without multiplying weights slides units along their
+  own ReLU, leaving the filters as trained. Such a net is not a classifier any
+  more — `run.json` records `bias_scale` so the run reads as a probe. Unused so
+  far.
+- **The offline suite is no longer a fast check: 15m43s on a runner**, almost all
+  of it `test_committed_runs_predate_the_second_metric`, which re-fits all 90
+  committed runs and grows with `results/`. Size a workflow's `timeout-minutes`
+  against it, not against the measurement.
+
 - **The paper's checkpoint is the converted Caffe one, and on it the paper
   reproduces.** §8.1 used MatConvNet's imported *original* VGG-19. Measured:
   `prob` 0.980 vs the documented 98%, `prob` the peak of 45 taps, fc7 0.750
@@ -347,15 +389,35 @@ Ordered. Nothing here is blocking — every quoted number now has a committed ru
   by the input's own mean and variance, so it is not affine and has no
   zero-population floor. Predicting otherwise for ViT was wrong; the rule is
   affineness, exactly.
-- **Why λ ≈ 1 survives 33 layers — the live hypothesis, now constrained.** The
-  grating is a *perturbation* `gray + c·g` about a fixed operating point, and a
-  ReLU net is piecewise linear, so while the perturbation does not flip ReLU
-  gates, `D = |J·(c·g)| = c·|J·g|` exactly — linear in contrast at any depth. On
-  this reading λ < 1 is the signature of gates actually switching with contrast,
-  and the log response is what emerges once they do. Caffe stays in that regime
-  for the whole conv stack; `IMAGENET1K_V1` leaves it gradually from mid-stack.
-  The direct check is still to count ReLU sign flips between gray and grating
-  against `c`; that needs a forward pass, so it is an Actions job.
+- ~~**Why λ ≈ 1 survives 33 layers — the live hypothesis.**~~ **Counted, and the
+  gate-flip form is falsified (2026-08-05).** The reading was: the grating is a
+  perturbation about a fixed operating point, a ReLU net is piecewise linear, so
+  while no gate flips `D = c·|J·g|` exactly, and λ < 1 is the signature of gates
+  switching. The direct check — count sign flips between gray and grating against
+  `c` — is now done, in `results/operating-point/`. **Gates flip constantly and λ
+  is 1 anyway.** On Caffe, **1.6–22.6%** of conv-stack gates are already flipped
+  at the *lowest* contrast on the grid, rising only to 6.4–45.0% at full contrast.
+  And flipping does not separate the checkpoints at all: `IMAGENET1K_V1` gives
+  2.5–18.5% and 7.2–48.0%, overlapping almost exactly, and across the 34 pooled
+  rectifiers the flip fraction correlates with λ at **r = +0.085 (p = 0.63)**.
+  - **What survives is the operating point, with the sign the other way round.**
+    Caffe's units sit *on* their thresholds — conv-stack median margin
+    `|z(gray)| / rms Δz(c=1)` = **0.035** against IN1K's **0.158**. For a
+    rectifier under a zero-mean drive of scale `s·c`, `D(c) = c·mean_i h(m_i/c)`
+    with `h(m) = φ(m) − |m|Φ(−|m|)`; at `m = 0` that is exactly proportional to
+    contrast, so **λ = 1 is what sitting at threshold looks like, and constant
+    flipping is that state rather than its opposite.** Feeding the measured
+    margins through the model predicts Caffe's conv λ to a median of **0.042**
+    with nothing fitted.
+  - **And a rectifier cannot make λ < 1.** `h` decreases in `|m|/c`, so raising
+    contrast only recruits units. The model therefore misses `IMAGENET1K_V1`'s
+    conv stack by 0.753 and Caffe's own `classifier.4` by +1.18 — structurally,
+    not numerically. The compression needs a drive that is *already* skewed or
+    compressed; it is not rectification of a linear signal. Pinned by
+    `test_lambda_rises_monotonically_as_units_leave_threshold`.
+  - It works on **both** checkpoints at conv1_1, the one layer where its
+    assumption is exact: predicted 1.176 / measured 1.204 (Caffe), 1.526 / 1.729
+    (IN1K).
   - **"Rectifications carry it" is now insufficient — measured 2026-07-28.**
     `vgg19_bn` has VGG-19's topology, ReLU count, task and stimulus, and
     BatchNorm in eval is a per-channel **affine** map that cannot add gates. Its

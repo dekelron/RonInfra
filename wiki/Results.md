@@ -380,6 +380,180 @@ rather than two rulers.
 > statistic that is comparable across grids by construction rather than by
 > argument.
 
+## What in the *training* separates the two VGG-19 checkpoints
+
+The two checkpoints hold the architecture, the dataset, the task and the stimulus
+fixed and still differ by ~0.45 in conv-stack λ (converted Caffe **+1.065**,
+`IMAGENET1K_V1` **+0.613**). Whatever does that is in the recipe. This section
+narrows it down — first with an exact symmetry that removes most of the candidate
+list before anything is measured, then by measuring what survives.
+
+Backing artifact: [`results/operating-point/`](../results/operating-point/), one
+JSON per checkpoint, both produced in the same job on the same runner
+(`.github/workflows/operating-point.yml`, run 31034992278) so nothing here can be
+a runner difference.
+
+### The two recipes, as documented
+
+| | Oxford/Caffe (Simonyan & Zisserman) | torchvision `IMAGENET1K_V1` |
+|---|---|---|
+| preprocessing | subtract mean pixel, BGR (103.939, 116.779, 123.68); **no** division by a standard deviation | subtract mean, **divide by std** (0.229, 0.224, 0.225) |
+| augmentation | isotropic rescale to S ∈ [256, 512] (*scale jittering*), random 224 crop, h-flip, random RGB colour shift | `RandomResizedCrop(224)` (area 8–100%, aspect jitter), h-flip; **no** colour jitter, no auto-augment |
+| weight decay | **5e-4** | **1e-4** |
+| batch size | 256 | 32 |
+| epochs | 74 | 90 |
+| learning rate | 1e-2, ÷10 three times | 1e-2, ÷10 every 30 epochs |
+| init | configuration A trained first; its first four conv and last three fc seed E | torchvision default |
+
+Sources: the [release gist](https://gist.github.com/ksimonyan/3785162f95cd2d5fee77)
+for the preprocessing and for *"configuration E trained with scale jittering"*;
+the paper §3.1 for the rest of column one; torchvision's
+`references/classification` README and `presets.py` for column two. `arxiv.org` is
+blocked from this sandbox, so column one's numeric entries are **citation, not
+measurement**.
+
+### Most of that list cannot be the cause, by an exact symmetry
+
+ReLU is positively homogeneous and both poolings commute with positive scaling,
+so a plain rectifier stack has an exact rescaling symmetry. For weight layers
+`0..n` in execution order, pick any `α_i > 0` with `α_{-1} = α_n = 1` and set
+
+    W_i <- W_i · α_i / α_{i-1}        b_i <- b_i · α_i
+
+Layer `i`'s activations are multiplied by `α_i` and **every ReLU gate and every
+logit is unchanged**. So `D(c,f)` at layer `i` is multiplied by `α_i` — and λ is
+an *exponent*, fitted as `D = a + b·(c^λ−1)/λ`, so rescaling `D` rescales `a` and
+`b` and moves λ not at all. Both halves are pinned offline
+(`test_gauge_transformation_leaves_the_network_function_alone`,
+`test_lambda_is_invariant_under_rescaling_the_response`), and each probe
+re-measures itself after a random symmetry move: drift **2.2e-7** (Caffe) and
+**3.5e-7** (IN1K).
+
+**So no difference between two finished checkpoints that is a move along this
+symmetry can produce different λ** — which disposes of the most obvious suspect.
+Writing the Caffe input in terms of the torchvision one gives a per-channel gain
+`255·std` = (58.4, 57.1, 57.4): a single scale of ~57.6, pure gauge and of no
+effect whatever, times a **2.2%** imbalance between the widest and narrowest
+channel, plus an offset below **0.5** against inputs of scale ~128. The
+preprocessing difference is gauge to within a couple of percent.
+
+> **What the argument does not say.** It does not say those knobs had no
+> influence *during* training. Weight decay penalises `‖W‖²`, and the symmetry is
+> not a symmetry of that penalty — feeding inputs 57.6× larger makes the decay
+> effectively weaker at conv1 relative to the data term, so input scale and decay
+> do interact in the objective even where they cancel in the function. The claim
+> is narrower: whatever they did, it has to survive in the finished weights as
+> something the symmetry cannot absorb. Everything below is therefore a ratio.
+
+### The gate-flip hypothesis is false in the form it was stated
+
+The reading carried until now was that Caffe holds λ ≈ 1 through 33 layers
+because the grating never flips a ReLU gate, leaving the net in a locally linear
+regime. **Measured, it does not.** On Caffe, at the *lowest* contrast on the grid
+(c = 1/128), the fraction of gates already flipped against gray is **1.6–22.6%**
+across the conv stack; full contrast only about doubles it, to **6.4–45.0%**.
+
+Worse for the hypothesis, flipping does not separate the checkpoints **at all**:
+
+| | flipped at c = 1/128 | flipped at c = 1 |
+|---|---|---|
+| converted Caffe (λ ≈ 1.07) | 1.6 – 22.6% | 6.4 – 45.0% |
+| `IMAGENET1K_V1` (λ ≈ 0.61) | 2.5 – 18.5% | 7.2 – 48.0% |
+
+Across the 34 pooled conv/fc rectifiers the flip fraction at full contrast
+correlates with λ at **r = +0.085 (p = 0.63)** — nothing. Gate counting was the
+one direct test `CLAUDE.md` had queued for this, and its answer is that the
+quantity is not the discriminator.
+
+### What is: how far units sit from threshold
+
+The gauge-invariant quantity that *does* separate them is the **margin** — how
+far a unit sits from its own threshold, in units of what the stimulus does to it,
+`m = |z(gray)| / rms over draws of Δz at c = 1`. Conv-stack medians:
+
+| | λ (measured) | margin | bias/drive | sparsity | excess kurtosis | effective rank | kernel DC |
+|---|---|---|---|---|---|---|---|
+| converted Caffe | **+1.065** | **0.035** | **0.0021** | 0.102 | **7.80** | 0.738 | 2.72 |
+| `IMAGENET1K_V1` | **+0.613** | **0.158** | **0.0990** | 0.086 | **1.88** | 0.892 | 4.78 |
+| *(Gaussian weights, for scale)* | — | — | — | 0.080 | 0.00 | 0.985 | 0.67 |
+
+Caffe's units sit essentially **on** their thresholds — a uniform gray field
+drives them to within 2–7% of what a full-contrast grating does — while
+`IMAGENET1K_V1`'s sit 4.5× further off. Constant gate flipping is not the
+opposite of that state; it *is* that state.
+
+### Why being at threshold is λ = 1, and how far that gets
+
+One rectified unit at pre-activation `z` under a zero-mean perturbation of scale
+`s·c` contributes `E[(z + s·c·u)^+] − z^+ = s·c·h(m/c)` to the distance of means,
+with `h(m) = φ(m) − |m|·Φ(−|m|)`, so a layer's response is
+`D(c) = c · mean_i h(m_i/c)`. At `m = 0` that mean is the constant `h(0)`, so **D
+is exactly proportional to contrast and λ is exactly 1**, on any grid. λ then
+rises as margins grow — 1.04 at median |m| = 0.02, 1.8 at 0.5, 2.4 when most
+units are off — and **never falls below 1**, since `h` decreases in `|m|/c` so
+raising contrast can only recruit units, never retire them. Both are pinned
+(`test_margins_at_threshold_give_exactly_lambda_one`,
+`test_lambda_rises_monotonically_as_units_leave_threshold`).
+
+Feeding the *measured* margins through that model gives a per-layer λ with
+nothing fitted. Pairing each tap with the rectifier it feeds:
+
+| | conv1_1 → `features.1` predicted / measured | median \|predicted − measured\| over the 15 later conv rectifiers |
+|---|---|---|
+| converted Caffe | 1.176 / **1.204** | **0.042** |
+| `IMAGENET1K_V1` | 1.526 / **1.729** | **0.753** |
+
+**At conv1_1 the model works on both checkpoints**, which is exactly where it
+should: the first layer's drive really is linear in contrast, so the assumption
+is not an approximation there. It gets the ordering and the size of the gap right
+— IN1K's first rectifier is strongly supralinear because its units sit 3.7×
+further off threshold — and both errors are in the same direction (−0.03, −0.20).
+
+Past conv1_1 it holds on Caffe and collapses on `IMAGENET1K_V1`. That is not a
+defect of the model, it is the finding restated: a rectifier fed a symmetric,
+contrast-proportional drive **cannot** produce λ < 1, so IN1K's conv stack — and
+Caffe's own `classifier.4`, which the model misses by +1.18 — must be receiving a
+drive that is already skewed or already compressed. Whatever makes the log
+response, it is not rectification of a linear signal.
+
+### Which knob, then — and what this cannot settle
+
+At **conv1_1, where the mechanism is exactly analysable, the difference is the
+bias.** `IMAGENET1K_V1`'s conv1 bias is **3.0× the image drive**; Caffe's is
+**0.048×** of it — a 62× difference in the one gauge-invariant ratio that a
+weight decay applied to biases controls directly. Caffe's biases have been
+crushed; torchvision's have not.
+
+Every weight-shape statistic separates the checkpoints in the same direction, and
+it is the direction 5× more L2 predicts: Caffe's conv weights are **4.1× more
+kurtotic** (7.80 vs 1.88), sparser (0.102 vs 0.086 below a tenth of the layer
+rms), and **lower effective rank** (0.738 vs 0.892). Shrinkage toward zero is
+what leaves heavy tails, near-zero weights and fewer effective directions, and
+none of the three can be faked by a rescaling.
+
+There is a within-checkpoint dose-response too, in the checkpoint that has λ
+variation to explain. Across `IMAGENET1K_V1`'s 15 conv rectifiers (λ spanning
+0.641), λ tracks sparsity at **r = +0.810**, kurtosis **+0.744**, kernel DC
+fraction **−0.710** and margin **−0.659**. Across Caffe's (λ spanning only 0.225,
+i.e. flat) nothing reaches significance — as it should not, since there is
+nothing to explain.
+
+**What this does not establish.** Two checkpoints differ in every row of the
+recipe table at once, so a signature consistent with weight decay is not proof of
+weight decay: batch size, epochs and augmentation all moved too. The
+within-checkpoint correlations are 15 layers of one network, and depth confounds
+them — sparsity, kurtosis, margin and λ all drift monotonically with depth. And a
+second, entirely live candidate has its own signature in the table:
+`RandomResizedCrop` resizes an 8%-area crop back up to 224, so it trains on
+images with far more low-frequency energy than scale jittering over
+S ∈ [256, 512] does — and `IMAGENET1K_V1`'s deep kernels are correspondingly
+**1.8× more DC-tuned** (4.78 vs 2.72), with DC fraction the second-best
+within-checkpoint predictor of λ. Decay and augmentation both fit.
+
+Separating them needs a controlled training experiment — one architecture, one
+dataset, weight decay and augmentation varied one at a time — not a second
+reading of the same two checkpoints. That is the next thing to run.
+
 ## Beyond VGG-19: AlexNet, VGG-19+BN, ResNet-50 and ViT-B/16
 
 The first runs on other architectures (2026-07-28, all `--layers all`, each with

@@ -4,6 +4,14 @@ One directory per run, committed. Each holds `result.npz` (the canonical
 `D(freq, contrast)` surfaces), `result.json` (fit summary, diffs readably),
 `run.json` (provenance) and `notes.md` (what it was for, what it showed).
 
+> **`operating-point/` is the one directory that is not a run.** It holds the
+> weight-space forensics from `log_response.operating_point` — one JSON per
+> checkpoint, no `D` surface, no repetition count — written by
+> `.github/workflows/operating-point.yml` and used to ask *what about the
+> training* separates the two VGG-19 checkpoints. It is kept under `results/`
+> because rule 1 applies to it exactly as to a run: the numbers quoted in
+> `wiki/Results.md` need a committed artifact behind them. See its `notes.md`.
+
 > **Runs from 2026-07-27 carry two surfaces.** `surfaces` is the paper's
 > distance-of-means `D` and stays the headline; `mean_of_distances` is the other
 > order of operations, `mean_r mean_i |a_i(x_r) − gray_i|`. It rides along
