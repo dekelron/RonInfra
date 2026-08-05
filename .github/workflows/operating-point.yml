@@ -12,6 +12,14 @@ name: operating point
 # up the 2x runner-to-runner variance that wiki/Results.md records for wall time.
 
 on:
+  # `workflow_dispatch` only registers once the file is on the default branch, so
+  # until this merges the push trigger is the only way to run it. Scoped to the
+  # probe's own two files: a doc-only commit on a working branch must not spend a
+  # runner, and re-measuring when the probe changes is what you want anyway.
+  push:
+    paths:
+      - ".github/workflows/operating-point.yml"
+      - "log_response/operating_point.py"
   workflow_dispatch:
     inputs:
       model:
@@ -44,7 +52,9 @@ jobs:
       MODEL: ${{ inputs.model || 'vgg19' }}
       REPS: ${{ inputs.reps || '4' }}
       SEED: ${{ inputs.seed || '0' }}
-      CAFFE: ${{ inputs.caffe }}
+      # On a push the `inputs` context is empty, and `x || true` would also
+      # override a deliberate false on dispatch. This reads correctly for both.
+      CAFFE: ${{ github.event_name != 'workflow_dispatch' || inputs.caffe }}
       CAFFE_H5: ${{ github.workspace }}/../caffe-cache/vgg19_keras.h5
       CAFFE_PTH: ${{ github.workspace }}/../caffe-cache/vgg19_caffe.pth
       OUT: results/operating-point
@@ -79,14 +89,14 @@ jobs:
         run: python -m log_response.test_pipeline
 
       - name: Cache the Caffe HDF5
-        if: ${{ inputs.caffe }}
+        if: ${{ env.CAFFE == 'true' }}
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/../caffe-cache
           key: caffe-vgg19-h5-v1
 
       - name: Fetch and convert the Caffe checkpoint
-        if: ${{ inputs.caffe }}
+        if: ${{ env.CAFFE == 'true' }}
         run: |
           pip install h5py
           mkdir -p "$(dirname "$CAFFE_H5")"
@@ -105,7 +115,7 @@ jobs:
             --out "$OUT/$MODEL-in1k.json" 2>&1 | tee in1k.log
 
       - name: Probe the converted Caffe checkpoint
-        if: ${{ inputs.caffe }}
+        if: ${{ env.CAFFE == 'true' }}
         run: |
           python -m log_response.operating_point \
             --model "$MODEL" --weights "$CAFFE_PTH" --reps "$REPS" --seed "$SEED" \
