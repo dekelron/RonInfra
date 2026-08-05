@@ -76,8 +76,12 @@ Three things, written up in full in `wiki/Results.md`:
         --gauge-check --compare results/vgg19-r250-s0-alllayers-fixed-caffe \
         --out results/operating-point/vgg19-caffe.json
 
-The files from run 31034992278 were written **without** `--compare` — the
-workflow did not pass it yet — so they carry the statistics and
-`predicted_lambda` but not `lambda_pre`/`lambda_relu`; the join was done offline
-for the write-up. The workflow passes it from the next run on, so later files are
-self-contained.
+The committed files carry the join (`compare_run`, `lambda_pre`, `relu_layer`,
+`lambda_relu`), so they read on their own.
+
+**They also reproduce.** The numbers here were first measured on run
+**31034992278** and re-measured on **31037478037**, a different runner, when the
+workflow gained `--compare`: every statistic came back identical. The Caffe half
+was measured a third time in the sandbox, from an independently converted
+checkpoint, and agrees with the runner to **1.7e-7** across all statistics and
+**7.6e-6** across the flip fractions. Nothing here is runner-dependent.
