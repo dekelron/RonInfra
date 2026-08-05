@@ -387,6 +387,7 @@ class TorchvisionModel(_TorchBackend):
         scramble: bool = False,
         scramble_seed: int = 0,
         allow_random_init: bool = False,
+        bias_scale: float = 1.0,
     ):
         import torch
         import torchvision
@@ -443,6 +444,21 @@ class TorchvisionModel(_TorchBackend):
 
         if scramble:
             self._scramble_within_layers(scramble_seed)
+
+        # Deliberate surgery on the operating point: multiply every bias while
+        # leaving every filter as trained. Unlike a rescaling of (W, b) together
+        # -- which is a gauge move and provably cannot change any tap's lambda
+        # (see operating_point.py) -- this slides units along their own ReLU, so
+        # it is the intervention that tests whether the operating point is what
+        # separates the two VGG-19 checkpoints. It changes the function: a
+        # bias-scaled net is not a classifier any more, and its run is a probe,
+        # not a measurement of a trained network.
+        self.bias_scale = float(bias_scale)
+        if self.bias_scale != 1.0:
+            from .operating_point import scale_biases
+
+            scale_biases(self.net, self.bias_scale)
+            self.weights_source += f" (biases x{self.bias_scale:g})"
 
         self.net.eval().to(self.device)
 

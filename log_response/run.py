@@ -165,6 +165,8 @@ def build_metadata(args, model, result, wall_seconds: float) -> dict:
         "environment": {**environment(), "wall_seconds": round(wall_seconds, 1)},
         "created_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
+    if getattr(args, "bias_scale", 1.0) != 1.0:
+        metadata["bias_scale"] = args.bias_scale
     if args.notes:
         metadata["notes"] = args.notes
     if isinstance(model, CLIPModel):
@@ -190,6 +192,7 @@ def build_model(args):
             (args.dtype, "--dtype"),
             (args.mask_decoder, "--mask-decoder"),
             (args.preprocessing != "shared-imagenet", "--preprocessing"),
+            (args.bias_scale != 1.0, "--bias-scale"),
         ):
             if value:
                 raise SystemExit(f"{flag} does not apply to the {args.model} back-end")
@@ -198,6 +201,8 @@ def build_model(args):
     is_hf = args.model.startswith("hf:")
     is_sam = args.model == "sam" or args.model.startswith("sam:")
     is_timm = args.model.startswith("timm:")
+    if args.bias_scale != 1.0 and (is_clip or is_hf or is_sam or is_timm):
+        raise SystemExit("--bias-scale is implemented for the torchvision back-end only")
     if args.prompts and not is_clip:
         raise SystemExit("--prompts only applies to the CLIP back-end")
     if args.instruction and not is_hf:
@@ -261,6 +266,7 @@ def build_model(args):
         scramble=args.scramble,
         scramble_seed=_scramble_seed(args),
         allow_random_init=args.allow_random_init,
+        bias_scale=args.bias_scale,
     )
 
 
@@ -379,6 +385,18 @@ def main(argv=None):
         action="store_true",
         help="scramble learned weights within each layer (control: collapses the "
         "prob-layer R^2; see results/vgg19-scramble-r50-s0)",
+    )
+    p.add_argument(
+        "--bias-scale",
+        type=float,
+        default=1.0,
+        help="multiply every bias by this factor, leaving the filters as trained "
+        "(torchvision back-end only; 1.0 = off). Scaling weights and biases "
+        "together is a gauge move and provably cannot change lambda, so this is "
+        "the surgical version: it slides units along their own ReLU and tests "
+        "whether the operating point is what separates two checkpoints. The "
+        "result is not a classifier -- such a run is a probe, not a measurement "
+        "of a trained net",
     )
     p.add_argument("--figures", default=None, help="directory to write figures into")
     p.add_argument(

@@ -1449,6 +1449,256 @@ def test_result_json_records_the_lambdas_the_median_is_taken_over():
             assert "r2" in cell and "lambda_r2" in cell
 
 
+def _tiny_relu_net():
+    """A plain Conv-ReLU stack with non-zero biases, small enough to probe in a test."""
+    import torch
+    import torch.nn as nn
+
+    torch.manual_seed(0)
+    net = nn.Sequential(
+        nn.Conv2d(3, 8, 3, padding=1),
+        nn.ReLU(inplace=True),
+        nn.MaxPool2d(2),
+        nn.Conv2d(8, 12, 3, padding=1),
+        nn.ReLU(inplace=True),
+        nn.AdaptiveAvgPool2d(1),
+        nn.Flatten(),
+        nn.Linear(12, 10),
+    )
+    with torch.no_grad():  # default Linear/Conv biases are small; make them bite
+        for module in net:
+            if hasattr(module, "bias") and module.bias is not None:
+                module.bias.normal_(0.0, 0.3)
+    return net.eval()
+
+
+def _require_torch():
+    import unittest
+
+    try:
+        import torch  # noqa: F401
+        import torchvision  # noqa: F401
+    except Exception as exc:
+        raise unittest.SkipTest(f"torch/torchvision not installed ({exc})")
+
+
+def test_gauge_transformation_leaves_the_network_function_alone():
+    """The ReLU rescaling symmetry must change activations but not logits or gates.
+
+    This is the premise of the whole training-attribution argument in
+    ``operating_point.py``: if a recipe difference only rescales weights, it is a
+    move along this symmetry and cannot change any tap's lambda. The test pins the
+    symmetry itself -- logits identical, every ReLU gate identical, and the
+    intermediate activations genuinely rescaled rather than accidentally unchanged.
+    """
+    _require_torch()
+    import torch
+
+    from .operating_point import apply_gauge, weight_layers
+
+    net = _tiny_relu_net()
+    x = torch.randn(2, 3, 32, 32)
+
+    taps, gates_before, acts_before = {}, {}, {}
+
+    def record(name, store):
+        def hook(_m, _i, out):
+            store[name] = out.detach().clone()
+
+        return hook
+
+    names = [n for n, _ in weight_layers(net)]
+    handles = [
+        dict(net.named_modules())[n].register_forward_hook(record(n, acts_before))
+        for n in names
+    ]
+    with torch.no_grad():
+        before = net(x).clone()
+    for h in handles:
+        h.remove()
+    gates_before = {k: (v > 0) for k, v in acts_before.items()}
+
+    rng = np.random.default_rng(0)
+    alphas = {n: float(np.exp(rng.uniform(-1.5, 1.5))) for n in names}
+    apply_gauge(net, alphas)
+
+    acts_after = {}
+    handles = [
+        dict(net.named_modules())[n].register_forward_hook(record(n, acts_after))
+        for n in names
+    ]
+    with torch.no_grad():
+        after = net(x).clone()
+    for h in handles:
+        h.remove()
+
+    assert torch.allclose(before, after, atol=1e-4, rtol=1e-4), "gauge moved the logits"
+    for name in names[:-1]:
+        assert torch.equal(
+            gates_before[name], acts_after[name] > 0
+        ), f"gauge flipped a ReLU gate at {name}"
+        ratio = float(acts_after[name].abs().sum() / acts_before[name].abs().sum())
+        assert abs(ratio - alphas[name]) < 1e-3, (
+            f"{name}: activations scaled by {ratio}, expected {alphas[name]}"
+        )
+    # A transformation that scaled nothing would pass the two checks above
+    # vacuously, so require that it actually moved the weights.
+    assert max(abs(a - 1.0) for a in list(alphas.values())[:-1]) > 0.5
+
+
+def test_lambda_is_invariant_under_rescaling_the_response():
+    """Rescaling D rescales the fit's a and b; lambda is untouched.
+
+    Second half of the gauge argument. The first half says a gauge move multiplies
+    a tap's D by a constant; this says the fitted exponent does not notice.
+    """
+    contrast = np.asarray(CONTRASTS)
+    response = 0.3 + 1.7 * np.log10(contrast / contrast[0])
+    base = fit_power_lambda(contrast, response)
+    for factor in (0.017, 7.3, 940.0):
+        scaled = fit_power_lambda(contrast, factor * response)
+        assert np.isclose(scaled.lam, base.lam, atol=1e-9), factor
+        assert np.isclose(scaled.r2, base.r2, atol=1e-9), factor
+
+
+def test_operating_point_statistics_are_gauge_invariant():
+    """Every statistic the probe reports must survive the rescaling symmetry.
+
+    A statistic that moves here is reporting the coordinate system rather than
+    anything about the training, and would attribute a difference between two
+    checkpoints to a symmetry that has no effect on any measured lambda.
+    """
+    _require_torch()
+
+    from .operating_point import OperatingPointProbe, apply_gauge, weight_layers
+
+    net = _tiny_relu_net()
+    grid = dict(contrasts=(0.05, 0.4, 1.0), frequencies=(3.5, 28.0), reps=2, size=32)
+
+    probe = OperatingPointProbe(net)
+    before = probe.run(seed=0, **grid)
+    probe.close()
+
+    rng = np.random.default_rng(1)
+    apply_gauge(net, {n: float(np.exp(rng.uniform(-1.5, 1.5))) for n, _ in weight_layers(net)})
+
+    probe = OperatingPointProbe(net)
+    after = probe.run(seed=0, **grid)
+    probe.close()
+
+    for a, b in zip(before, after):
+        for key in ("bias_drive_ratio", "off_fraction", "margin_median", "dc_fraction",
+                    "sparsity", "kurtosis"):
+            assert np.isclose(getattr(a, key), getattr(b, key), atol=1e-5, rtol=1e-4), (
+                f"{a.layer}.{key}: {getattr(a, key)} -> {getattr(b, key)}"
+            )
+        assert np.allclose(a.flip_fraction, b.flip_fraction, atol=1e-9), a.layer
+
+
+def test_scaling_biases_moves_the_operating_point():
+    """The intervention must not be a gauge move -- otherwise it tests nothing.
+
+    Multiplying biases without multiplying weights slides units along their own
+    ReLU. That has to show up as a changed bias/drive ratio and changed gate
+    flipping, or the sufficiency test in the write-up is vacuous.
+    """
+    _require_torch()
+
+    from .operating_point import OperatingPointProbe, scale_biases
+
+    net = _tiny_relu_net()
+    grid = dict(contrasts=(0.05, 0.4, 1.0), frequencies=(3.5, 28.0), reps=2, size=32)
+
+    probe = OperatingPointProbe(net)
+    before = probe.run(seed=0, **grid)
+    probe.close()
+
+    scale_biases(net, 8.0)
+
+    probe = OperatingPointProbe(net)
+    after = probe.run(seed=0, **grid)
+    probe.close()
+
+    first_before, first_after = before[0], after[0]
+    assert first_after.bias_drive_ratio > 4 * first_before.bias_drive_ratio
+    assert first_after.margin_median > first_before.margin_median, (
+        "bigger biases must hold units further from threshold"
+    )
+    assert first_after.flip_fraction[-1] < first_before.flip_fraction[-1], (
+        "units held further from threshold must have fewer gates flipped"
+    )
+
+
+def test_flip_fraction_is_exactly_zero_at_zero_contrast():
+    """At c = 0 the grating *is* the gray reference, so no gate can have flipped."""
+    _require_torch()
+
+    from .operating_point import OperatingPointProbe
+
+    net = _tiny_relu_net()
+    probe = OperatingPointProbe(net)
+    stats = probe.run(contrasts=(0.0, 1.0), frequencies=(7.0,), reps=2, size=32, seed=0)
+    probe.close()
+
+    for entry in stats:
+        assert entry.flip_fraction[0] == 0.0, entry.layer
+    assert max(e.flip_fraction[1] for e in stats) > 0.0, "no gate flipped at full contrast"
+
+
+def test_weight_shape_statistics_match_their_closed_forms():
+    """Calibrate the shape statistics against a distribution whose values are known.
+
+    On i.i.d. Gaussian weights the excess kurtosis is 0, the fraction below a tenth
+    of the rms is ``erf(0.1/sqrt2)`` = 0.0797, and ``|sum W| / ||W||`` is a folded
+    standard normal with median 0.674. Also checks that the chunked reduction --
+    which exists so the 102M-parameter fc layer does not need a float64 copy --
+    agrees with a plain dense computation.
+    """
+    _require_torch()
+    import math
+    import torch
+    import torch.nn as nn
+
+    from .operating_point import weight_shape, _row_chunks
+
+    torch.manual_seed(0)
+    layer = nn.Linear(4096, 512, bias=False)
+    with torch.no_grad():
+        layer.weight.normal_(0.0, 0.05)
+    stats = weight_shape(layer)
+
+    assert abs(stats["kurtosis"]) < 0.05, stats["kurtosis"]
+    assert abs(stats["sparsity"] - math.erf(0.1 / math.sqrt(2.0))) < 0.005, stats["sparsity"]
+    assert abs(stats["dc_fraction"] - 0.6745) < 0.05, stats["dc_fraction"]
+    assert 0.9 < stats["effective_rank"] <= 1.0, stats["effective_rank"]
+
+    # chunked == dense
+    w = layer.weight.detach().double().numpy()
+    dense_sparsity = float((np.abs(w) < 0.1 * np.sqrt((w**2).mean())).mean())
+    assert abs(stats["sparsity"] - dense_sparsity) < 1e-12
+    assert sum(int(b.shape[0]) for b in _row_chunks(layer.weight, budget=10_000)) == 512
+
+
+def test_relu_taps_are_only_the_layers_a_relu_follows():
+    """The probe measures gates, so it must tap exactly the pre-activations.
+
+    VGG-19's last Linear feeds the softmax, not a ReLU, and must be excluded: it
+    has no gate whose flipping the metric could see.
+    """
+    _require_torch()
+    import torchvision
+
+    from .operating_point import relu_taps, weight_layers
+
+    net = torchvision.models.vgg19(weights=None)
+    taps, layers = relu_taps(net), [n for n, _ in weight_layers(net)]
+
+    assert len(layers) == 19, layers  # 16 conv + 3 fc
+    assert len(taps) == 18, taps  # everything except the final classifier
+    assert "classifier.6" not in taps
+    assert taps[0] == "features.0" and taps[-1] == "classifier.3"
+
+
 def _run_all():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     import unittest
